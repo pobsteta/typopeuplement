@@ -105,3 +105,6 @@ expect_erreur <- function(expr, motif = NULL) {
   if (!is.null(motif)) testthat::expect_match(msg, motif)
   invisible(err)
 }
+
+# Codes des types de la cle d'exemple (config/exemple.json), partages par plusieurs fichiers de tests.
+CODES_EXEMPLE <- c("F", "M", "R-PB-J", "R-PB-C", "R-GB", "R-IRR")

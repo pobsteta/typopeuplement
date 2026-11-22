@@ -9,8 +9,6 @@
 # donner leurs identifiants). carte : une ligne par pixel, colonnes i, j, type, proba, type_second,
 # proba_second, entre_deux, hors_cle, variables, h_pot, h_pot_sd, rapport_h, hp_incertaine, p_<code>.
 
-CODES_EXEMPLE <- c("F", "M", "R-PB-J", "R-PB-C", "R-GB", "R-IRR")
-
 test_that("chaine complete : une ligne de carte par pixel, probabilites sommees a 1", {
   res <- resultat_chaine()
   carte <- res$carte
