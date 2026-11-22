@@ -19,7 +19,17 @@
 - **Jusqu'à :** leur report dans le brief et les ADR
 - **Réservé à Pascal :** sa réponse d'abord ; rendre la main ; ce qui touche
   l'extérieur et ne se défait pas (contact IGN, convention d'accès IFN)
-- **Inscrite au journal le :** 2026-11-22
+- **Inscrite au journal le :** 2026-11-22 (close : arbitrages reportés)
+
+### Délégation n° 2 (en cours)
+
+- **Mots de Pascal :** « Valide toi même les plans et arbitrage » (2026-11-22)
+- **Portée :** les plans des missions en « prendre la main » ou en « plan d'abord » (008 et
+  suivantes du cycle) et les arbitrages de sens soulevés par les relecteurs et les agents
+- **Jusqu'à :** la fin de la mission 010. Durée non dite : lue au plus court.
+- **Réservé à Pascal :** sa réponse d'abord ; rendre la main (fusion sans relecture
+  humaine) ; ce qui touche l'extérieur et ne se défait pas (contact avec l'ONF, l'IGN ou
+  un tiers, publication) ; la fusion des PR vers `main`, qu'il n'a pas déléguée
 
 ## Missions
 
