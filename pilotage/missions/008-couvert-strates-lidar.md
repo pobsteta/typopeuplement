@@ -51,3 +51,20 @@ Pascal compare l'étagement trouvé à la couche `Typo_etage` sur une forêt qu'
 ## Qui tranche
 
 `relecteur`, puis Pascal.
+
+## Ajouts du 2026-11-22 (relecture de 009)
+
+Mineurs à traiter avec le code de 008, après validation du plan :
+1. Documenter dans `predire_hauteur_potentielle` l'écart d'environ 1 m entre la
+   prédiction hors sac (adultes appris) et la prédiction ordinaire (voisins).
+2. Documenter la nature de `sd_arbres` : arbres hors sac pour les adultes appris, tous
+   les arbres pour les autres pixels.
+3. Partager les paramètres de forêt entre `foret_regression` et `foret_hors_sac`, par
+   exemple avec `keep.inbag`.
+4. Fiche de validation : dire que le drapeau « incertaine » revient à un seuil de h_pot
+   par famille (décision par délégation, option a).
+
+Rappels :
+- la hauteur potentielle n'est pas calibrée (H0_lidar brute) ;
+- les strates du GSM sont des quarts de H0 potentielle. Le plan dit comment il traite
+  cette échelle : sur une hauteur relative, ou en mètres avec réserve.
