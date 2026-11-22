@@ -10,7 +10,9 @@ typer_peuplements(
   ser = NULL,
   configuration,
   sortie = NULL,
-  graine = 0
+  graine = 0,
+  variables = NULL,
+  milieu = NULL
 )
 }
 \arguments{
@@ -27,6 +29,13 @@ typer_peuplements(
 n'est écrit.}
 
 \item{graine}{Graine du hasard ; remplace celle de la configuration.}
+
+\item{variables}{data.frame de pixels aux variables fournies
+(\code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}) ; \code{NULL} : mode « pixels préparés ».}
+
+\item{milieu}{En mode « variables fournies », data.frame des variables de milieu
+(une ligne par ligne de \code{variables}) pour la hauteur potentielle ; \code{NULL} : hauteur
+potentielle vide et signalée partout.}
 }
 \value{
 Objet \code{typo_resultat} (voir \code{\link[=executer_chaine]{executer_chaine()}}), invisible si \code{sortie} est donné.
@@ -36,8 +45,22 @@ Point d'entrée de la chaîne : produit la carte du type de peuplement d'une emp
 (AOI), sa couche de confiance et la fiche de validation de la SER.
 }
 \details{
-Ce qui tourne aujourd'hui : \code{aoi} est un data.frame de pixels déjà préparés (les
-colonnes décrites dans \code{\link[=executer_chaine]{executer_chaine()}}), avec \code{placettes} et \code{ser} donnés.
+Deux modes tournent aujourd'hui :
+\itemize{
+\item \strong{pixels préparés} : \code{aoi} est un data.frame de pixels (les colonnes décrites dans
+\code{\link[=executer_chaine]{executer_chaine()}}), avec \code{placettes} et \code{ser} donnés ; les variables sont prédites
+par des modèles calibrés sur les placettes, et validées sur elles ;
+\item \strong{variables fournies} (mission 006) : \code{variables} est un data.frame de pixels dont
+les variables viennent d'un producteur, par exemple les paramètres forestiers LiDAR
+de l'ONF lus par \code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}. Pas d'ajustement dendrométrique, pas de
+placettes, donc pas de validation (voir \code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}}). \code{aoi} peut
+alors être \code{NULL} (toutes les lignes de \code{variables}) ou un objet \code{sf} (seuls les
+pixels dont le centre \code{x}, \code{y} tombe dedans sont gardés).
+}
+
+Pixels préparés sans colonnes \code{x}, \code{y} : les centres des pixels sont pris à
+\verb{x = i × taille_pixel}, \verb{y = j × taille_pixel} (convention du jeu synthétique, voir
+\code{\link[=ecrire_livrables]{ecrire_livrables()}}). Pour de vraies données, donner \code{x}, \code{y} en Lambert-93.
 
 Ce qui reste en attente (arrêt net, message dit) :
 \itemize{

@@ -131,6 +131,18 @@ print.typo_resultat <- function(x, ...) {
 resume_resultat <- function(res) {
   f <- res$fiche_validation
   c <- res$carte
+  if (identical(res$niveau_modele, "producteur")) {
+    types_ok <- !is.na(c$type)
+    return(c(
+      sprintf("SER %s : %d pixels, dont %d typ\u00e9s (variables du producteur, pas de validation)",
+              f$ser, nrow(c), sum(types_ok)),
+      sprintf("  pixels entre deux types : %s", fmt_pourcent(mean(c$entre_deux[types_ok]))),
+      sprintf("  pixels non pr\u00e9comptables : %s", fmt_pourcent(mean(c$non_precomptable))),
+      sprintf("  hauteur potentielle incertaine : %s", fmt_pourcent(mean(c$hp_incertaine))),
+      sprintf("  V de Cram\u00e9r avec %s (coh\u00e9rence) : %s", f$controle$reference %||% "-",
+              fmt_nombre(f$controle$v_cramer))
+    ))
+  }
   c(
     sprintf("SER %s : %d pixels class\u00e9s (niveau du mod\u00e8le : %s)", f$ser, nrow(c), res$niveau_modele),
     sprintf("  pr\u00e9cision \u00e0 la placette : %s (kappa %s)", fmt_pourcent(f$placette$precision_globale),
@@ -139,5 +151,215 @@ resume_resultat <- function(res) {
             fmt_nombre(f$grappe$kappa)),
     sprintf("  pixels entre deux types : %s", fmt_pourcent(mean(c$entre_deux))),
     sprintf("  hauteur potentielle incertaine : %s", fmt_pourcent(mean(c$hp_incertaine)))
+  )
+}
+
+# Chronomètre d'un étage : évalue `expr`, ajoute une ligne à `env$temps`.
+chronometrer <- function(env, etage, pixels, expr) {
+  debut <- proc.time()[["elapsed"]]
+  valeur <- force(expr)
+  env$temps <- rbind(env$temps, data.frame(etage = etage,
+                                           secondes = proc.time()[["elapsed"]] - debut,
+                                           pixels = as.integer(pixels),
+                                           stringsAsFactors = FALSE))
+  valeur
+}
+
+# Variables appelées par les conditions d'une clé.
+variables_cle <- function(cle) {
+  unique(unlist(lapply(cle$types, function(t) {
+    vapply(t$conditions, function(cd) as.character(cd$variable), character(1))
+  })))
+}
+
+#' Exécuter la chaîne sur des variables fournies par un producteur
+#'
+#' Mode « variables fournies » (mission 006) : les variables de la clé viennent déjà
+#' calculées (par exemple les paramètres forestiers LiDAR de l'ONF lus par
+#' [lire_parametres_lidar()]). On saute l'ajustement dendrométrique : pas de placettes,
+#' donc **pas de validation** ; la fiche porte un contrôle de cohérence avec l'étagement
+#' du producteur (`typo_etage`), qui n'est pas une validation.
+#'
+#' Étages, chacun chronométré (`temps`) : `lecture` (repris de l'attribut
+#' `temps_lecture` des variables), `hauteur_potentielle`, `cle`, `lissage`, `decision`,
+#' `controle` ; `ecriture_rasters` et `ecriture_tables` sont ajoutés par
+#' [ecrire_livrables()].
+#'
+#' - Les pixels `non_precomptable` ne sont pas typés (type vide).
+#' - Les souplesses de la table de branchement (attribut `couches`, voir [couches_onf()])
+#'   remplacent celles de la configuration pour leurs variables : réglage du jeu, dit
+#'   dans la fiche.
+#' - Si le seuil de gros bois du producteur diffère de `seuils_diametre$bm_gb_cm` de la
+#'   configuration, le drapeau `gb_interim` est levé sur tous les pixels typés et la
+#'   fiche le déclare.
+#' - Sans `milieu`, la hauteur potentielle est vide et signalée partout
+#'   (`hp_incertaine`) ; la clé s'en tient alors aux autres variables.
+#' - Une clé vide (SER sans typologie sourcée) arrête la chaîne : aucune carte de types
+#'   sans clé.
+#'
+#' @param variables data.frame de pixels : `i`, `j` (indices de grille), `h_dom` (m),
+#'   `couvert` (0 à 1), les variables de la clé autres que `rapport_h` (une colonne vide
+#'   neutralise ses conditions), et facultativement `x`, `y`, `famille`, `typo_etage`,
+#'   `non_precomptable`, `part_pb_absente`.
+#' @param conf Configuration effective d'une SER ([lire_configuration()]).
+#' @param milieu data.frame des `variables_milieu` de la configuration, une ligne par
+#'   ligne de `variables` ; `NULL` : hauteur potentielle vide.
+#'
+#' @return Objet `typo_resultat` : `carte`, `fiche_validation` (sans placette ni grappe,
+#'   avec `controle` et `declarations`), `niveau_modele` (`"producteur"`), `ser`, `cle`
+#'   (souplesses du jeu comprises), `temps` (`etage`, `secondes`, `pixels`), `gabarit`.
+#' @seealso [typer_peuplements()], [controle_coherence()]
+#' @export
+executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
+  chrono <- new.env()
+  chrono$temps <- data.frame(etage = character(0), secondes = numeric(0), pixels = integer(0),
+                             stringsAsFactors = FALSE)
+  n <- nrow(variables)
+  t_lecture <- attr(variables, "temps_lecture")
+  if (!is.null(t_lecture)) {
+    chrono$temps <- data.frame(etage = "lecture", secondes = t_lecture, pixels = n,
+                               stringsAsFactors = FALSE)
+  }
+  cle <- conf$cle
+  ser <- conf$ser %||% ""
+  if (length(cle$types) == 0) {
+    arreter(sprintf(paste0("cl\u00e9 de types vide pour la SER %s : aucune carte de types ",
+                           "sans typologie locale sourc\u00e9e"), ser))
+  }
+  verifier_colonnes(variables, c("i", "j", "h_dom", "couvert"), "les variables fournies")
+  couches <- attr(variables, "couches")
+  declarations <- character(0)
+
+  # Souplesses du jeu (erreurs du producteur), à la place de celles de la configuration.
+  if (!is.null(couches) && "souplesse" %in% names(couches)) {
+    for (k in which(!is.na(couches$souplesse))) {
+      cle$souplesse[[couches$variable[k]]] <- couches$souplesse[k]
+      declarations <- c(declarations, sprintf("Souplesse de %s : %s (%s).", couches$variable[k],
+                                              format(couches$souplesse[k], decimal.mark = ","), couches$source[k]))
+    }
+  }
+
+  non_prec <- if ("non_precomptable" %in% names(variables)) {
+    as.logical(variables$non_precomptable) %in% TRUE
+  } else rep(FALSE, n)
+  pb_absente <- if ("part_pb_absente" %in% names(variables)) {
+    as.logical(variables$part_pb_absente) %in% TRUE
+  } else if ("part_pb" %in% names(variables)) is.na(variables$part_pb) else rep(TRUE, n)
+  if (any(pb_absente)) {
+    declarations <- c(declarations, paste0(
+      "part_pb absente du jeu : ses conditions sont neutralis\u00e9es (drapeau part_pb_absente)."))
+  }
+
+  # Gros bois : seuil du producteur contre seuil de la SER.
+  seuil_conf <- conf$seuils_diametre$bm_gb_cm
+  seuil_prod <- if (!is.null(couches) && "seuil_cm" %in% names(couches)) {
+    couches$seuil_cm[couches$variable == "part_gb"]
+  } else numeric(0)
+  gb_interim <- length(seuil_prod) == 1 && !is.na(seuil_prod) && !is.null(seuil_conf) &&
+    abs(seuil_prod - as.numeric(seuil_conf)) > 1e-9
+  if (gb_interim) {
+    declarations <- c(declarations, sprintf(paste0(
+      "Gros bois : INT\u00c9RIM. La part de gros bois du producteur est calcul\u00e9e \u00e0 %s cm, ",
+      "la limite de la SER est %s cm (drapeau gb_interim)."),
+      format(seuil_prod, decimal.mark = ","), format(as.numeric(seuil_conf), decimal.mark = ",")))
+  }
+
+  # 1. Hauteur potentielle.
+  hp <- chronometrer(chrono, "hauteur_potentielle", n, {
+    if (is.null(milieu)) {
+      data.frame(h_pot = rep(NA_real_, n), h_pot_sd = NA_real_, rapport_h = NA_real_,
+                 hp_incertaine = TRUE)
+    } else {
+      if (nrow(milieu) != n) arreter("milieu doit avoir une ligne par ligne de variables")
+      verifier_colonnes(milieu, conf$variables_milieu, "le milieu")
+      df <- cbind(as.data.frame(variables)[, setdiff(names(variables), conf$variables_milieu),
+                                           drop = FALSE],
+                  as.data.frame(milieu)[, conf$variables_milieu, drop = FALSE])
+      mhp <- modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf)
+      predire_hauteur_potentielle(mhp, df)
+    }
+  })
+  if (is.null(milieu)) {
+    declarations <- c(declarations, paste0(
+      "Hauteur potentielle vide et signal\u00e9e partout (milieu non fourni) : ",
+      "rapport_h neutralis\u00e9 dans la cl\u00e9."))
+  }
+
+  # 2. Clé floue sur les pixels précomptables.
+  ok <- which(!non_prec)
+  vars <- setdiff(variables_cle(cle), "rapport_h")
+  verifier_colonnes(variables, vars, "les variables fournies (variables de la cl\u00e9)")
+  probas <- chronometrer(chrono, "cle", length(ok), {
+    entree <- as.data.frame(variables)[ok, vars, drop = FALSE]
+    entree$rapport_h <- hp$rapport_h[ok]
+    appartenances_types(cle, entree)
+  })
+  hors_cle <- attr(probas, "hors_cle")
+  attr(probas, "hors_cle") <- NULL
+
+  # 3. Lissage à l'échelle de lecture.
+  probas <- chronometrer(chrono, "lissage", length(ok), {
+    lisser_probabilites(probas, variables$i[ok], variables$j[ok], conf$lissage_fenetre %||% 3)
+  })
+
+  # 4. Décision et assemblage de la carte (une ligne par pixel, vide hors précomptable).
+  carte <- chronometrer(chrono, "decision", length(ok), {
+    dec <- decider_type(probas, as.numeric(cle$marge_entre_deux %||% 0.15))
+    codes <- names(probas)
+    tout <- data.frame(type = rep(NA_character_, n), proba = NA_real_,
+                       type_second = NA_character_, proba_second = NA_real_,
+                       entre_deux = NA, hors_cle = NA, stringsAsFactors = FALSE)
+    tout[ok, c("type", "proba", "type_second", "proba_second", "entre_deux")] <- dec
+    tout$hors_cle[ok] <- hors_cle
+    p_cols <- as.data.frame(matrix(NA_real_, n, length(codes)))
+    names(p_cols) <- paste0("p_", codes)
+    p_cols[ok, ] <- as.matrix(probas)
+    xy <- if (all(c("x", "y") %in% names(variables))) {
+      data.frame(x = variables$x, y = variables$y)
+    } else NULL
+    gardees <- intersect(c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "h_dom",
+                           "couvert", "famille", "typo_etage"), names(variables))
+    morceaux <- list(data.frame(i = variables$i, j = variables$j), xy, tout,
+                     as.data.frame(variables)[, gardees, drop = FALSE],
+                     hp[, c("h_pot", "h_pot_sd", "rapport_h", "hp_incertaine")],
+                     data.frame(non_precomptable = non_prec, part_pb_absente = pb_absente,
+                                gb_interim = gb_interim & !non_prec),
+                     p_cols)
+    out <- do.call(cbind, morceaux[!vapply(morceaux, is.null, logical(1))])
+    rownames(out) <- NULL
+    out
+  })
+
+  # 5. Contrôle de cohérence avec l'étagement du producteur (pas une validation).
+  controle <- chronometrer(chrono, "controle", length(ok), {
+    if ("typo_etage" %in% names(variables)) {
+      controle_coherence(carte$type[ok], variables$typo_etage[ok], "Typo_etage",
+                         exclure = 0)
+    } else NULL
+  })
+
+  fiche <- list(
+    ser = ser,
+    mode = "variables fournies",
+    placette = NULL,
+    grappe = NULL,
+    niveau_modele = "producteur",
+    controle = controle,
+    declarations = declarations
+  )
+  structure(
+    list(
+      carte = carte,
+      fiche_validation = fiche,
+      erreurs_variables = NULL,
+      rmse_hauteur_potentielle = NULL,
+      types_observes = NULL,
+      niveau_modele = "producteur",
+      ser = ser,
+      cle = cle,
+      temps = chrono$temps,
+      gabarit = attr(variables, "gabarit")
+    ),
+    class = "typo_resultat"
   )
 }

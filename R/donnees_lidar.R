@@ -1,0 +1,154 @@
+# Lecture des paramètres forestiers LiDAR d'un producteur (mission 006).
+#
+# Mode « variables fournies » : les variables de la clé viennent déjà calculées par le
+# producteur (ONF, jeu « Paramètres forestiers LiDAR – Vercors drômois 2021-2022 »,
+# rasters de 26,6 m en Lambert-93). On saute l'ajustement dendrométrique.
+
+#' Couches du jeu ONF « Paramètres forestiers LiDAR » et leur branchement
+#'
+#' Table de branchement des rasters du producteur sur les variables de la chaîne
+#' (fiche synthétique du jeu Vercors drômois, A. Hedel, ONF, 25/09/2024, p. 4) :
+#'
+#' | fichier | variable | conversion |
+#' |---|---|---|
+#' | `G.tif` | `G` (m²/ha) | aucune |
+#' | `p100GR.tif` | `part_resineux` (0 à 1) | ÷ 100 |
+#' | `p100GGB.tif` | `part_gb` (0 à 1) | ÷ 100 |
+#' | `H0_lidar.tif` | `h_dom` (m) | aucune ; hauteur brute, **non calibrée** (p. 2) |
+#' | `Tx_couv.tif` | `couvert` (0 à 1) | ÷ 100 |
+#' | `Compo1.tif` | `famille` (0 non précomptable, 1 feuillus, 2 résineux, 3 mélange) | aucune |
+#' | `Typo_etage.tif` | `typo_etage` (0 non précomptable, 1 non étagé, 2 faiblement étagé, 3 étagé) | aucune ; contrôle de cohérence seulement |
+#'
+#' `Struc_fam` n'est pas utilisée (décision de Pascal, plan 006). `part_pb` n'existe pas
+#' dans le jeu : elle reste vide et le drapeau `part_pb_absente` est levé.
+#'
+#' **Gros bois : intérim déclaré.** La part de gros bois du producteur est calculée à
+#' 47,5 cm (fiche, p. 1 : « GB : 47.5 ≤ Ø < 62.5 cm ») alors que la limite retenue pour
+#' H10 est 42,5 cm (Pascal, 2026-11-22). La colonne `seuil_cm` porte 47,5 pour
+#' `part_gb` ; la chaîne lève le drapeau `gb_interim` quand ce seuil diffère de celui de
+#' la configuration.
+#'
+#' **Souplesses : réglage du jeu Vercors**, tirées des erreurs du producteur (fiche, p. 3,
+#' « Synthèse des corrections de biais à appliquer par contexte »), sans correction de
+#' biais :
+#' - `part_resineux` : 0,10 (« ordre de grandeur de +/- 4 m²/ha et +/- 10 % », p. 3) ;
+#' - `part_gb` : 0,11 (plus forte correction de %GGB du tableau, « -11 % » pour
+#'   G < 11 m²/ha, p. 3) ;
+#' - `G` : 6,7 m²/ha (plus forte correction de G du tableau, « -6.7 » pour G < 11 m²/ha et
+#'   « +6.7 » pour G > 48 m²/ha, p. 3).
+#'
+#' Ces souplesses ne sont pas des paramètres de la SER : elles disent l'erreur de ce jeu.
+#' Elles remplacent celles de la configuration pour ces variables, et la fiche le dit.
+#'
+#' @return data.frame : `fichier`, `variable`, `facteur` (multiplicateur), `obligatoire`,
+#'   `seuil_cm` (seuil de diamètre du producteur, `NA` sinon), `souplesse` (`NA` si aucune),
+#'   `source`.
+#' @seealso [lire_parametres_lidar()]
+#' @export
+couches_onf <- function() {
+  fiche <- "fiche ONF Vercors dr\u00f4mois (A. Hedel, 25/09/2024)"
+  data.frame(
+    fichier = c("G.tif", "p100GR.tif", "p100GGB.tif", "H0_lidar.tif", "Tx_couv.tif",
+                "Compo1.tif", "Typo_etage.tif"),
+    variable = c("G", "part_resineux", "part_gb", "h_dom", "couvert", "famille", "typo_etage"),
+    facteur = c(1, 0.01, 0.01, 1, 0.01, 1, 1),
+    obligatoire = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
+    seuil_cm = c(NA, NA, 47.5, NA, NA, NA, NA),
+    souplesse = c(6.7, 0.10, 0.11, NA, NA, NA, NA),
+    source = c(
+      paste0(fiche, ", p. 3 : correction de G jusqu'\u00e0 6,7 m\u00b2/ha (r\u00e9glage du jeu Vercors)"),
+      paste0(fiche, ", p. 3 : erreur de %R de l'ordre de 10 % (r\u00e9glage du jeu Vercors)"),
+      paste0(fiche, ", p. 1 : GB \u00e0 47,5 cm ; p. 3 : correction de %GGB jusqu'\u00e0 11 % ",
+             "(r\u00e9glage du jeu Vercors)"),
+      paste0(fiche, ", p. 2 : hauteur dominante brute, non calibr\u00e9e"),
+      paste0(fiche, ", p. 4 : taux de couvert en %"),
+      paste0(fiche, ", p. 4 : 0 non pr\u00e9comptable, 1 feuillus, 2 r\u00e9sineux, 3 m\u00e9lange"),
+      paste0(fiche, ", p. 4 : \u00e9tagement, contr\u00f4le de coh\u00e9rence seulement")
+    ),
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Lire les paramètres forestiers LiDAR d'un producteur sur une emprise
+#'
+#' Lit les rasters du producteur (par défaut ceux de l'ONF, [couches_onf()]), les découpe
+#' sur l'emprise `aoi` et rend un data.frame de pixels prêt pour
+#' `typer_peuplements(variables = ...)`.
+#'
+#' Sont retenus les pixels où au moins une couche a une valeur. Le drapeau
+#' `non_precomptable` est levé là où `famille` vaut 0, ou `G` vaut 0 ou est vide : ces
+#' pixels ne sont pas typés.
+#'
+#' Coordonnées : `x`, `y` sont les centres des pixels, en m, dans le système des rasters
+#' (Lambert-93, EPSG:2154, pour le jeu ONF). `i` est l'indice de colonne (0 à l'ouest),
+#' `j` l'indice de ligne compté depuis le sud (0 au sud), sur la grille découpée.
+#'
+#' @param dossier Dossier qui contient les rasters.
+#' @param aoi Emprise : `NULL` (tout le jeu), objet `sf`/`sfc`, `SpatVector` ou
+#'   `SpatExtent` de terra. Un polygone est reprojeté dans le système des rasters ; seuls
+#'   les pixels dont le centre tombe dedans sont gardés.
+#' @param couches Table de branchement ([couches_onf()] par défaut).
+#'
+#' @return data.frame : `i`, `j`, `x`, `y`, une colonne par `variable` de `couches`,
+#'   `part_pb` (vide), `non_precomptable`, `part_pb_absente`. Attributs : `gabarit`
+#'   (grille d'origine découpée : `xmin`, `xmax`, `ymin`, `ymax`, `resolution`, `crs`),
+#'   `couches` (la table de branchement), `temps_lecture` (secondes).
+#' @examples
+#' \dontrun{
+#' # Rasters du jeu téléchargés depuis le serveur du CRAIG, hors du dépôt.
+#' v <- lire_parametres_lidar("chemin/vers/vercors", aoi = sf::st_read("foret.gpkg"))
+#' }
+#' @export
+lire_parametres_lidar <- function(dossier, aoi = NULL, couches = couches_onf()) {
+  debut <- proc.time()[["elapsed"]]
+  chemins <- file.path(dossier, couches$fichier)
+  present <- file.exists(chemins)
+  manque <- couches$fichier[!present & couches$obligatoire]
+  if (length(manque) > 0) {
+    arreter(sprintf("couches absentes de %s : %s", dossier, paste(manque, collapse = ", ")))
+  }
+  couches <- couches[present, , drop = FALSE]
+  r <- terra::rast(chemins[present])
+  names(r) <- couches$variable
+
+  if (!is.null(aoi)) {
+    if (inherits(aoi, c("sf", "sfc"))) {
+      aoi <- terra::vect(sf::st_transform(sf::st_geometry(aoi), terra::crs(r)))
+    }
+    if (inherits(aoi, "SpatVector")) {
+      if (!terra::same.crs(aoi, r)) aoi <- terra::project(aoi, terra::crs(r))
+      r <- terra::crop(r, aoi, snap = "out", mask = TRUE)
+    } else if (inherits(aoi, "SpatExtent")) {
+      r <- terra::crop(r, aoi, snap = "out")
+    } else {
+      arreter("aoi doit \u00eatre NULL, un objet sf, un SpatVector ou un SpatExtent")
+    }
+  }
+
+  v <- terra::values(r, mat = TRUE)
+  garde <- which(rowSums(!is.na(v)) > 0)
+  if (length(garde) == 0) arreter("aucun pixel renseign\u00e9 dans l'emprise")
+  xy <- terra::xyFromCell(r, garde)
+  rc <- terra::rowColFromCell(r, garde)
+  out <- data.frame(i = as.integer(rc[, 2] - 1L), j = as.integer(terra::nrow(r) - rc[, 1]),
+                    x = xy[, 1], y = xy[, 2])
+  for (k in seq_len(nrow(couches))) {
+    out[[couches$variable[k]]] <- as.numeric(v[garde, k]) * couches$facteur[k]
+  }
+  if (!"part_pb" %in% names(out)) {
+    out$part_pb <- NA_real_
+    out$part_pb_absente <- TRUE
+  } else {
+    out$part_pb_absente <- is.na(out$part_pb)
+  }
+  fam0 <- if ("famille" %in% names(out)) !is.na(out$famille) & out$famille == 0 else FALSE
+  out$non_precomptable <- fam0 | is.na(out$G) | out$G == 0
+
+  e <- as.vector(terra::ext(r))
+  attr(out, "gabarit") <- list(xmin = e[["xmin"]], xmax = e[["xmax"]], ymin = e[["ymin"]],
+                               ymax = e[["ymax"]], resolution = terra::res(r),
+                               crs = terra::crs(r))
+  attr(out, "couches") <- couches
+  attr(out, "temps_lecture") <- proc.time()[["elapsed"]] - debut
+  out
+}

@@ -26,7 +26,7 @@ Unités : diamètres en cm à 1,30 m, surface terrière en m²/ha, hauteurs en m
 coordonnées en m (Lambert-93 pour les vraies données), parts entre 0 et 1.
 }
 \author{
-\strong{Maintainer}: Pascal Obst<U+00E9>tar \email{pascal.obstetar@gmail.com}
+\strong{Maintainer}: Pascal Obstétar \email{pascal.obstetar@gmail.com}
 
 }
 \keyword{internal}

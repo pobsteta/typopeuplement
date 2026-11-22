@@ -88,19 +88,23 @@ decider_type <- function(probas, marge_entre_deux = 0.15) {
     return(data.frame(type = character(0), proba = numeric(0), type_second = character(0),
                       proba_second = numeric(0), entre_deux = logical(0)))
   }
-  ordre <- t(apply(p, 1, function(r) order(-r)))
-  if (ncol(p) == 1) ordre <- matrix(1L, nrow = n, ncol = 1)
+  # Rang 1 puis rang 2, à égalité le premier type de la clé (comme order(-r)), sans
+  # boucle sur les lignes : 450 000 pixels d'un massif en moins d'une seconde.
   lignes <- seq_len(n)
-  p1 <- p[cbind(lignes, ordre[, 1])]
+  k1 <- indice_max_ligne(p)
+  p1 <- p[cbind(lignes, k1)]
   if (ncol(p) > 1) {
-    p2 <- p[cbind(lignes, ordre[, 2])]
-    second <- codes[ordre[, 2]]
+    reste <- p
+    reste[cbind(lignes, k1)] <- -Inf
+    k2 <- indice_max_ligne(reste)
+    p2 <- p[cbind(lignes, k2)]
+    second <- codes[k2]
   } else {
     p2 <- rep(0, n)
     second <- rep(NA_character_, n)
   }
   data.frame(
-    type = codes[ordre[, 1]],
+    type = codes[k1],
     proba = p1,
     type_second = second,
     proba_second = p2,

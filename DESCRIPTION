@@ -16,7 +16,7 @@ Depends:
 Imports:
     sf (>= 1.0-0),
     terra (>= 1.7-0),
-    ranger,
+    ranger (>= 0.15.0),
     e1071,
     MASS,
     jsonlite,
@@ -25,6 +25,8 @@ Imports:
 Suggests:
     nemeton,
     testthat (>= 3.0.0)
+Remotes:
+    github::pobsteta/nemeton
 Config/testthat/edition: 3
 Language: fr
 Roxygen: list(markdown = TRUE)
