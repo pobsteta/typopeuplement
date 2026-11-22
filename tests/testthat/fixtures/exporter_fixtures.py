@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 
 from typopeuplement.chaine import executer, types_observes
+from typopeuplement.hauteur_potentielle import ModeleHauteurPotentielle
 from typopeuplement.cle import Cle, appartenances, classer
 from typopeuplement.lissage import lisser
 from typopeuplement.modeles import comparer_classifieurs
@@ -105,6 +106,12 @@ def main() -> None:
     ajouter("pct_hp_incertaine", c["hp_incertaine"].mean())
     for fam, v in res["rmse_hauteur_potentielle"].items():
         ajouter(f"rmse_hp_{fam}", v)
+    # Hauteur potentielle contre la verite du generateur, sur les peuplements adultes fermes.
+    m = ModeleHauteurPotentielle(conf["variables_milieu"], graine=conf.get("graine", 0)).ajuster(pixels)
+    hp = m.predire(pixels)
+    adultes = m.peuplements_adultes(pixels)
+    ajouter("n_adultes", adultes.sum())
+    ajouter("rmse_hp_vs_verite_adultes", np.sqrt(((hp["h_pot"] - verite["h_pot"])[adultes] ** 2).mean()))
     for var_, row in err.iterrows():
         ajouter(f"rmse_{var_}", row["rmse"])
     for code in conf["cle"]["types"]:

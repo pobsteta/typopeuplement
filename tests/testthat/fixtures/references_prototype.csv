@@ -11,6 +11,8 @@ pct_entre_deux,0.1611111111
 pct_hp_incertaine,0.01333333333
 rmse_hp_feuillus,4.23877516
 rmse_hp_resineux,2.027703166
+n_adultes,390
+rmse_hp_vs_verite_adultes,1.724261372
 rmse_G,3.186168424
 rmse_part_resineux,0.0750575136
 rmse_part_pb,0.05379778535
