@@ -1,0 +1,35 @@
+{
+  "_avertissement": "Configuration d'EXEMPLE. Les types, seuils et souplesses ci-dessous sont des valeurs provisoires pour faire tourner la chaîne, pas une typologie. Chaque SER pilote remplacera la clé par la sienne, sourcée (guide de sylviculture, typologie du SRGS). Seules les limites de gros bois 42,5 / 47,5 cm viennent d'une source : Souchon (2020), cité dans docs/brief-typologie-peuplements.md.",
+  "national": {
+    "graine": 0,
+    "predicteurs": ["lidar_h95", "lidar_h50", "lidar_cv_h", "lidar_couvert", "lidar_sous_etage", "s2_ndvi_hiver", "s2_amplitude_ndvi"],
+    "variables_milieu": ["altitude", "pente", "bilan_hydrique", "reserve_utile"],
+    "variables_cibles": ["G", "part_resineux", "part_pb", "part_bm", "part_gb"],
+    "lissage_fenetre": 3,
+    "grappe_cote_m": 70.7,
+    "placettes_min_par_type": 30,
+    "transition_demi_largeur_m": 500,
+    "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5},
+    "hauteur_potentielle": {"couvert_min": 0.7, "hauteur_min_m": 15.0, "incertitude_relative_max": 0.2, "quantile_enveloppe": 0.9},
+    "cle": {
+      "marge_entre_deux": 0.15,
+      "souplesse": {"part_resineux": 0.05, "part_pb": 0.05, "part_gb": 0.05, "rapport_h": 0.05},
+      "types": [
+        {"code": "F", "libelle": "Feuillus", "conditions": [{"variable": "part_resineux", "max": 0.35}]},
+        {"code": "M", "libelle": "Mélange feuillus-résineux", "conditions": [{"variable": "part_resineux", "min": 0.35, "max": 0.65}]},
+        {"code": "R-PB-J", "libelle": "Résineux à petits bois, jeune (loin de la hauteur potentielle)", "conditions": [{"variable": "part_resineux", "min": 0.65}, {"variable": "part_pb", "min": 0.5}, {"variable": "rapport_h", "max": 0.6}]},
+        {"code": "R-PB-C", "libelle": "Résineux à petits bois, chétif (proche de la hauteur potentielle)", "conditions": [{"variable": "part_resineux", "min": 0.65}, {"variable": "part_pb", "min": 0.5}, {"variable": "rapport_h", "min": 0.6}]},
+        {"code": "R-GB", "libelle": "Résineux à gros bois", "conditions": [{"variable": "part_resineux", "min": 0.65}, {"variable": "part_gb", "min": 0.5}]},
+        {"code": "R-IRR", "libelle": "Résineux irrégulier ou à bois moyens", "conditions": [{"variable": "part_resineux", "min": 0.65}, {"variable": "part_pb", "max": 0.5}, {"variable": "part_gb", "max": 0.5}]}
+      ]
+    }
+  },
+  "grandes_regions": {
+    "alpes": {"seuils_diametre": {"bm_gb_cm": 42.5}},
+    "vosges": {"seuils_diametre": {"bm_gb_cm": 47.5}}
+  },
+  "ser": {
+    "exemple-alpes-du-nord": {"grande_region": "alpes", "_code_ser": "à renseigner depuis GeoData INRAE"},
+    "exemple-vosges": {"grande_region": "vosges", "_code_ser": "à renseigner depuis GeoData INRAE"}
+  }
+}

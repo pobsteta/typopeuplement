@@ -1,0 +1,36 @@
+{
+  "_avertissement": "Configuration de la SER pilote H10 (Prealpes du Nord), mission 005. La CLE DE TYPES EST VIDE VOLONTAIREMENT : la typologie en usage (GSM Alpes du Nord, cle des structures de peuplements) ne s'exprime pas dans le format actuel (variables absentes de la chaine : couvert des strates 1 a 3, hauteur dominante potentielle absolue, nombre de tiges ; clause OU absente du format). Voir docs/referentiels/typologie-h10.md. Les valeurs du bloc national (predicteurs, souplesses, marge, seuils de hauteur potentielle) sont celles de exemple.json, PROVISOIRES.",
+  "national": {
+    "graine": 0,
+    "predicteurs": ["lidar_h95", "lidar_h50", "lidar_cv_h", "lidar_couvert", "lidar_sous_etage", "s2_ndvi_hiver", "s2_amplitude_ndvi"],
+    "variables_milieu": ["altitude", "pente", "bilan_hydrique", "reserve_utile"],
+    "variables_cibles": ["G", "part_resineux", "part_pb", "part_bm", "part_gb"],
+    "lissage_fenetre": 3,
+    "grappe_cote_m": 70.7,
+    "placettes_min_par_type": 30,
+    "transition_demi_largeur_m": 500,
+    "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5},
+    "hauteur_potentielle": {"couvert_min": 0.7, "hauteur_min_m": 15.0, "incertitude_relative_max": 0.2, "quantile_enveloppe": 0.9},
+    "cle": {
+      "marge_entre_deux": 0.15,
+      "souplesse": {"part_resineux": 0.05, "part_pb": 0.05, "part_gb": 0.05, "rapport_h": 0.05},
+      "types": []
+    }
+  },
+  "grandes_regions": {
+    "H": {
+      "_a_trancher_bm_gb_cm": "Limite bois moyens / gros bois NON TRANCHEE : 42,5 cm (GSM Alpes du Nord 2006, classes 45 et plus, p. 54 ; valeur heritee du national en attendant) ou 47,5 cm (SRGS Auvergne-Rhone-Alpes 2023 p. 12 ; fiche du jeu LiDAR Vercors). Question posee a Pascal."
+    }
+  },
+  "ser": {
+    "H10": {
+      "grande_region": "H",
+      "_code_ser": "H10 (Prealpes du Nord), 86,6 % des forets du jeu Vercors dromois ; reste en H30 (12,3 %), voir docs/referentiels/ser.md",
+      "_sources": "docs/referentiels/typologie-h10.md",
+      "cle": {
+        "_statut": "VIDE : cle GSM non executable dans le format actuel ; ne pas utiliser l'exemple pour H10.",
+        "types": []
+      }
+    }
+  }
+}

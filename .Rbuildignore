@@ -1,0 +1,14 @@
+^\.claude$
+^\.git$
+^\.gitignore$
+^\.pytest_cache$
+^CLAUDE\.md$
+^README\.md$
+^config$
+^docs$
+^pilotage$
+^sorties$
+^src$
+^pyproject\.toml$
+^tests/.*\.py$
+^tests/__pycache__$
