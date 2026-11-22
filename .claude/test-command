@@ -1,1 +1,1 @@
-python3 -m pytest -q
+Rscript -e 'testthat::test_local()' && python3 -m pytest -q
