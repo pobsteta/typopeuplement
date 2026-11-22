@@ -34,9 +34,25 @@ arbres où il n'a pas servi. Les autres lignes ont la prédiction ordinaire (tou
 arbres). Sans cela, la forêt « reconnaîtrait » les adultes appris et l'enveloppe serait
 trop basse pour eux.
 
+\strong{Écart entre les deux prédictions.} La prédiction hors sac d'un adulte appris et la
+prédiction ordinaire d'un pixel voisin de même milieu ne sont pas la même grandeur :
+la forêt entière a vu l'adulte, ses arbres hors sac non. Sur le Vercors (relecture de
+la mission 009), elles diffèrent d'environ 1 m. Une carte de \code{h_pot} peut donc montrer
+un saut de cet ordre entre un adulte fermé appris et son voisin ; ce saut vient de la
+méthode, pas du milieu (l'attribut \code{hors_sac} dit quelles lignes sont concernées).
+
 \strong{Dispersion des arbres.} L'écart-type entre arbres (× k), rendu dans l'attribut
 \code{sd_arbres}, n'est pas une erreur de prédiction : il dit combien la forêt varie d'un
 arbre à l'autre en ce point. Il ne compte pas dans \code{h_pot_sd}, ni dans \code{hp_incertaine}.
+Il ne porte pas sur les mêmes arbres partout : pour un adulte appris (prédit hors sac),
+sur les seuls arbres hors sac (environ un tiers) ; pour les autres lignes, sur tous les
+arbres. Les deux ne se comparent pas directement.
+
+\strong{Drapeau « incertaine » : un seuil de hauteur potentielle.} \code{h_pot_sd} est constant
+dans une famille (k × RMSE). Le test \code{h_pot_sd / h_pot > incertitude_relative_max}
+revient donc à \verb{h_pot < k × RMSE / incertitude_relative_max} : un seuil de hauteur
+potentielle par famille, qui marque les stations les moins fertiles (décision de
+2026-11-22, option a ; la fiche de \code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}} donne ces seuils).
 
 La prédiction se fait par paquets de \code{taille_paquet} lignes, pour borner la mémoire
 (une valeur par arbre et par ligne).

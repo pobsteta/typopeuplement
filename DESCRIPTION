@@ -11,7 +11,8 @@ Description: Chaine de traitement qui produit, pour les forets de France
     carte porte sa couche de confiance. Package compagnon de nemeton. Version
     minimale de ranger : 0.15.0, qui introduit le parametre min.bucket (taille
     minimale des feuilles) utilise par les forets aleatoires (NEWS de ranger,
-    version 0.15.0).
+    version 0.15.0). Le couvert des strates par le nuage de points LiDAR HD
+    passe par lasR (Suggests, depuis r-universe), qui demande GDAL.
 License: GPL-3
 Encoding: UTF-8
 Depends:
@@ -26,10 +27,12 @@ Imports:
     stats,
     utils
 Suggests:
+    lasR,
     nemeton,
     testthat (>= 3.0.0)
 Remotes:
     github::pobsteta/nemeton
+Additional_repositories: https://r-lidar.r-universe.dev
 Config/testthat/edition: 3
 Language: fr
 Roxygen: list(markdown = TRUE)

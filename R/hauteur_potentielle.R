@@ -74,7 +74,7 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
     modele$rmse_cv[[nom]] <- sqrt(mean((pred_cv - y)^2))
     # Forêt finale, et ses prédictions hors sac (arbres où la ligne n'a pas servi) :
     # l'enveloppe se mesure sur des hauteurs que la forêt n'a pas apprises.
-    m <- foret_hors_sac(X, y, nombre_arbres, feuille_min, graine)
+    m <- foret_regression(X, y, nombre_arbres, feuille_min, graine, keep.inbag = TRUE)
     hs <- hors_sac_par_ligne(m, X)
     modele$facteur[[nom]] <- max(1, unname(stats::quantile(y / hs$moy, quantile_enveloppe, type = 7)))
     m$inbag.counts <- NULL
@@ -119,9 +119,25 @@ peuplements_adultes <- function(modele, df) {
 #' arbres). Sans cela, la forêt « reconnaîtrait » les adultes appris et l'enveloppe serait
 #' trop basse pour eux.
 #'
+#' **Écart entre les deux prédictions.** La prédiction hors sac d'un adulte appris et la
+#' prédiction ordinaire d'un pixel voisin de même milieu ne sont pas la même grandeur :
+#' la forêt entière a vu l'adulte, ses arbres hors sac non. Sur le Vercors (relecture de
+#' la mission 009), elles diffèrent d'environ 1 m. Une carte de `h_pot` peut donc montrer
+#' un saut de cet ordre entre un adulte fermé appris et son voisin ; ce saut vient de la
+#' méthode, pas du milieu (l'attribut `hors_sac` dit quelles lignes sont concernées).
+#'
 #' **Dispersion des arbres.** L'écart-type entre arbres (× k), rendu dans l'attribut
 #' `sd_arbres`, n'est pas une erreur de prédiction : il dit combien la forêt varie d'un
 #' arbre à l'autre en ce point. Il ne compte pas dans `h_pot_sd`, ni dans `hp_incertaine`.
+#' Il ne porte pas sur les mêmes arbres partout : pour un adulte appris (prédit hors sac),
+#' sur les seuls arbres hors sac (environ un tiers) ; pour les autres lignes, sur tous les
+#' arbres. Les deux ne se comparent pas directement.
+#'
+#' **Drapeau « incertaine » : un seuil de hauteur potentielle.** `h_pot_sd` est constant
+#' dans une famille (k × RMSE). Le test `h_pot_sd / h_pot > incertitude_relative_max`
+#' revient donc à `h_pot < k × RMSE / incertitude_relative_max` : un seuil de hauteur
+#' potentielle par famille, qui marque les stations les moins fertiles (décision de
+#' 2026-11-22, option a ; la fiche de [executer_chaine_fournie()] donne ces seuils).
 #'
 #' La prédiction se fait par paquets de `taille_paquet` lignes, pour borner la mémoire
 #' (une valeur par arbre et par ligne).
@@ -179,17 +195,6 @@ predire_hauteur_potentielle <- function(modele, df, taille_paquet = 20000L) {
   rapport <- ifelse(incertaine, NA_real_, as.numeric(df$h_dom) / hp)
   structure(data.frame(h_pot = hp, h_pot_sd = sd, rapport_h = rapport, hp_incertaine = incertaine),
             sd_arbres = sd_arbres, hors_sac = hors_sac)
-}
-
-# Forêt de régression qui garde la trace des lignes tirées par chaque arbre (paramètres
-# de foret_regression()).
-foret_hors_sac <- function(X, y, nombre_arbres, feuille_min, graine) {
-  ranger::ranger(
-    x = as.data.frame(X), y = y,
-    num.trees = nombre_arbres, mtry = ncol(X),
-    min.node.size = 2, min.bucket = feuille_min,
-    seed = graine_ranger(graine), num.threads = 1, keep.inbag = TRUE
-  )
 }
 
 # Moyenne et écart-type (de population) hors sac de chaque ligne apprise : sur les seuls

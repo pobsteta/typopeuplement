@@ -47,6 +47,23 @@ python3 -m typopeuplement executer --config config/exemple.json --ser exemple-vo
   prend des tableaux déjà calculés.
 - Rien n'est tranché : la stack est proposée dans [`docs/adr/0001-stack-python-libre.md`](docs/adr/0001-stack-python-libre.md).
 
+## Nuage de points LiDAR HD : lasR et GDAL
+
+Le couvert des strates du GSM (`couvert_strates_dalle()`, mission 008) lit les dalles du
+LiDAR HD de l'IGN avec [lasR](https://github.com/r-lidar/lasR). lasR n'est pas sur le
+CRAN : il est en `Suggests` et s'installe depuis r-universe. Il se compile et demande
+GDAL (en-têtes de développement) :
+
+```sh
+sudo apt-get install -y libgdal-dev   # Debian, Ubuntu
+Rscript -e 'install.packages("lasR", repos = "https://r-lidar.r-universe.dev")'
+```
+
+Sans lasR, le reste de la chaîne tourne, `couvert_strates_dalle()` s'arrête en le disant,
+et les tests qui lisent l'extrait de nuage sont sautés. Une dalle de 1 km² (277 Mo,
+49 millions de points, Vercors) se traite en 2 min environ sur 4 cœurs et demande près de
+9 Go de mémoire (mesure du 2026-11-22) ; on la traite seule, puis on la supprime.
+
 ## Licence
 
 GPL-3.0-or-later.

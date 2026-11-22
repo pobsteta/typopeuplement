@@ -55,6 +55,8 @@ validation croisée par famille, l'enveloppe par famille (mesurée hors sac), la
 de pixels « incertaine » et, si le producteur la déclare non calibrée, ce
 qu'implique une hauteur dominante brute. La carte porte \code{h_pot_sd} (enveloppe ×
 RMSE) et, à part, \code{sd_arbres} (dispersion des arbres de la forêt, pas une erreur).
+La fiche donne aussi, par famille, le seuil de hauteur potentielle auquel revient le
+drapeau \code{hp_incertaine} (\code{h_pot} < enveloppe × RMSE / \code{incertitude_relative_max}).
 \item Jeu sans bloc \code{jeux} dans la configuration : la fiche le déclare (souplesses de la
 clé).
 \item Sans \code{milieu}, la hauteur potentielle est vide et signalée partout

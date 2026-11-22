@@ -194,6 +194,17 @@ declarations_milieu <- function(milieu, vm, conf, couches, mhp, incertaine) {
       format(mhp$quantile_enveloppe, decimal.mark = ","),
       paste(sprintf("famille %s : %s", names(k), format(round(k, 3), decimal.mark = ",")),
             collapse = " ; ")))
+    # h_pot_sd est constant dans une famille : le drapeau « incertaine » revient à un seuil
+    # de hauteur potentielle par famille (décision du 2026-11-22, option a).
+    seuil <- k[names(r)] * r / mhp$incertitude_relative_max
+    out <- c(out, sprintf(paste0(
+      "Le drapeau \u00ab hauteur potentielle incertaine \u00bb (h_pot_sd / h_pot > %s) revient ",
+      "\u00e0 un seuil de hauteur potentielle par famille, h_pot < enveloppe \u00d7 RMSE / %s : ",
+      "%s. Il marque les stations les moins fertiles, pas une incertitude locale."),
+      format(mhp$incertitude_relative_max, decimal.mark = ","),
+      format(mhp$incertitude_relative_max, decimal.mark = ","),
+      paste(sprintf("famille %s : %s m", names(seuil), format(round(seuil, 1), decimal.mark = ",")),
+            collapse = " ; ")))
   }
   if (length(incertaine) > 0) {
     out <- c(out, sprintf("Hauteur potentielle incertaine sur %s %% des pixels pr\u00e9comptables.",
@@ -250,6 +261,8 @@ variables_cle <- function(cle) {
 #'   de pixels « incertaine » et, si le producteur la déclare non calibrée, ce
 #'   qu'implique une hauteur dominante brute. La carte porte `h_pot_sd` (enveloppe ×
 #'   RMSE) et, à part, `sd_arbres` (dispersion des arbres de la forêt, pas une erreur).
+#'   La fiche donne aussi, par famille, le seuil de hauteur potentielle auquel revient le
+#'   drapeau `hp_incertaine` (`h_pot` < enveloppe × RMSE / `incertitude_relative_max`).
 #' - Jeu sans bloc `jeux` dans la configuration : la fiche le déclare (souplesses de la
 #'   clé).
 #' - Sans `milieu`, la hauteur potentielle est vide et signalée partout
