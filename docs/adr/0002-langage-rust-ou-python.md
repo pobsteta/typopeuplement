@@ -1,7 +1,7 @@
 # ADR 0002 — Rust ou Python pour la chaîne
 
 - **Date :** 2026-11-22
-- **Statut :** proposée
+- **Statut :** remplacée par ADR 0003
 - **Proposée par :** Claude (orchestrateur), à la question de Pascal
 - **Tranchée par :** Pascal (à trancher)
 - **Complète :** ADR 0001 (Python, bibliothèques libres), proposée elle aussi

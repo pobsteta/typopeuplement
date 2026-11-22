@@ -17,6 +17,28 @@ des outils libres faciliterait le partage entre organismes ». Options envisagé
 (continuité avec le rapport, `lidR`, `randomForest`), Python (`scikit-learn`, `laspy`,
 `rasterio`, PDAL), plugin QGIS, chaîne Computree conservée.
 
+## Complément du 2026-11-22 : nemeton est en R
+
+Pascal précise qu'à terme le projet servira [nemeton](https://github.com/pobsteta/nemeton).
+nemeton est un package R (sf, terra). Il déclare lidR et lasR en Suggests et appelle déjà
+des tâches Python dans un sous-processus isolé (`R/reticulate_isolated.R` : FORDEAD,
+Open-Canopy). Il calcule aussi l'indice de station P2 à partir de courbes de hauteur
+dominante sourcées. La question se pose donc à nouveau, entre deux options :
+
+| | **Python** (code actuel) | **R** (package compagnon de nemeton) |
+|---|---|---|
+| Intégration à nemeton | Par fichiers (GeoTIFF, GeoPackage) ou reticulate isolé, comme FORDEAD | Native : appel direct, objets sf / terra partagés |
+| Nuage de points | pylasr encore jeune, ou PDAL | lidR et lasR, natifs |
+| Modèles | scikit-learn | ranger (forêts aléatoires), e1071 (SVM), MASS (analyse discriminante) |
+| Test du successeur | Lisible par beaucoup de monde | Même écosystème que nemeton, l'ONF, l'INRAE et le rapport de 2020 |
+| Code déjà écrit | Environ 900 lignes et 17 tests | À porter (environ 900 lignes) |
+
+**Recommandation de l'orchestrateur : R.** Un package compagnon de nemeton, qui reprend
+ses conventions : SER → grande région → national, NDP, sf et terra. Le code Python reste
+petit, donc le portage coûte peu, et chaque mois d'attente l'alourdit. Ce que ça
+sacrifie : le travail Python déjà écrit, et l'audience Python. Cette décision touche
+nemeton : elle remonte à Pascal, hors délégation.
+
 ## Le crible FRANCE
 
 | Lettre | Question | Réponse (une ligne) | Ce que ça coûte | Prêts à payer ? |

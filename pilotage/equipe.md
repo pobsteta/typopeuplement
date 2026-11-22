@@ -13,11 +13,13 @@
 
 ## Délégation
 
-- **Portée :** _aucune_
-- **Jusqu'à :** _…_
+- **Portée :** les points B2 à B6 et A1 à A6 de la critique du contradicteur du
+  2026-11-22 (« Pour tous les autres points, je te laisse juge sachant qu'à terme ce
+  projet servira nemeton »)
+- **Jusqu'à :** leur report dans le brief et les ADR
 - **Réservé à Pascal :** sa réponse d'abord ; rendre la main ; ce qui touche
-  l'extérieur et ne se défait pas
-- **Inscrite au journal le :** _…_
+  l'extérieur et ne se défait pas (contact IGN, convention d'accès IFN)
+- **Inscrite au journal le :** 2026-11-22
 
 ## Missions
 

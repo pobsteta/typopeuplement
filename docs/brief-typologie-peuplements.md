@@ -6,6 +6,12 @@
 
 « je m'en passe » — Pascal, 2026-11-22
 
+## Pour qui, pour quelle décision
+
+« Les coopératives, les experts, l'ONF utiliseront ces cartes. Les cartes sont calculées sur des AOI, pas sur la France entière d'un coup. On reste à la gestion forestière au niveau forêt voire massif. » — Pascal, 2026-11-22
+
+À terme, le projet servira [nemeton](https://github.com/pobsteta/nemeton) (Pascal, 2026-11-22) : ses cartes doivent pouvoir alimenter ce package R d'analyse des territoires forestiers.
+
 ## En bref
 
 Le projet vise une chaîne de traitement automatique qui produit, pour toute forêt de France hexagonale, une carte du **type de peuplement** (composition, structure, capital), calibrée par sylvoécorégion (SER).
@@ -44,6 +50,7 @@ Le projet livre des cartes prédictives et leurs clés de lecture, pas des consi
 **Dans le périmètre**
 
 - France hexagonale et Corse, forêts publiques et privées.
+- Un calcul par aire d'intérêt (AOI) : une forêt, au plus un massif. La chaîne ne calcule pas la France entière d'un coup.
 - Une résolution de travail de l'ordre de 25 m, une lecture à l'échelle du quart au demi-hectare.
 - Une table de correspondance entre les types prédits et les typologies locales existantes (guides de sylviculture, typologies des schémas régionaux de gestion sylvicole).
 
@@ -52,6 +59,20 @@ Le projet livre des cartes prédictives et leurs clés de lecture, pas des consi
 - Le choix des essences et les itinéraires sylvicoles : la typologie reste descriptive.
 - Le remplacement du diagnostic de terrain : les cartes sont une aide à la décision et un outil de stratification d'inventaire.
 - L'outre-mer, dont les données et les forêts appellent un projet distinct.
+
+## Ce qui existe et ce qu'on y ajoute
+
+*Ajouté par délégation de Pascal (critique du contradicteur, point B2), 2026-11-22.*
+
+| Existant | Ce qu'il donne | Ce que le projet en fait |
+| --- | --- | --- |
+| IGN, [schéma directeur de l'information forestière 2025-2030](https://www.ign.fr/files/default/2025-07/synthese-sdif-2025-2030.pdf) | Priorité « Mettre la forêt en cartes » : cartes des essences, volume par dimension | Source d'entrée dès sa diffusion ; l'IGN est à interroger (partenaire, porteur ou doublon ?) |
+| IGN, [MNH LiDAR HD](https://www.data.gouv.fr/datasets/mnh-lidar-hd) | Hauteur de canopée au pas de 50 cm | Entrée de la hauteur dominante, avant tout recalcul du nuage de points |
+| [FORMS](https://essd.copernicus.org/articles/15/4927/2023/) (Schwartz et al., 2023) | Hauteur nationale à 10 m, volume à 30 m | Contrôle et repli hors couverture LiDAR HD |
+| ONF, [carte prédictive des peuplements, montagnes de l'Ain](https://www.data.gouv.fr/datasets/envir-onf-peuplements-2) (2017) | Types de peuplements par LiDAR (A à F, PB, BM, GB) | Méthode et clé à comparer ; jeu de contrôle |
+| [nemeton](https://github.com/pobsteta/nemeton) (P2, indice de station) | Courbes de hauteur dominante selon l'âge, sourcées, par essence et classe de fertilité ; repli SER → grande région → national | Contrôle de la hauteur potentielle là où l'âge est connu (lien, pas de copie) |
+
+**Ce que le projet ajoute** : un type de peuplement par pixel, calibré par SER, avec sa probabilité et l'écart à la hauteur potentielle, à l'échelle d'une forêt ou d'un massif, pour les aménagistes, les coopératives et les experts.
 
 ## Propositions d'amélioration
 
@@ -94,6 +115,7 @@ Le milieu n'est pas typé : il sert à estimer, pixel par pixel, la hauteur domi
 2. Modéliser cette hauteur en fonction des variables de milieu, par essence ou famille d'essences.
 3. Appliquer le modèle à toute la SER pour obtenir une carte de hauteur potentielle.
 4. Introduire dans la clé des peuplements le rapport entre hauteur mesurée et hauteur potentielle.
+5. Là où l'âge est connu (BD Forêt, inventaire), contrôler la hauteur potentielle par les courbes de hauteur dominante publiées, déjà intégrées à nemeton (indicateur P2), et la valider sur des placettes datées. *Ajouté par délégation (point B4) : les peuplements adultes voisins mêlent milieu, âge et sylviculture.*
 
 **Point faible connu : le sol.** La carte nationale de pH de Digitalis, tirée de 104 375 placettes d'inventaire, n'explique que 58 % de la variance du pH mesuré ([description Digitalis](https://zenodo.org/records/10277365/files/Dataset%20description.pdf)). Là où le modèle reste trop incertain, la clé doit s'en tenir à la hauteur mesurée et le signaler.
 
@@ -176,7 +198,7 @@ Le rapport de 2020 utilise Computree, R et ArcGIS ; un passage à des outils lib
 Le projet avance en trois phases, chacune fermée par un critère de passage ; les durées et le budget restent à chiffrer avec le porteur.
 
 1. **Cadrage.** Inventaire des données par SER, choix des pilotes, protocole de placette commun, gouvernance. *Passage : pilotes et porteur désignés, accès aux données acquis.*
-2. **Pilotes.** Chaîne complète sur deux à quatre SER contrastées, validation indépendante, retours de gestionnaires. *Passage : précision au demi-hectare au moins égale aux 76 % du rapport, y compris en feuillus, et cartes jugées utilisables sur le terrain.*
+2. **Pilotes.** Chaîne complète sur deux à quatre SER contrastées, validation indépendante, retours de gestionnaires. *Passage : erreur acceptable fixée par usage (stratification d'inventaire, aménagement) et par SER avec les utilisateurs, et atteinte en validation indépendante ; les 76 % du rapport restent le repère des résineux de montagne. Cartes jugées utilisables sur le terrain.* *(Critère amendé par délégation, point B6.)*
 3. **Généralisation.** Extension par grande région écologique, puis affinage SER par SER selon les placettes disponibles. *Passage : fiche de validation publiée pour chaque SER couverte.*
 
 **Partenaires pressentis**
@@ -198,6 +220,8 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 | LiDAR HD acquis à des dates et saisons différentes selon les blocs | Date et saison du vol en variable ; mise à jour par imagerie |
 | Données fines sensibles en forêt privée | Résolution dégradée en diffusion publique, comme dans le Vercors drômois |
 | Carte prise pour une vérité | Couche de confiance obligatoire, formation des utilisateurs |
+| Zones sensibles non diffusées du LiDAR HD (ZICAD) : trous dans la carte | Signaler les zones sans donnée ; repli sur FORMS ou l'imagerie *(ajouté par délégation, B5)* |
+| Coordonnées publiques des placettes de l'inventaire forestier national arrondies au kilomètre ([IGN](https://www.data.gouv.fr/datasets/donnees-brutes-de-l-inventaire-forestier)) | Calibrer sur les placettes des utilisateurs de l'AOI ; l'IFN public sert à valider à l'échelle de la SER ; convention d'accès aux coordonnées exactes à demander *(ajouté par délégation, B3)* |
 
 **Questions ouvertes**
 
@@ -206,6 +230,19 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 - [ ] Quelles SER pilotes, et avec quelles placettes existantes ?
 - [ ] La typologie doit-elle être reconnue par les schémas régionaux de gestion sylvicole pour servir dans les plans simples de gestion ?
 - [ ] Le code de la chaîne ONF est-il partageable entre organismes ?
+
+## Arbitrages du 22 novembre 2026
+
+| Point de la critique | Décision | Par qui |
+| --- | --- | --- |
+| B1 Bénéficiaire, échelle | Coopératives, experts, ONF ; calcul par AOI, forêt ou massif | Pascal |
+| B2 Doublons possibles | Section « Ce qui existe » ; contact IGN préparé, à décider par Pascal | Claude, par délégation |
+| B3 Placettes IFN au km | Calibration sur placettes des utilisateurs, IFN en validation | Claude, par délégation |
+| B4 Hauteur potentielle circulaire | Contrôle par les courbes de hauteur dominante de nemeton | Claude, par délégation |
+| B5 Volume, ZICAD | Produits IGN dérivés d'abord ; risque ajouté | Claude, par délégation |
+| B6 Seuil de 76 % | Critère par usage et par SER | Claude, par délégation |
+| A1 à A6 Rust ou Python | ADR 0003 : pas de Rust pour l'instant | Claude, par délégation |
+| Python ou R | Remonte à Pascal (touche nemeton) | à trancher |
 
 ## Sources
 
