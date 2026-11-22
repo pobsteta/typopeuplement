@@ -23,6 +23,13 @@ oui · oui (`R/cle.R`, `R/configuration.R`, GSM p. 54-55) · oui (tests existant
   toucher `inst/extdata/config/`.
 - **Câblé :** pas de `main`, tests verts, journal en ajout seul.
 
+## Ajout du 2026-11-22 (Pascal, « oui à tes propositions »)
+
+`poids_transition()` refuse une demi-largeur nulle ou négative, par une erreur claire :
+une largeur nulle ferait une rupture à la limite des SER (critère 4). Pour cela, le
+périmètre s'étend à `R/ser.R` et à la seule assertion de `tests/testthat/test-ser.R` qui
+attend un poids de 1 pour une bande nulle. Elle devient un test d'erreur.
+
 ## Valeur provisoire
 
 La combinaison des « ou » par le maximum est un choix. Le minimum reste pour les « et »,

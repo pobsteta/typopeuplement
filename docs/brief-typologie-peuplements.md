@@ -123,7 +123,7 @@ Le milieu n'est pas typé : il sert à estimer, pixel par pixel, la hauteur domi
 
 ## Déclinaison par sylvoécorégion
 
-La SER est le bon niveau de déclinaison : la France hexagonale en compte 86, plus 5 d'alluvions récentes, regroupées en 11 grandes régions écologiques plus la Corse ([GeoData INRAE](https://geodata.inrae.fr/geonetwork/srv/api/records/67044273-ec7e-4487-afe7-fa5dda5fa2bd)).
+La SER est le bon niveau de déclinaison : la France métropolitaine, Corse comprise, en compte 86, plus 5 d'alluvions récentes ; elles sont regroupées en 11 grandes régions écologiques (A à K, la Corse étant K), plus la région L des alluvions *(corrigé le 2026-11-22, Pascal, d'après `docs/referentiels/ser.md`)* ([GeoData INRAE](https://geodata.inrae.fr/geonetwork/srv/api/records/67044273-ec7e-4487-afe7-fa5dda5fa2bd)).
 
 **Principe : un socle national, une calibration locale**
 

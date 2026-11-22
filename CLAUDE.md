@@ -49,8 +49,12 @@ l'effort.**
 - **Valider à l'échelle de lecture** : grappes d'un quart à un demi-hectare, pas
   seulement à la placette.
 - **Le milieu sert à la hauteur potentielle**, pas à une typologie de stations.
-- SER : référentiel GeoData INRAE (86 SER, plus 5 d'alluvions récentes, 11 grandes
-  régions écologiques plus la Corse).
+- SER : référentiel GeoData INRAE (86 SER, Corse comprise, plus 5 d'alluvions récentes ;
+  11 grandes régions écologiques A à K, Corse = K, plus L pour les alluvions ;
+  `docs/referentiels/ser.md`).
+- Un code SER hors du référentiel est une erreur, pas une valeur manquante.
+- La bande de transition entre SER a une largeur strictement positive : une largeur
+  nulle ferait une rupture (critère 4).
 - Unités : diamètres en cm à 1,30 m, surface terrière en m²/ha, hauteurs en m,
   coordonnées en m (Lambert-93 pour les vraies données), parts entre 0 et 1.
 
