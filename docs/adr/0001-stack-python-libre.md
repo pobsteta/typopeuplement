@@ -1,7 +1,7 @@
 # ADR 0001 — chaîne en Python, bibliothèques libres
 
 - **Date :** 2026-11-22
-- **Statut :** proposée
+- **Statut :** remplacée par ADR 0004 (Pascal a retenu R, 2026-11-22)
 - **Proposée par :** Claude (orchestrateur)
 - **Tranchée par :** Pascal (à trancher)
 

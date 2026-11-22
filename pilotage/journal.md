@@ -28,3 +28,7 @@
 2026-11-22 · Claude (orchestrateur, par délégation) · brief · décidé : B6 — critère de passage de la phase 2 fixé par usage et par SER avec les utilisateurs ; 76 % gardé comme repère pour les résineux de montagne seulement · pourquoi : référence non transposable · ce que Pascal peut défaire : revenir à 76 % partout
 2026-11-22 · Claude (orchestrateur, par délégation) · ADR 0002 · décidé : A1 à A6 — ADR 0003 : Rust écarté pour l'instant (calcul par AOI, forêt ou massif) ; nuage de points par lasR ou MNH IGN, à mesurer sur une AOI pilote ; scikit-learn gardé ; ADR 0002 remplacée · pourquoi : la vitesse nationale ne se pose plus, Rust ne s'intègre pas à nemeton · ce que Pascal peut défaire : rouvrir 0002
 2026-11-22 · Claude (orchestrateur) · ADR 0001 · non tranché par délégation : Python ou R, car la décision touche nemeton (autre projet, en R) ; remonte à Pascal avec une recommandation
+2026-11-22 · Pascal · brief · « Je valide. » Brief amendé validé (porte n° 1, brief)
+2026-11-22 · Pascal · ADR 0001 · « On part sur R. » Stack R, package compagnon de nemeton ; ADR 0004 acceptée, remplace 0001
+2026-11-22 · Pascal · brief · « Pas de message à l'IGN, les placettes servent pour contrôle » : pas de contact IGN ni de convention d'accès IFN ; les placettes IFN servent au contrôle (validation), pas à la calibration
+2026-11-22 · Claude (orchestrateur) · brief · spec rédigée (docs/spec.md), à valider par Pascal ; la commande de tests reste Python jusqu'à la mission de portage en R, qui la remplacera par testthat

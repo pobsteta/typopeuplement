@@ -66,7 +66,7 @@ Le projet livre des cartes prédictives et leurs clés de lecture, pas des consi
 
 | Existant | Ce qu'il donne | Ce que le projet en fait |
 | --- | --- | --- |
-| IGN, [schéma directeur de l'information forestière 2025-2030](https://www.ign.fr/files/default/2025-07/synthese-sdif-2025-2030.pdf) | Priorité « Mettre la forêt en cartes » : cartes des essences, volume par dimension | Source d'entrée dès sa diffusion ; l'IGN est à interroger (partenaire, porteur ou doublon ?) |
+| IGN, [schéma directeur de l'information forestière 2025-2030](https://www.ign.fr/files/default/2025-07/synthese-sdif-2025-2030.pdf) | Priorité « Mettre la forêt en cartes » : cartes des essences, volume par dimension | Source d'entrée dès sa diffusion ; pas de contact engagé (Pascal, 2026-11-22) |
 | IGN, [MNH LiDAR HD](https://www.data.gouv.fr/datasets/mnh-lidar-hd) | Hauteur de canopée au pas de 50 cm | Entrée de la hauteur dominante, avant tout recalcul du nuage de points |
 | [FORMS](https://essd.copernicus.org/articles/15/4927/2023/) (Schwartz et al., 2023) | Hauteur nationale à 10 m, volume à 30 m | Contrôle et repli hors couverture LiDAR HD |
 | ONF, [carte prédictive des peuplements, montagnes de l'Ain](https://www.data.gouv.fr/datasets/envir-onf-peuplements-2) (2017) | Types de peuplements par LiDAR (A à F, PB, BM, GB) | Méthode et clé à comparer ; jeu de contrôle |
@@ -191,7 +191,7 @@ La flèche « hauteur atteignable » est le lien nouveau par rapport au rapport 
 - Une fiche de validation par SER : matrices de confusion, erreurs, domaine de validité.
 - Le code de la chaîne et le protocole de placette, documentés.
 
-Le rapport de 2020 utilise Computree, R et ArcGIS ; un passage à des outils libres faciliterait le partage entre organismes.
+Le rapport de 2020 utilise Computree, R et ArcGIS ; un passage à des outils libres faciliterait le partage entre organismes. La chaîne s'écrit en R, en package compagnon de nemeton (ADR 0004, Pascal, 2026-11-22).
 
 ## Phasage, partenaires, risques
 
@@ -221,7 +221,7 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 | Données fines sensibles en forêt privée | Résolution dégradée en diffusion publique, comme dans le Vercors drômois |
 | Carte prise pour une vérité | Couche de confiance obligatoire, formation des utilisateurs |
 | Zones sensibles non diffusées du LiDAR HD (ZICAD) : trous dans la carte | Signaler les zones sans donnée ; repli sur FORMS ou l'imagerie *(ajouté par délégation, B5)* |
-| Coordonnées publiques des placettes de l'inventaire forestier national arrondies au kilomètre ([IGN](https://www.data.gouv.fr/datasets/donnees-brutes-de-l-inventaire-forestier)) | Calibrer sur les placettes des utilisateurs de l'AOI ; l'IFN public sert à valider à l'échelle de la SER ; convention d'accès aux coordonnées exactes à demander *(ajouté par délégation, B3)* |
+| Coordonnées publiques des placettes de l'inventaire forestier national arrondies au kilomètre ([IGN](https://www.data.gouv.fr/datasets/donnees-brutes-de-l-inventaire-forestier)) | Calibrer sur les placettes des utilisateurs de l'AOI ; les placettes IFN servent au contrôle, pas à la calibration *(délégation B3, confirmé par Pascal le 2026-11-22)* |
 
 **Questions ouvertes**
 
@@ -236,13 +236,14 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 | Point de la critique | Décision | Par qui |
 | --- | --- | --- |
 | B1 Bénéficiaire, échelle | Coopératives, experts, ONF ; calcul par AOI, forêt ou massif | Pascal |
-| B2 Doublons possibles | Section « Ce qui existe » ; contact IGN préparé, à décider par Pascal | Claude, par délégation |
-| B3 Placettes IFN au km | Calibration sur placettes des utilisateurs, IFN en validation | Claude, par délégation |
+| B2 Doublons possibles | Section « Ce qui existe » ; pas de contact IGN | Claude, par délégation ; contact : Pascal |
+| B3 Placettes IFN au km | Calibration sur placettes des utilisateurs, IFN pour contrôle | Claude, par délégation ; confirmé par Pascal |
 | B4 Hauteur potentielle circulaire | Contrôle par les courbes de hauteur dominante de nemeton | Claude, par délégation |
 | B5 Volume, ZICAD | Produits IGN dérivés d'abord ; risque ajouté | Claude, par délégation |
 | B6 Seuil de 76 % | Critère par usage et par SER | Claude, par délégation |
 | A1 à A6 Rust ou Python | ADR 0003 : pas de Rust pour l'instant | Claude, par délégation |
-| Python ou R | Remonte à Pascal (touche nemeton) | à trancher |
+| Python ou R | R, package compagnon de nemeton (ADR 0004) | Pascal |
+| Brief amendé | Validé | Pascal |
 
 ## Sources
 

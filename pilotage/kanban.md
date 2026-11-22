@@ -7,6 +7,8 @@
 
 ## Bac à sable
 
+- Porter le prototype Python en package R compagnon de nemeton (ADR 0004), tests testthat équivalents · depuis le cycle 0
+
 - Brancher le calcul des métriques LiDAR HD (nuage de points → grille de 25 m) · depuis le cycle 0
 - Brancher les séries Sentinel-2 et la BD Forêt v3 · depuis le cycle 0
 - Modèle de part de petits bois et seuil de précomptage abaissé · depuis le cycle 0
