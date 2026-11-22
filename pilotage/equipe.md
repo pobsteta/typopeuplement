@@ -32,10 +32,10 @@
 
 | [005 Typologie H10](missions/005-typologie-h10.md) | `acquereur` | sonnet | donner | oui · oui · oui | 2 |
 | [006 Lecture du Vercors](missions/006-lecture-vercors.md) | `dev` | opus | donner, plan d'abord | oui · non → plan · oui | 2 |
-| [007 Clé à disjonctions](missions/007-cle-disjonctions.md) | `dev` | sonnet | donner | oui · oui · oui | 3 (proposée) |
-| [009 Hauteur potentielle par le relief](missions/009-hauteur-potentielle-mnt.md) | `dev` | opus | donner | oui · oui · à vérifier | 3 (proposée) |
-| [008 Couvert des strates LiDAR HD](missions/008-couvert-strates-lidar.md) | `dev` | opus | **prendre** (plan) | oui · non · après 009 | 3-4 (proposée) |
-| [010 Clé du GSM](missions/010-cle-gsm.md) | `acquereur` | sonnet | donner | oui · oui · après 007-009 | 4 (proposée) |
+| [007 Clé à disjonctions](missions/007-cle-disjonctions.md) | `dev` | sonnet | donner | oui · oui · oui | 3 |
+| [009 Hauteur potentielle par le relief](missions/009-hauteur-potentielle-mnt.md) | `dev` | opus | donner | oui · oui · à vérifier | 3 |
+| [008 Couvert des strates LiDAR HD](missions/008-couvert-strates-lidar.md) | `dev` | opus | **prendre** (plan) | oui · non · après 009 | 3-4 |
+| [010 Clé du GSM](missions/010-cle-gsm.md) | `acquereur` | sonnet | donner | oui · oui · après 007-009 | 4 |
 
 **En attente, faute de réponse à la 1re question** : lire les données d'une AOI, typologie
 locale d'une SER pilote, mesure des temps (ADR 0003). Toutes trois attendent le choix des
