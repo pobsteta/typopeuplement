@@ -69,6 +69,12 @@ test_that("relief : un point du terrain tombe au bon endroit (altitude de l'IGN)
   k <- which(x$v$i == 0 & x$v$j == 39)
   expect_equal(x$v$x[k], 884368.3, tolerance = 1e-6)
   expect_equal(x$milieu$altitude[k], 1397.68, tolerance = 5 / 1397.68)
+  # Pixel (i = 20, j = 20) de l'extrait : x = 884 900,3 m, y = 6 426 351,7 m (Lambert-93,
+  # x puis y). Altitude du service d'altimetrie de la Geoplateforme (IGN) en ce point :
+  # 1 428,28 m. Tolerance de 1 m.
+  k2 <- which(x$v$i == 20 & x$v$j == 20)
+  expect_equal(x$v$x[k2], 884900.3, tolerance = 1e-6)
+  expect_lt(abs(x$milieu$altitude[k2] - 1428.28), 1)
   # Coordonnees inversees (y, x) : hors du MNT, valeur vide.
   inv <- data.frame(x = x$v$y[k], y = x$v$x[k])
   expect_true(all(is.na(milieu_pixels(x$rel, inv))))
@@ -101,11 +107,31 @@ test_that("hauteur potentielle : au moins H0 mesuree chez les adultes, au quanti
   hp <- predire_hauteur_potentielle(m, df)
   ad <- peuplements_adultes(m, df) & df$famille %in% names(m$modeles)
   expect_gt(sum(ad), 20)
-  # Enveloppe haute au quantile 0,9 : au plus 10 % des adultes au-dessus de h_pot.
-  expect_gte(mean(df$h_dom[ad] <= hp$h_pot[ad]), m$quantile_enveloppe)
-  # L'incertitude est rendue partout ou le milieu est connu.
+  # Enveloppe haute au quantile 0,9, mesuree et appliquee hors sac : environ 10 % des
+  # adultes appris au-dessus de h_pot (ni 0 %, ce que donnerait une forêt qui les a vus).
+  expect_true(all(attr(hp, "hors_sac")[ad]))
+  part <- mean(df$h_dom[ad] <= hp$h_pot[ad])
+  expect_gte(part, 0.85)
+  expect_lte(part, 0.95)
+  # La moyenne hors sac est celle de ranger (out-of-bag, m$predictions).
+  for (f in names(m$modeles)) {
+    expect_equal(m$apprentissage[[f]]$moy, m$modeles[[f]]$predictions, tolerance = 1e-9)
+  }
+  # Un non-adulte, ou un adulte qu'on n'a pas appris, a la prediction ordinaire.
+  expect_false(any(attr(hp, "hors_sac")[!peuplements_adultes(m, df)]))
+  autre <- df[ad, , drop = FALSE][1, ]
+  autre$h_dom <- autre$h_dom + 0.01
+  expect_false(attr(predire_hauteur_potentielle(m, autre), "hors_sac"))
+  # L'incertitude est rendue partout ou le milieu est connu : k x RMSE de validation
+  # croisee, sans la dispersion des arbres (rendue a part dans l'attribut sd_arbres).
   expect_false(anyNA(hp$h_pot_sd))
   expect_true(all(hp$h_pot_sd > 0))
+  f1 <- names(m$modeles)[1]
+  dans <- df$famille == f1
+  expect_equal(hp$h_pot_sd[dans], rep(m$facteur[[f1]] * m$rmse_cv[[f1]], sum(dans)), tolerance = 1e-12)
+  sa <- attr(hp, "sd_arbres")
+  expect_length(sa, nrow(df))
+  expect_true(all(sa >= 0))
   expect_true(all(is.na(hp$rapport_h[hp$hp_incertaine])))
   expect_true(all(unlist(m$rmse_cv) > 0))
 })
@@ -137,10 +163,12 @@ test_that("chaine : le relief entre par `milieu`, la fiche dit ce qui manque et 
   ok <- !c$non_precomptable
   expect_false(all(c$hp_incertaine[ok]))
   expect_false(anyNA(c$h_pot_sd[ok]))
+  expect_false(anyNA(c$sd_arbres[ok]))
   dec <- res$fiche_validation$declarations
   expect_true(any(grepl("relief seul", dec)))
   expect_true(any(grepl("absentes du milieu fourni : bilan_hydrique, reserve_utile", dec, fixed = TRUE)))
   expect_true(any(grepl("RMSE de validation crois", dec)))
+  expect_true(any(grepl("hors sac", dec)))
   expect_true(any(grepl("incertaine sur", dec)))
   expect_true(any(grepl("non calibr", dec)))
   expect_true(length(res$rmse_hauteur_potentielle) >= 1)

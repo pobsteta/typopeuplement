@@ -185,6 +185,15 @@ declarations_milieu <- function(milieu, vm, conf, couches, mhp, incertaine) {
     out <- c(out, sprintf("RMSE de validation crois\u00e9e de la hauteur potentielle (m) : %s.",
                           paste(sprintf("famille %s : %s", names(r),
                                         format(round(r, 2), decimal.mark = ",")), collapse = " ; ")))
+    k <- unlist(mhp$facteur)
+    out <- c(out, sprintf(paste0(
+      "Enveloppe de la hauteur potentielle (quantile %s du rapport h_dom / pr\u00e9diction ",
+      "hors sac des adultes ferm\u00e9s) : %s. Incertitude h_pot_sd = enveloppe \u00d7 RMSE ; ",
+      "la dispersion des arbres de la for\u00eat (sd_arbres) est rendue \u00e0 part, ",
+      "ce n'est pas une erreur de pr\u00e9diction."),
+      format(mhp$quantile_enveloppe, decimal.mark = ","),
+      paste(sprintf("famille %s : %s", names(k), format(round(k, 3), decimal.mark = ",")),
+            collapse = " ; ")))
   }
   if (length(incertaine) > 0) {
     out <- c(out, sprintf("Hauteur potentielle incertaine sur %s %% des pixels pr\u00e9comptables.",
@@ -237,8 +246,10 @@ variables_cle <- function(cle) {
 #'   fiche le déclare.
 #' - Avec `milieu`, la fiche dit ce que voit la hauteur potentielle (attribut `source`),
 #'   les variables de milieu de la configuration absentes (jamais inventées), la RMSE de
-#'   validation croisée par famille, la part de pixels « incertaine » et, si le
-#'   producteur la déclare non calibrée, ce qu'implique une hauteur dominante brute.
+#'   validation croisée par famille, l'enveloppe par famille (mesurée hors sac), la part
+#'   de pixels « incertaine » et, si le producteur la déclare non calibrée, ce
+#'   qu'implique une hauteur dominante brute. La carte porte `h_pot_sd` (enveloppe ×
+#'   RMSE) et, à part, `sd_arbres` (dispersion des arbres de la forêt, pas une erreur).
 #' - Jeu sans bloc `jeux` dans la configuration : la fiche le déclare (souplesses de la
 #'   clé).
 #' - Sans `milieu`, la hauteur potentielle est vide et signalée partout
@@ -354,6 +365,8 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
       } else predire_hauteur_potentielle(mhp, df)
     }
   })
+  # Dispersion des arbres de la forêt (pas une erreur de prédiction), rendue à part.
+  hp$sd_arbres <- attr(hp, "sd_arbres") %||% rep(NA_real_, n)
   if (is.null(milieu)) {
     declarations <- c(declarations, paste0(
       "Hauteur potentielle vide et signal\u00e9e partout (milieu non fourni) : ",
@@ -406,7 +419,7 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
                            "couvert", "famille", "typo_etage"), names(variables))
     morceaux <- list(data.frame(i = variables$i, j = variables$j), xy, tout,
                      as.data.frame(variables)[, gardees, drop = FALSE],
-                     hp[, c("h_pot", "h_pot_sd", "rapport_h", "hp_incertaine")],
+                     hp[, c("h_pot", "h_pot_sd", "rapport_h", "hp_incertaine", "sd_arbres")],
                      data.frame(non_precomptable = non_prec, part_pb_absente = pb_absente,
                                 gb_interim = gb_interim & !non_prec),
                      p_cols)

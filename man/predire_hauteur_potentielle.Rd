@@ -14,17 +14,30 @@ predire_hauteur_potentielle(modele, df, taille_paquet = 20000L)
 \item{taille_paquet}{Nombre de lignes prédites à la fois. \strong{Provisoire} : 20 000.}
 }
 \value{
-data.frame : \code{h_pot} (m), \code{h_pot_sd} (m), \code{rapport_h}, \code{hp_incertaine}.
+data.frame : \code{h_pot} (m), \code{h_pot_sd} (m), \code{rapport_h}, \code{hp_incertaine} ; avec
+les attributs \code{sd_arbres} (m, dispersion des arbres, \code{NA} sans milieu) et \code{hors_sac}
+(logique : ligne prédite hors sac).
 }
 \description{
-Hauteur potentielle (moyenne des arbres de la forêt, enveloppe comprise), son
-incertitude (dispersion des arbres et erreur de validation croisée), et le rapport
-hauteur dominante mesurée / hauteur potentielle. Là où l'incertitude relative dépasse
-\code{incertitude_relative_max}, le rapport est vide (\code{NA}) et \code{hp_incertaine} est vrai :
-la clé s'en tient alors à la hauteur mesurée. Là où une variable de milieu manque
-(pixel hors du MNT), \code{h_pot} et \code{h_pot_sd} sont vides et \code{hp_incertaine} est vrai.
+Hauteur potentielle \code{h_pot} = k × moyenne des arbres de la forêt (k : enveloppe de la
+famille), son incertitude \code{h_pot_sd} = k × RMSE de validation croisée par blocs de la
+famille, et le rapport hauteur dominante mesurée / hauteur potentielle. Là où
+l'incertitude relative \code{h_pot_sd / h_pot} dépasse \code{incertitude_relative_max}, le rapport
+est vide (\code{NA}) et \code{hp_incertaine} est vrai : la clé s'en tient alors à la hauteur
+mesurée. Là où une variable de milieu manque (pixel hors du MNT), \code{h_pot} et \code{h_pot_sd}
+sont vides et \code{hp_incertaine} est vrai.
 }
 \details{
+\strong{Hors sac.} Un adulte fermé qui a servi à l'apprentissage (même milieu, même \code{h_dom},
+même \code{couvert}, même famille qu'une ligne apprise) est prédit hors sac : par les seuls
+arbres où il n'a pas servi. Les autres lignes ont la prédiction ordinaire (tous les
+arbres). Sans cela, la forêt « reconnaîtrait » les adultes appris et l'enveloppe serait
+trop basse pour eux.
+
+\strong{Dispersion des arbres.} L'écart-type entre arbres (× k), rendu dans l'attribut
+\code{sd_arbres}, n'est pas une erreur de prédiction : il dit combien la forêt varie d'un
+arbre à l'autre en ce point. Il ne compte pas dans \code{h_pot_sd}, ni dans \code{hp_incertaine}.
+
 La prédiction se fait par paquets de \code{taille_paquet} lignes, pour borner la mémoire
 (une valeur par arbre et par ligne).
 }

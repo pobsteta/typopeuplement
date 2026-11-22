@@ -10,9 +10,14 @@
 #'
 #' Apprend, par famille d'essences, la hauteur dominante des peuplements adultes fermés
 #' en fonction des variables de milieu (forêt aléatoire ranger). La prédiction est
-#' relevée par une enveloppe haute : le quantile `quantile_enveloppe` du rapport hauteur
-#' observée / hauteur prédite hors échantillon chez les adultes (au moins 1), car un
-#' peuplement adulte n'a pas toujours atteint sa hauteur potentielle.
+#' relevée par une enveloppe haute k : le quantile `quantile_enveloppe` du rapport hauteur
+#' observée / hauteur prédite hors sac (out-of-bag de ranger) chez les adultes (au moins 1),
+#' car un peuplement adulte n'a pas toujours atteint sa hauteur potentielle. Les adultes
+#' appris sont ensuite prédits hors sac ([predire_hauteur_potentielle()]) : environ
+#' `1 - quantile_enveloppe` d'entre eux dépassent leur hauteur potentielle.
+#'
+#' La RMSE de validation croisée par blocs (plis contigus) donne l'incertitude :
+#' `h_pot_sd` = k × RMSE.
 #'
 #' @param df data.frame (pixels) : `h_dom` (m), `couvert` (0 à 1), les variables de milieu,
 #'   et `famille` si l'on veut un modèle par famille d'essences.
@@ -32,7 +37,8 @@
 #' @param feuille_min Effectif minimal d'une feuille. **Provisoire** : 5.
 #'
 #' @return Objet `typo_hauteur_potentielle` : modèles, `rmse_cv` (RMSE de validation
-#'   croisée par famille, m) et `facteur` (enveloppe) par famille.
+#'   croisée par famille, m), `facteur` (enveloppe k) et `apprentissage` (lignes apprises
+#'   et leur prédiction hors sac) par famille.
 #' @seealso [predire_hauteur_potentielle()], [peuplements_adultes()]
 #' @export
 ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
@@ -45,7 +51,7 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
     list(variables_milieu = variables_milieu, couvert_min = couvert_min,
          hauteur_min_m = hauteur_min_m, incertitude_relative_max = incertitude_relative_max,
          quantile_enveloppe = quantile_enveloppe, graine = graine, famille = famille,
-         modeles = list(), rmse_cv = list(), facteur = list()),
+         modeles = list(), rmse_cv = list(), facteur = list(), apprentissage = list()),
     class = "typo_hauteur_potentielle"
   )
   # Adultes fermés au milieu connu : une ligne sans milieu n'apprend rien.
@@ -65,9 +71,16 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
       m <- foret_regression(X[!test, , drop = FALSE], y[!test], nombre_arbres, feuille_min, graine)
       pred_cv[test] <- predire_foret(m, X[test, , drop = FALSE])
     }
-    modele$facteur[[nom]] <- max(1, unname(stats::quantile(y / pred_cv, quantile_enveloppe, type = 7)))
     modele$rmse_cv[[nom]] <- sqrt(mean((pred_cv - y)^2))
-    modele$modeles[[nom]] <- foret_regression(X, y, nombre_arbres, feuille_min, graine)
+    # Forêt finale, et ses prédictions hors sac (arbres où la ligne n'a pas servi) :
+    # l'enveloppe se mesure sur des hauteurs que la forêt n'a pas apprises.
+    m <- foret_hors_sac(X, y, nombre_arbres, feuille_min, graine)
+    hs <- hors_sac_par_ligne(m, X)
+    modele$facteur[[nom]] <- max(1, unname(stats::quantile(y / hs$moy, quantile_enveloppe, type = 7)))
+    m$inbag.counts <- NULL
+    modele$modeles[[nom]] <- m
+    modele$apprentissage[[nom]] <- list(cle = cle_lignes(g, c(variables_milieu, "h_dom", "couvert")),
+                                        moy = hs$moy, sd = hs$sd)
   }
   if (length(modele$modeles) == 0) {
     arreter("trop peu de peuplements adultes ferm\u00e9s pour ajuster le mod\u00e8le de hauteur potentielle")
@@ -92,12 +105,23 @@ peuplements_adultes <- function(modele, df) {
 
 #' Prédire la hauteur potentielle et le rapport des hauteurs
 #'
-#' Hauteur potentielle (moyenne des arbres de la forêt, enveloppe comprise), son
-#' incertitude (dispersion des arbres et erreur de validation croisée), et le rapport
-#' hauteur dominante mesurée / hauteur potentielle. Là où l'incertitude relative dépasse
-#' `incertitude_relative_max`, le rapport est vide (`NA`) et `hp_incertaine` est vrai :
-#' la clé s'en tient alors à la hauteur mesurée. Là où une variable de milieu manque
-#' (pixel hors du MNT), `h_pot` et `h_pot_sd` sont vides et `hp_incertaine` est vrai.
+#' Hauteur potentielle `h_pot` = k × moyenne des arbres de la forêt (k : enveloppe de la
+#' famille), son incertitude `h_pot_sd` = k × RMSE de validation croisée par blocs de la
+#' famille, et le rapport hauteur dominante mesurée / hauteur potentielle. Là où
+#' l'incertitude relative `h_pot_sd / h_pot` dépasse `incertitude_relative_max`, le rapport
+#' est vide (`NA`) et `hp_incertaine` est vrai : la clé s'en tient alors à la hauteur
+#' mesurée. Là où une variable de milieu manque (pixel hors du MNT), `h_pot` et `h_pot_sd`
+#' sont vides et `hp_incertaine` est vrai.
+#'
+#' **Hors sac.** Un adulte fermé qui a servi à l'apprentissage (même milieu, même `h_dom`,
+#' même `couvert`, même famille qu'une ligne apprise) est prédit hors sac : par les seuls
+#' arbres où il n'a pas servi. Les autres lignes ont la prédiction ordinaire (tous les
+#' arbres). Sans cela, la forêt « reconnaîtrait » les adultes appris et l'enveloppe serait
+#' trop basse pour eux.
+#'
+#' **Dispersion des arbres.** L'écart-type entre arbres (× k), rendu dans l'attribut
+#' `sd_arbres`, n'est pas une erreur de prédiction : il dit combien la forêt varie d'un
+#' arbre à l'autre en ce point. Il ne compte pas dans `h_pot_sd`, ni dans `hp_incertaine`.
 #'
 #' La prédiction se fait par paquets de `taille_paquet` lignes, pour borner la mémoire
 #' (une valeur par arbre et par ligne).
@@ -105,22 +129,40 @@ peuplements_adultes <- function(modele, df) {
 #' @param modele Objet rendu par [ajuster_hauteur_potentielle()].
 #' @param df data.frame : variables de milieu, `h_dom`, et la colonne de famille si elle existe.
 #' @param taille_paquet Nombre de lignes prédites à la fois. **Provisoire** : 20 000.
-#' @return data.frame : `h_pot` (m), `h_pot_sd` (m), `rapport_h`, `hp_incertaine`.
+#' @return data.frame : `h_pot` (m), `h_pot_sd` (m), `rapport_h`, `hp_incertaine` ; avec
+#'   les attributs `sd_arbres` (m, dispersion des arbres, `NA` sans milieu) et `hors_sac`
+#'   (logique : ligne prédite hors sac).
 #' @export
 predire_hauteur_potentielle <- function(modele, df, taille_paquet = 20000L) {
   verifier_colonnes(df, c("h_dom", modele$variables_milieu), "la table \u00e0 pr\u00e9dire")
   n <- nrow(df)
   hp <- rep(NA_real_, n)
   sd <- rep(NA_real_, n)
+  sd_arbres <- rep(NA_real_, n)
+  hors_sac <- rep(FALSE, n)
   fam <- if (modele$famille %in% names(df)) as.character(df[[modele$famille]]) else rep("toutes", n)
   defaut <- names(modele$modeles)[1]
+  complet <- stats::complete.cases(as.data.frame(df)[, modele$variables_milieu, drop = FALSE])
+  adulte <- if ("couvert" %in% names(df)) peuplements_adultes(modele, df) else rep(FALSE, n)
   for (nom in unique(fam)) {
     cle <- if (nom %in% names(modele$modeles)) nom else defaut
     m <- modele$modeles[[cle]]
-    rmse <- modele$rmse_cv[[cle]]
     k <- modele$facteur[[cle]]
-    complet <- stats::complete.cases(as.data.frame(df)[, modele$variables_milieu, drop = FALSE])
     idx <- which(fam == nom & complet)
+    sd[idx] <- k * modele$rmse_cv[[cle]]
+    # Adultes appris de cette famille : hors sac.
+    app <- if (nom %in% names(modele$modeles)) modele$apprentissage[[nom]] else NULL
+    if (!is.null(app)) {
+      cand <- idx[adulte[idx]]
+      pos <- match(cle_lignes(df[cand, , drop = FALSE],
+                              c(modele$variables_milieu, "h_dom", "couvert")), app$cle)
+      vus <- cand[!is.na(pos)]
+      pos <- pos[!is.na(pos)]
+      hp[vus] <- k * app$moy[pos]
+      sd_arbres[vus] <- k * app$sd[pos]
+      hors_sac[vus] <- TRUE
+      idx <- setdiff(idx, vus)
+    }
     for (debut in seq.int(1L, by = taille_paquet, length.out = ceiling(length(idx) / taille_paquet))) {
       ix <- idx[debut:min(length(idx), debut + taille_paquet - 1L)]
       X <- matrice_num(df[ix, , drop = FALSE], modele$variables_milieu)
@@ -128,15 +170,46 @@ predire_hauteur_potentielle <- function(modele, df, taille_paquet = 20000L) {
                                       num.threads = 1)$predictions
       par_arbre <- matrix(par_arbre, nrow = length(ix))
       moy <- rowMeans(par_arbre)
-      # Écart-type de population (comme numpy), puis erreur de validation croisée.
-      sd_arbres <- sqrt(rowMeans((par_arbre - moy)^2))
       hp[ix] <- moy
-      sd[ix] <- sqrt(sd_arbres^2 + (k * rmse)^2)
+      # Écart-type de population (comme numpy).
+      sd_arbres[ix] <- sqrt(rowMeans((par_arbre - moy)^2))
     }
   }
   incertaine <- is.na(hp) | (sd / hp) > modele$incertitude_relative_max
   rapport <- ifelse(incertaine, NA_real_, as.numeric(df$h_dom) / hp)
-  data.frame(h_pot = hp, h_pot_sd = sd, rapport_h = rapport, hp_incertaine = incertaine)
+  structure(data.frame(h_pot = hp, h_pot_sd = sd, rapport_h = rapport, hp_incertaine = incertaine),
+            sd_arbres = sd_arbres, hors_sac = hors_sac)
+}
+
+# Forêt de régression qui garde la trace des lignes tirées par chaque arbre (paramètres
+# de foret_regression()).
+foret_hors_sac <- function(X, y, nombre_arbres, feuille_min, graine) {
+  ranger::ranger(
+    x = as.data.frame(X), y = y,
+    num.trees = nombre_arbres, mtry = ncol(X),
+    min.node.size = 2, min.bucket = feuille_min,
+    seed = graine_ranger(graine), num.threads = 1, keep.inbag = TRUE
+  )
+}
+
+# Moyenne et écart-type (de population) hors sac de chaque ligne apprise : sur les seuls
+# arbres où elle n'a pas été tirée. La moyenne est celle de ranger (`m$predictions`). Une
+# ligne tirée par tous les arbres (cas de probabilité négligeable) garde tous les arbres.
+hors_sac_par_ligne <- function(m, X) {
+  P <- stats::predict(m, data = as.data.frame(X), predict.all = TRUE, num.threads = 1)$predictions
+  P <- matrix(P, nrow = nrow(X))
+  dehors <- do.call(cbind, m$inbag.counts) == 0
+  dehors[rowSums(dehors) == 0, ] <- TRUE
+  nb <- rowSums(dehors)
+  moy <- rowSums(P * dehors) / nb
+  sd <- sqrt(rowSums(((P - moy)^2) * dehors) / nb)
+  list(moy = moy, sd = sd)
+}
+
+# Clé texte d'une ligne (valeurs exactes) pour reconnaître une ligne apprise.
+cle_lignes <- function(df, colonnes) {
+  morceaux <- lapply(colonnes, function(c) sprintf("%.17g", as.numeric(as.data.frame(df)[[c]])))
+  do.call(paste, c(morceaux, sep = "|"))
 }
 
 #' Écart aux courbes de station de nemeton

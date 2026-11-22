@@ -51,8 +51,10 @@ configuration, le drapeau \code{gb_interim} est levé sur tous les pixels typés
 fiche le déclare.
 \item Avec \code{milieu}, la fiche dit ce que voit la hauteur potentielle (attribut \code{source}),
 les variables de milieu de la configuration absentes (jamais inventées), la RMSE de
-validation croisée par famille, la part de pixels « incertaine » et, si le
-producteur la déclare non calibrée, ce qu'implique une hauteur dominante brute.
+validation croisée par famille, l'enveloppe par famille (mesurée hors sac), la part
+de pixels « incertaine » et, si le producteur la déclare non calibrée, ce
+qu'implique une hauteur dominante brute. La carte porte \code{h_pot_sd} (enveloppe ×
+RMSE) et, à part, \code{sd_arbres} (dispersion des arbres de la forêt, pas une erreur).
 \item Jeu sans bloc \code{jeux} dans la configuration : la fiche le déclare (souplesses de la
 clé).
 \item Sans \code{milieu}, la hauteur potentielle est vide et signalée partout
