@@ -33,9 +33,10 @@ _Rempli par Pascal seul._
 
 ## Harnais
 
-- **Peut (périmètre) :** `R/`, `man/`, `NAMESPACE`, `DESCRIPTION` (après la fusion de 001).
+- **Peut (périmètre) :** `R/`, `man/`, `NAMESPACE`, `DESCRIPTION`, `inst/extdata/config/`, `tests/testthat/test-dev-*.R`.
+- **Plan validé :** [`003-plan.md`](003-plan.md) (Pascal, 2026-11-22).
 - **Câblé :** pas de `main` ; pas de « terminé » sans tests verts ; journal en ajout seul.
-- **Ne doit pas :** écrire dans `tests/testthat/` (périmètre du testeur) ; inventer une
+- **Ne doit pas :** écrire dans `tests/testthat/` hors `test-dev-*.R` (périmètre du testeur) ; inventer une
   clé de types (celle de `config/exemple.json` reste un exemple) ; dépendre d'un
   paquet hors ADR 0004.
 - **Sources autorisées :** prototype, spec, ADR 0003 et 0004, nemeton.

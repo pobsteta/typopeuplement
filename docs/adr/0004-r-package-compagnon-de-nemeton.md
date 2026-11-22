@@ -43,6 +43,13 @@ Le code Python déjà écrit (il sert de référence au portage), et l'audience 
 - Échanges en formats ouverts : GeoTIFF ou COG pour les rasters, GeoPackage pour les
   vecteurs.
 
+## Amendement du 2026-11-22 (Pascal, « oui à tout »)
+
+- **jsonlite** s'ajoute pour la configuration en JSON. nemeton l'importe déjà, et le
+  prototype lit le même fichier.
+- **nemeton** est en Suggests, appelé par `requireNamespace()`. Il passera en Imports
+  avec la lecture des vraies données.
+
 ## Sources
 
 - https://github.com/pobsteta/nemeton (`DESCRIPTION`, `CLAUDE.md`, `R/site_index.R`)

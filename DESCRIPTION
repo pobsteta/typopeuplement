@@ -2,7 +2,9 @@ Package: typopeuplement
 Type: Package
 Title: Carte du Type de Peuplement des Forets de France Hexagonale
 Version: 0.1.0
-Author: Pascal Obstétar [aut, cre]
+Authors@R: c(
+    person("Pascal", "Obstétar", email = "pascal.obstetar@gmail.com", role = c("aut", "cre"))
+  )
 Description: Chaine de traitement qui produit, pour les forets de France
     hexagonale, une carte du type de peuplement (composition, structure,
     capital) calibree par sylvoecoregion. La typologie est descriptive. Chaque

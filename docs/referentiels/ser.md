@@ -14,6 +14,8 @@
 | Codes et noms des 86 SER principales | GeoData INRAE, couche `inrae:ser_l93` (origine IGN), fiche `67044273-ec7e-4487-afe7-fa5dda5fa2bd` | WFS `https://geodata.inrae.fr/geoserver/inrae/ows`, attributs `codeser` et `NomSER` ; fiche : titre « SylvoEcoRegions », date de création 2002-12-31, date de révision 2024-11-05, CRS EPSG:2154 | fiche révisée le 2024-11-05 ; WFS interrogé le 2026-11-22 (`numberMatched` = 473 entités) | 2026-11-22 |
 | Noms des GRECO A à K | IGN, Inventaire forestier, « Fiches descriptives des GRECO et des SER » | `https://inventaire-forestier.ign.fr/spip.php?article773`, intitulés « GRECO A : … » à « GRECO K : Corse » ; fiches fournies en 2013 selon la page | page consultée le 2026-11-22 (pied de page © IGN 2025) | 2026-11-22 |
 | GRECO L et les 5 SER d'alluvions L1 à L5 | IGN, fiche `https://inventaire-forestier.ign.fr/IMG/pdf/GRECO_L.pdf` | p. 1 : texte « La GRECO L a été divisée en 5 SER » et légende de la carte (L1 à L5) | fiche non datée (14 p.) ; page IGN 2025 | 2026-11-22 |
+| Contour des forêts du Vercors drômois | ONF – CNPF – Département de la Drôme (producteur ONF), data.gouv.fr, jeu « Paramètres forestiers LiDAR - Vercors drômois - 2021-2022 » ; CRAIG | fichier `donnees_thematiques/foret/2024_vercors_dromois/01_Emprise/Emprise_Vercors_dromois_2024_dendrolidar_L93.gpkg` sur `drive.opendata.craig.fr` ; rasters `02_Donnees_dendro/Typo_etage.tif`, `Tx_couv.tif`, `H0_lidar.tif` ; fiche `2024_Vercors_dromois_fiche_synthetique.pdf` p. 1 | produit 2024-09-25 (étiquettes des rasters) ; jeu modifié le 2026-09-30 ; Licence Ouverte v2.0 | 2026-11-22 |
+| Chefs-lieux de communes (positions de contrôle) | IGN, ADMIN EXPRESS COG carto, édition 2025 | WFS `https://data.geopf.fr/wfs/ows`, couche `ADMINEXPRESS-COG-CARTO-PE.2025:chef_lieu_de_commune` (et `:commune`) | édition 2025 | 2026-11-22 |
 
 **Contrôle croisé (deux sources indépendantes pour l'observation) :**
 1. La liste des 86 codes SER de la page IGN (fascicules « SER A 11 » … « SER K 13 ») est identique à celle du WFS INRAE : 86 codes de part et d'autre, aucune différence dans les deux sens.
@@ -38,20 +40,45 @@ Entités du WFS : 473 (plusieurs polygones par SER, les grandes SER sont éclat�
 3. **Noms L1 à L5 lus sur une image** (légende de la carte du PDF, relue à 220 dpi) : le texte du PDF ne les contient pas, sauf L4 « Adour-Garonne » et L5 « Rhône-Méditerranée-Corse ». Une relecture par Pascal est utile.
 4. **Fiche INRAE : « 86 SER en France métropolitaine »** : ces 86 incluent la Corse (K11 à K13). « Hexagonale » du brief est donc un raccourci : la Corse en fait partie du décompte.
 
-## Vercors drômois (SER pilote)
+5. **Surface forestière du jeu Vercors drômois** : 35 095 ha (fiche synthétique, p. 1) contre 35 010,9 ha (emprise livrée, recalculée) : 84 ha (0,24 %), cause non établie.
+6. **Seuil de gros bois du jeu Vercors drômois** : la fiche synthétique (p. 1) classe GB à 47,5 ≤ Ø < 62,5 cm (PB 17,5 à 27,5 ; BM 27,5 à 42,5 ; TGB ≥ 62,5), donc la limite des gros bois à 47,5 cm ; les règles du projet donnent 42,5 cm en Savoie et dans les Pyrénées et 47,5 cm dans les Vosges. À rapprocher de la typologie locale quand la SER pilote sera choisie (hors mission 002, signalé).
 
-**Il n'y a pas une SER unique.** Le massif (jeu de données ONF – CNPF – Département de la Drôme, 35 095 ha, emprise 5,1244 à 5,842 °E et 44,6369 à 45,0927 °N, data.gouv.fr, modifié le 2026-09-30) est à cheval sur deux SER de la **GRECO H : Alpes** :
+## Vercors drômois (SER pilote) — rattachement sur le contour réel des forêts
 
-| Point testé (WGS84) | SER | Nom |
-|---|---|---|
-| Vassieux-en-Vercors (44,8939 N ; 5,3639 E) | **H10** | Préalpes du Nord |
-| Saint-Agnan-en-Vercors (44,9167 N ; 5,3833 E) | **H10** | Préalpes du Nord |
-| La Chapelle-en-Vercors (44,7456 N ; 5,3639 E) | **H30** | Alpes externes du Sud |
-| Lente (44,7000 N ; 5,4000 E) | **H30** | Alpes externes du Sud |
+*Refait à l'aller-retour 1/3 (2026-11-22) : la version précédente testait des points mal placés et un quadrillage sur le rectangle ; elle plaçait à tort La Chapelle-en-Vercors et Lente en H30. Elle est remplacée.*
 
-Méthode : requête WFS `INTERSECTS(the_geom, POINT(x y))` sur `inrae:ser_l93`, coordonnées converties en Lambert-93 (formule vérifiée sur Paris : 652 469 ; 6 862 035). Un quadrillage de 30 points sur l'emprise du jeu donne H10 au nord-ouest, H30 au sud, H41 et H21 en marge est : la limite H10/H30 passe vers 44,85 à 44,9 °N. Ce quadrillage porte sur l'emprise rectangulaire, pas sur le contour des forêts : la part de surface de chaque SER dans les 35 095 ha n'est pas calculée.
+**Contour des forêts utilisé.** Jeu « Paramètres forestiers LiDAR – Vercors drômois – 2021-2022 » (producteur ONF ; ONF – CNPF – Département de la Drôme ; data.gouv.fr, page `parametres-forestiers-lidar-vercors-dromois-2021-2022-1`, modifié le 2026-09-30, Licence Ouverte v2.0). Couche retenue : `01_Emprise/Emprise_Vercors_dromois_2024_dendrolidar_L93.gpkg` (786 kio, EPSG:2154, daté du 2026-09-29 sur le serveur CRAIG `drive.opendata.craig.fr`), un multipolygone de 608 parties, 35 010,9 ha. C'est bien le contour des forêts et non un rectangle : l'emprise rectangulaire des rasters couvre environ 270 000 ha ; les pixels valides des rasters `Typo_etage.tif`, `Tx_couv.tif` et `H0_lidar.tif` (494 812 pixels de 26,6 m, soit 35 010,9 ha) coïncident avec ce polygone. La fiche synthétique du jeu (A. Hedel, ONF, 25/09/2024, p. 1) annonce « Surface forestière : 35 095 ha » : écart de 84 ha (0,24 %) avec l'emprise livrée, non expliqué (arrondi ou mise à jour du masque ; question possible au producteur). Étendue réelle de l'emprise : 5,1244 à 5,8420 °E et 44,6524 à 45,0770 °N (le rectangle de métadonnées data.gouv, 44,6369 à 45,0927 °N, est un peu plus large).
 
-Rattachement par défaut proposé à Pascal : **H10, Préalpes du Nord** pour le Vercors drômois du nord (plateaux de Vassieux, Saint-Agnan), **H30, Alpes externes du Sud** pour le sud (La Chapelle, Lente). La GRECO est H dans les deux cas : c'est le niveau de repli commun. Choix du périmètre de la SER pilote : **à Pascal**.
+**Méthode.** Intersection de ce contour avec les polygones de `inrae:ser_l93` (requête WFS par emprise, EPSG:2154, 7 entités renvoyées, consultée le 2026-11-22), surfaces calculées en Lambert-93. Seconde méthode indépendante pour le même chiffre : attribution de la SER à chacun des 494 812 pixels valides du raster `Typo_etage.tif` (centre du pixel). Les scripts et téléchargements sont hors dépôt (dossier de travail de la session).
+
+**Part de surface de chaque SER dans les forêts du jeu (35 010,9 ha) :**
+
+| SER | Nom | Surface (ha), intersection | Part | Contrôle par pixels (ha) |
+|---|---|---|---|---|
+| **H10** | Préalpes du Nord | 30 311,8 | 86,58 % | 30 316,8 (86,59 %) |
+| **H30** | Alpes externes du Sud | 4 290,6 | 12,25 % | 4 290,0 (12,25 %) |
+| J22 | Plaines et collines rhodaniennes et languedociennes | 404,5 | 1,16 % | 403,8 (1,15 %) |
+| C52 | Plaines et piémonts alpins | 4,0 | 0,01 % | 0,4 |
+| H41 | Alpes intermédiaires du Sud | 0,1 | 0,00 % | 0 |
+| | **Total** | **35 010,9** | 100 % | |
+
+**Des forêts du jeu tombent-elles en H30 ? Oui : 4 290,6 ha, 12,25 %.** Elles sont toutes dans le sud du massif (5,28 à 5,83 °E ; 44,65 à 44,89 °N) ; la commune portant l'essentiel est Lus-la-Croix-Haute (4 221,1 ha de forêt du jeu en H30, chef-lieu 44,6654 N ; 5,7052 E, en H30). Le nord et le centre du Vercors drômois (plateaux de Vassieux, Saint-Agnan, La Chapelle, Bouvante, Léoncel) sont en **H10**. Les 404,5 ha en J22 sont en bordure de la plaine de Valence (surtout Hostun, 379,9 ha). GRECO : H pour H10, H30, H41 ; C pour C52 ; J pour J22. La GRECO n'est donc pas unique non plus (H : 86,6 + 12,3 + 0,0 = 98,8 %).
+
+**Positions de contrôle (WGS84, source : IGN ADMIN EXPRESS COG carto 2025, couche `chef_lieu_de_commune`, WFS data.geopf.fr, consultée le 2026-11-22 ; SER : WFS INRAE) :**
+
+| Lieu | Latitude N ; longitude E | SER | Nom |
+|---|---|---|---|
+| La Chapelle-en-Vercors (chef-lieu) | 44,9683 ; 5,4161 | **H10** | Préalpes du Nord |
+| Ferme de Lente (position IGN transmise par le relecteur, non relue dans une couche IGN) | 44,938 ; 5,315 | **H10** | Préalpes du Nord |
+| Vassieux-en-Vercors (chef-lieu) | 44,8954 ; 5,3711 | **H10** | Préalpes du Nord |
+| Saint-Agnan-en-Vercors (chef-lieu) | 44,9356 ; 5,4307 | **H10** | Préalpes du Nord |
+| Lus-la-Croix-Haute (chef-lieu) | 44,6654 ; 5,7052 | **H30** | Alpes externes du Sud |
+
+Erreur de la version précédente : les coordonnées données pour La Chapelle-en-Vercors (44,7456 N ; 5,3639 E) et pour « Lente » (44,70 N ; 5,40 E) ne correspondent pas à ces lieux (La Chapelle est à 44,9683 N ; 5,4161 E, soit environ 25 km plus au nord) ; les deux étaient en H30 et sont en réalité en H10. Les coordonnées de Vassieux et de Saint-Agnan sont remplacées par celles des chefs-lieux IGN ; elles restent en H10.
+
+**Contrôle croisé avec nemeton** (`inst/extdata/communes_ser.csv`, SER à plus forte part par commune) : sur les 41 communes touchées par les forêts du jeu, la SER de plus grande surface de forêt est la même que celle de nemeton pour 30 communes ; elle diffère pour 11 communes, toutes marginales (de 0,02 à 55,9 ha de forêt du jeu chacune : Châtelus, Chamaloc, Saint-Julien-en-Quint, Peyrus, Rochefort-Samson, Barbières, Romeyer, Châteaudouble, Saint-Vincent-la-Commanderie, Dévoluy, Choranche). Cause : nemeton attribue une SER à la commune entière (mode commune), le WFS découpe au polygone. Au total 109,0 ha de forêt du jeu (0,31 %) sont dans une SER autre que celle que nemeton donnerait à leur commune. Pour les forêts de ce massif, **le polygone fait foi** ; le rattachement par commune est un repli.
+
+**Pour Pascal (décision de périmètre, non tranchée ici) :** le massif est à 86,6 % en H10 et à 12,3 % en H30. Faut-il ouvrir la SER pilote sur H10 seule, sur H10 et H30, ou sur la GRECO H ? La question est reprise ci-dessous.
 
 ## Utilisation par typopeuplement
 
@@ -64,6 +91,12 @@ Rattachement par défaut proposé à Pascal : **H10, Préalpes du Nord** pour le
   - `inst/extdata/ser.csv` (colonnes `code;nom;greco`, 86 lignes), produit par `data-raw/build_ifn_tarifs_schaeffer.R` : mêmes 86 codes que ce référentiel, sans les alluvions L1 à L5 ni le nom des GRECO.
   - `inst/extdata/communes_ser.csv` (41 550 lignes, `insee;nom;departement;ser;part;greco`) : rattachement commune vers SER, non repris ici.
   - Comment typopeuplement l'utilise : même appel WFS et même règle de plus grande intersection, côté Python (pas de dépendance à R) ; `ser_codes.csv` fournit les noms et la GRECO de repli. Les contours (28,3 Mo, géométries de l'ensemble) ne sont pas versionnés ici. Si un travail hors ligne est voulu, GeoPackage à produire depuis le WFS (format ouvert) et à tenir hors du dépôt.
+
+## Questions à Pascal (non tranchées)
+
+1. **Copie ou lien pour les 86 lignes de nemeton** (point 3 de la fiche). Aujourd'hui `ser_codes.csv` (91 lignes : 86 SER + 5 alluvions, avec noms de GRECO) recoupe `nemeton/inst/extdata/ser.csv` (86 lignes, mêmes codes, noms et GRECO). Option A : garder `ser_codes.csv` comme seule table du projet (autonome, Python seul, contient L1 à L5 et les noms de GRECO que nemeton n'a pas) ; risque : deux tables à tenir si nemeton change. Option B : ne garder que les 5 lignes L1 à L5 et les 11 noms de GRECO, et lire les 86 autres chez nemeton ; risque : dépendance du projet à un autre dépôt et à R. La consigne de la fiche (« un lien plutôt qu'une copie ») plaide pour B ; l'autonomie de la chaîne Python plaide pour A.
+2. **SER pilote du Vercors drômois** : H10 seule (86,6 %), H10 + H30 (98,8 %), ou GRECO H ?
+3. **« 11 grandes régions plus la Corse »** (écart 1 ci-dessus).
 
 ## Limites
 

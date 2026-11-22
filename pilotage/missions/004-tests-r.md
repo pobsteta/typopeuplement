@@ -31,7 +31,7 @@ _Rempli par Pascal seul._
 
 ## Harnais
 
-- **Peut (périmètre) :** `tests/testthat/` (sauf `test-environnement.R`, à 001).
+- **Peut (périmètre) :** `tests/testthat/` (sauf `test-environnement.R`, à 001, et `test-dev-*.R`, à 003), dont `tests/testthat/fixtures/` : le jeu synthétique Python exporté en CSV (graine fixée), pour comparer les deux versions.
 - **Câblé :** pas de `main` ; journal en ajout seul.
 - **Ne doit pas :** écrire dans `R/` ; affaiblir un critère de la spec.
 - **Sources autorisées :** spec, tests Python, plan validé de 003.
@@ -53,7 +53,9 @@ Aucune.
 ## Tests
 
 Chaque critère d'acceptation 1 à 6 a au moins un test ; chaque test du prototype Python a
-son équivalent.
+son équivalent ; un test vérifie les décomptes de `inst/extdata/ser/ser_codes.csv` (86 SER
+principales, 5 d'alluvions, GRECO A à K plus L), remarque du relecteur de 002. Noms des
+fonctions : [`003-plan.md`](003-plan.md).
 
 ## Terrain
 
