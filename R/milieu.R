@@ -212,7 +212,12 @@ calculer_relief <- function(mnt, gabarit, rayon_tpi_m = 300, pente_plate_deg = 1
   plat <- pente < pente_plate_deg
   expo_sin <- terra::ifel(plat, 0, sin(asp))
   expo_cos <- terra::ifel(plat, 0, cos(asp))
-  w <- terra::focalMat(alt, rayon_tpi_m, type = "circle")
+  # Pas du MNT arrondi (au µm) pour les poids du TPI : la grille étendue porte des pas en
+  # x et en y qui diffèrent de quelques 1e-12 m (26,6 m du jeu ONF), et terra::focalMat
+  # les jugerait « non carrés » (avertissement de GDAL).
+  pas <- round(terra::res(alt), 6)
+  w <- terra::focalMat(terra::rast(nrows = 1, ncols = 1, xmin = 0, xmax = pas[1], ymin = 0,
+                                   ymax = pas[2]), rayon_tpi_m, type = "circle")
   w[w > 0] <- 1
   w[w == 0] <- NA
   moy <- terra::focal(alt, w = w, fun = "mean", na.rm = TRUE)

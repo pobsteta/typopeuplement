@@ -557,9 +557,12 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
   attr(probas, "hors_cle") <- NULL
   attr(probas, "touche_na") <- NULL
 
-  # 3. Lissage à l'échelle de lecture.
+  # 3. Lissage à l'échelle de lecture. Un pixel hors clé (aucun type ne le décrit, par
+  # exemple couvert < 0,1) a un poids nul : ses probabilités égales ne diluent pas celles
+  # de ses voisins, et il ne leur en emprunte pas (aller-retour 1/3 de la mission 012).
   probas <- chronometrer(chrono, "lissage", length(ok), {
-    lisser_probabilites(probas, variables$i[ok], variables$j[ok], conf$lissage_fenetre %||% 3)
+    lisser_probabilites(probas, variables$i[ok], variables$j[ok], conf$lissage_fenetre %||% 3,
+                        poids = as.numeric(!hors_cle))
   })
 
   # 4. Décision et assemblage de la carte (une ligne par pixel, vide hors précomptable).
@@ -570,11 +573,18 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
     tout <- data.frame(type = rep(NA_character_, n), proba = NA_real_,
                        type_second = NA_character_, proba_second = NA_real_,
                        entre_deux = NA, hors_cle = NA, stringsAsFactors = FALSE)
+    # Hors clé : pas de type. Type, probabilités et entre_deux restent vides ; seul le
+    # drapeau hors_cle est porté.
+    dec[hors_cle, c("type", "type_second")] <- NA_character_
+    dec[hors_cle, c("proba", "proba_second")] <- NA_real_
+    dec$entre_deux[hors_cle] <- NA
     tout[ok, c("type", "proba", "type_second", "proba_second", "entre_deux")] <- dec
     tout$hors_cle[ok] <- hors_cle
     p_cols <- as.data.frame(matrix(NA_real_, n, length(codes)))
     names(p_cols) <- paste0("p_", codes)
-    p_cols[ok, ] <- as.matrix(probas)
+    pm <- as.matrix(probas)
+    pm[hors_cle, ] <- NA_real_
+    p_cols[ok, ] <- pm
     xy <- if (all(c("x", "y") %in% names(variables))) {
       data.frame(x = variables$x, y = variables$y)
     } else NULL
@@ -591,6 +601,8 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
     rownames(out) <- NULL
     out
   })
+
+  declarations <- c(declarations, declarations_repartition(carte$type[ok], hors_cle))
 
   # 5. Contrôle de cohérence avec l'étagement du producteur (pas une validation).
   controle <- chronometrer(chrono, "controle", length(ok), {
@@ -624,4 +636,24 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
     ),
     class = "typo_resultat"
   )
+}
+
+# Déclarations de la fiche : part des pixels hors clé (sans type) et répartition des types
+# sur les pixels précomptables typés.
+declarations_repartition <- function(types, hors_cle) {
+  n <- length(types)
+  if (n == 0) return(character(0))
+  out <- sprintf(paste0("Pixels hors cl\u00e9 (aucun type de la cl\u00e9 ne les d\u00e9crit, ",
+                        "par exemple couvert trop faible) : %s des pixels pr\u00e9comptables ",
+                        "(%d sur %d) ; ils n'ont pas de type (drapeau hors_cle) et ne comptent ",
+                        "pas dans le lissage de leurs voisins."),
+                 fmt_pourcent(mean(hors_cle)), sum(hors_cle), n)
+  typ <- types[!is.na(types)]
+  if (length(typ) > 0) {
+    tab <- sort(table(typ), decreasing = TRUE)
+    out <- c(out, paste0("R\u00e9partition des types (pixels typ\u00e9s, n = ", length(typ), ") : ",
+                         paste(sprintf("%s %s", names(tab), vapply(as.numeric(tab) / length(typ), fmt_pourcent, character(1))),
+                               collapse = " ; "), "."))
+  }
+  out
 }

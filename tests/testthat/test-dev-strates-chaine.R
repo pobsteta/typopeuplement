@@ -16,13 +16,7 @@ CODES_GSM <- c("CH", "L", "3", "R", "1", "1GB", "2", "2GB", "12", "12GB", "13", 
 
 extrait_relief_b <- function() {
   v <- lire_parametres_lidar(dossier_vercors_b())
-  # terra::focalMat (dans calculer_relief) peut emettre « Pixels not square » selon l'etat
-  # de GDAL laisse par les tests precedents : avertissement sans objet ici (poids du TPI),
-  # etouffe lui seul (mineur de R/milieu.R, hors du perimetre de 012 : des que sf est charge, son gestionnaire
-  # d erreurs GDAL fait remonter ce message en avertissement).
-  rel <- withCallingHandlers(
-    calculer_relief(testthat::test_path("fixtures", "vercors", "milieu", "mnt.tif"), attr(v, "gabarit")),
-    warning = function(w) if (grepl("Pixels not square", conditionMessage(w))) invokeRestart("muffleWarning"))
+  rel <- calculer_relief(testthat::test_path("fixtures", "vercors", "milieu", "mnt.tif"), attr(v, "gabarit"))
   list(v = v, milieu = milieu_pixels(rel, v))
 }
 
@@ -277,4 +271,71 @@ test_that("strates calculees depuis une dalle dans la chaine (lasR) : couverts d
   expect_lt(max(abs(as.matrix(c[, cols]) - as.matrix(px[, cols]))), 0.02)
   # La cle du GSM cite c*_hpot, pas c*_h0 : ils restent absents, et la fiche le dit.
   expect_false("c1_hpot" %in% names(c))
+})
+
+test_that("relief : pas du MNT arrondi, focalMat ne juge plus les pixels non carres (1/3, point 3)", {
+  # La grille etendue du relief porte des pas en x et en y qui different de ~3e-12 m
+  # (26,6 m du jeu ONF) ; sf charge, GDAL en faisait un avertissement « Pixels not square ».
+  requireNamespace("sf", quietly = TRUE)
+  v <- lire_parametres_lidar(dossier_vercors_b())
+  expect_no_warning(
+    rel <- calculer_relief(testthat::test_path("fixtures", "vercors", "milieu", "mnt.tif"),
+                           attr(v, "gabarit")))
+  expect_true(all(terra::res(rel) > 26.59 & terra::res(rel) < 26.61))
+})
+
+test_that("lissage : un pixel de poids nul ne dilue pas ses voisins et ne leur emprunte rien", {
+  # Grille 1 x 3 : A franc, pixel du milieu a probabilites egales (hors cle), A franc.
+  p <- data.frame(A = c(1, 0.5, 1), B = c(0, 0.5, 0))
+  sans <- lisser_probabilites(p, c(0, 0, 0), c(0, 1, 2), 3)
+  expect_lt(sans$A[1], 1)  # sans poids : le pixel hors cle dilue ses voisins
+  l <- lisser_probabilites(p, c(0, 0, 0), c(0, 1, 2), 3, poids = c(1, 0, 1))
+  expect_equal(l$A, c(1, 0.5, 1), tolerance = 1e-12)  # voisins intacts, pixel nul inchange
+  expect_equal(rowSums(l), rep(1, 3), tolerance = 1e-12)
+  # Poids 1 partout : le lissage d'avant, a l'identique.
+  expect_identical(lisser_probabilites(p, c(0, 0, 0), c(0, 1, 2), 3, poids = c(1, 1, 1)), sans)
+  expect_erreur(lisser_probabilites(p, c(0, 0, 0), c(0, 1, 2), 3, poids = c(1, -1, 1)), "poids")
+})
+
+test_that("hors cle : pas de type, drapeau garde, poids nul au lissage (aller-retour 1/3)", {
+  v <- lire_parametres_lidar(dossier_vercors_b())
+  conf <- lire_configuration(ecrire_json('{"national": {"lissage_fenetre": 3,
+    "hauteur_potentielle": {"couvert_min": 0.7, "hauteur_min_m": 15,
+      "incertitude_relative_max": 0.2, "quantile_enveloppe": 0.9},
+    "cle": {"marge_entre_deux": 0.15, "souplesse": {}, "types": [
+      {"code": "A", "conditions": [{"variable": "couvert", "min": 0.5}]},
+      {"code": "B", "conditions": [{"variable": "couvert", "min": 0.1, "max": 0.5}]}
+    ]}}, "ser": {"s": {}}}'), "s")
+  # Tout le couvert a 0,8 (A), sauf un pixel a 0,05 : aucun type ne le decrit.
+  v$couvert <- 0.8
+  k <- which(v$i == 20 & v$j == 20 & !v$non_precomptable)
+  expect_length(k, 1)
+  v$couvert[k] <- 0.05
+  res <- executer_chaine_fournie(v, conf)
+  c <- res$carte
+  expect_true(c$hors_cle[k])
+  expect_true(is.na(c$type[k]) && is.na(c$proba[k]) && is.na(c$type_second[k]) &&
+                is.na(c$entre_deux[k]))
+  expect_true(all(is.na(c[k, c("p_A", "p_B")])))
+  # Ses voisins (fenetre 3 x 3) gardent A a 1 : il ne les dilue pas.
+  vois <- which(abs(c$i - c$i[k]) <= 1 & abs(c$j - c$j[k]) <= 1 & seq_len(nrow(c)) != k &
+                  !c$non_precomptable)
+  expect_gt(length(vois), 0)
+  expect_equal(c$p_A[vois], rep(1, length(vois)))
+  expect_true(all(c$type[vois] == "A") && !any(c$entre_deux[vois]))
+  expect_false(any(c$hors_cle[-k], na.rm = TRUE))
+  # La fiche donne la part hors cle et la repartition des types.
+  dec <- res$fiche_validation$declarations
+  n_ok <- sum(!c$non_precomptable)
+  expect_true(any(grepl(sprintf("(1 sur %d)", n_ok), dec, fixed = TRUE)))
+  expect_true(any(grepl(sprintf("R\u00e9partition des types (pixels typ\u00e9s, n = %d) : A 100,0 %%",
+                                n_ok - 1), dec, fixed = TRUE)))
+  # Livrables : type vide dans types.tif, drapeau dans confiance.tif.
+  d <- file.path(tempdir(), "dev_hors_cle")
+  ecrire_livrables(res, d)
+  ty <- terra::rast(file.path(d, "types.tif"))
+  co <- terra::rast(file.path(d, "confiance.tif"))
+  xy <- cbind(c$x[k], c$y[k])
+  expect_true(is.na(terra::extract(ty[["type"]], xy)[[1]]))
+  expect_equal(terra::extract(co[["hors_cle"]], xy)[[1]], 1)
 })
