@@ -38,7 +38,10 @@ l'effort.**
   de la typologie locale de chaque SER (guide de sylviculture, typologie du SRGS),
   sourcée. La clé de `config/exemple.json` est un exemple pour faire tourner la chaîne.
 - **Seuils propres à chaque SER** : la limite des gros bois est à 42,5 cm en Savoie et
-  dans les Pyrénées, à 47,5 cm dans les Vosges (Souchon, 2020).
+  dans les Pyrénées, à 47,5 cm dans les Vosges (Souchon, 2020). Pour la SER pilote H10,
+  42,5 cm, fidèle au GSM Alpes du Nord (Pascal, 2026-11-22).
+- **Typologie de H10** : typologie de structure du Guide des sylvicultures de montagne
+  Alpes du Nord (cap du 2026-11-22, `docs/referentiels/typologie-h10.md`).
 - **La référence de validation est la clé appliquée aux mesures**, pas le type relevé à
   dire d'expert (Souchon, 2020).
 - **Chaque carte porte sa couche de confiance** : probabilité du type, drapeau « entre

@@ -30,7 +30,7 @@ _Rempli par Pascal seul._
 ## Harnais
 
 - **Peut (périmètre), après validation du plan :** `R/`, `man/`, `NAMESPACE`, `DESCRIPTION`,
-  `tests/testthat/test-dev-*.R`. Les données téléchargées restent hors du dépôt, sauf un
+  `tests/testthat/test-dev-*.R`, `tests/testthat/fixtures/vercors/`. Plan validé : [`006-plan.md`](006-plan.md). Les données téléchargées restent hors du dépôt, sauf un
   extrait de test de moins de 2 Mo.
 - **Câblé :** pas de `main` ; pas de « terminé » sans tests verts ; journal en ajout seul.
 - **Ne doit pas :** écrire dans `inst/extdata/config/` (mission 005) ; inventer une clé.
