@@ -72,7 +72,9 @@ references_strates <- function(carte, facteur = NULL) {
 #' - strate 1 (Z ≥ 3/4 H) : premiers retours `p1`, sur `n_premiers` premiers retours ;
 #' - strates 2 à 4 : tous les retours de la strate (`n2`, `n3`, `n4`), sur ceux qui
 #'   sont arrivés sous son plafond (`s2` : Z < 3/4 H ; `s3` : Z < H/2 ; `s4` : Z < H/4).
-#'   La strate 4 commence à `plancher_m`.
+#'   La strate 4 commence à `plancher_m`. Un retour sous `plancher_m` est du sol pour
+#'   toutes les strates : sous une référence de moins de 4 m (H/4 < 1 m), il ne compte
+#'   ni en strate 4 ni dans les strates du dessus qui descendraient sous le plancher.
 #'
 #' Les hauteurs Z négatives (sous le sol interpolé) valent 0. Seules les classes
 #' `classes` comptent (par défaut 1 à 5 de l'ASPRS, celles du LiDAR HD de l'IGN : non
@@ -127,7 +129,10 @@ comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
     valable <- !is.na(h_cel) & h_cel > 0
     h_cel[!valable] <- NA_real_
     strate <- 4L - findInterval(z / h_cel[k], bornes)
-    strate[strate == 4L & sol] <- 5L
+    # Sous le plancher, c'est le sol, quelle que soit la strate où tomberait le retour :
+    # sous une référence de moins de 4 m, le quart du bas est sous le plancher et les
+    # strates 3, 2 voire 1 y descendent (mineur de 008).
+    strate[sol] <- 5L
     # Comptes par pixel (lignes) et par strate (colonnes) ; NA ignorés par tabulate().
     tous <- matrix(tabulate(k + nb * (strate - 1L), nbins = nb * 5L), nrow = nb, ncol = 5L)
     p1 <- tabulate(k[prem & strate == 1L], nbins = nb)
@@ -315,4 +320,117 @@ couvert_strates_dalle <- function(fichier, gabarit, references, plancher_m = 1,
   res$x <- grille$xmin + (col + 0.5) * grille$res[1]
   res$y <- grille$ymax - (lig + 0.5) * grille$res[2]
   res
+}
+
+#' Dalles LiDAR HD sur le contour d'une emprise
+#'
+#' Garde les dalles dont l'emprise touche le **contour** de l'AOI (ses polygones), et non
+#' son rectangle englobant (mineur de 008). Avec `gabarit`, le contour est d'abord coupé
+#' à l'emprise de la grille des pixels : une dalle qui ne touche que la partie de l'AOI
+#' hors de la grille n'apporterait aucun compte (à Léoncel, une parcelle détachée à
+#' l'ouest, hors du jeu ONF, appelait trois dalles pour rien).
+#'
+#' @param dalles Les dalles : objet `sf`/`sfc` de leurs emprises (par exemple le WFS
+#'   `IGNF_LIDAR-HD_METADONNEE:metadata` de la Géoplateforme), ou vecteur de noms
+#'   (`"LHD_FXX_0873_6430_PTS_..."`, `"0873-6430"`, `"0873_6430"`, URL comprises) : les
+#'   deux nombres sont le coin nord-ouest en km (Lambert-93), la dalle fait `cote_m` de
+#'   côté.
+#' @param aoi Emprise : objet `sf` ou `sfc` (polygones), reprojetée en Lambert-93.
+#' @param gabarit Grille des pixels ([grille_strates()] : `SpatRaster` ou gabarit de
+#'   [lire_parametres_lidar()]) ; `NULL` : contour entier.
+#' @param cote_m Côté d'une dalle nommée, en m (1 000 m pour le LiDAR HD).
+#' @return Le sous-ensemble de `dalles` (même forme qu'en entrée), dans le même ordre.
+#' @export
+dalles_sur_aoi <- function(dalles, aoi, gabarit = NULL, cote_m = 1000) {
+  if (!inherits(aoi, c("sf", "sfc"))) arreter("aoi doit être un objet sf ou sfc")
+  zone <- sf::st_union(sf::st_make_valid(sf::st_transform(sf::st_geometry(aoi), 2154)))
+  if (!is.null(gabarit)) {
+    g <- grille_strates(gabarit)
+    cadre <- sf::st_as_sfc(sf::st_bbox(c(xmin = g$xmin, ymin = g$ymax - g$nrow * g$res[2],
+                                         xmax = g$xmin + g$ncol * g$res[1], ymax = g$ymax),
+                                       crs = sf::st_crs(2154)))
+    zone <- sf::st_intersection(zone, cadre)
+  }
+  if (is.character(dalles)) {
+    m <- regmatches(basename(dalles), regexpr("[0-9]{4}[_-][0-9]{4}", basename(dalles)))
+    if (length(m) != length(dalles)) arreter("nom de dalle sans coin nord-ouest (XXXX_YYYY, en km)")
+    km <- do.call(rbind, strsplit(m, "[_-]"))
+    x0 <- as.numeric(km[, 1]) * 1000
+    y1 <- as.numeric(km[, 2]) * 1000
+    carres <- lapply(seq_along(x0), function(k) sf::st_polygon(list(rbind(
+      c(x0[k], y1[k]), c(x0[k] + cote_m, y1[k]), c(x0[k] + cote_m, y1[k] - cote_m),
+      c(x0[k], y1[k] - cote_m), c(x0[k], y1[k])))))
+    geom <- sf::st_sfc(carres, crs = 2154)
+  } else if (inherits(dalles, c("sf", "sfc"))) {
+    geom <- sf::st_transform(sf::st_geometry(dalles), 2154)
+  } else {
+    arreter("dalles doit être un objet sf, sfc ou un vecteur de noms de dalles")
+  }
+  garde <- if (length(zone) == 0 || all(sf::st_is_empty(zone))) {
+    rep(FALSE, length(geom))
+  } else {
+    # Toucher, pas seulement partager un bord : l'intérieur de la dalle coupe la zone.
+    lengths(sf::st_relate(geom, zone, pattern = "2********")) > 0
+  }
+  if (is.data.frame(dalles)) dalles[garde, , drop = FALSE] else dalles[garde]
+}
+
+# Lit les couverts des strates fournis : data.frame de couvert_depuis_comptes() ou de
+# comptes_strates() (colonnes p1_*), ou chemins de fichiers .rds (un ou plusieurs ; des
+# comptes de plusieurs dalles s'additionnent). Rend x, y et c1..c4 de la référence.
+lire_couverts_fournis <- function(strates, reference) {
+  if (is.character(strates)) {
+    if (!all(grepl("\\.rds$", strates, ignore.case = TRUE))) {
+      arreter("strates : chemins .rds attendus (comptes ou couverts), ou dalles .la[sz]")
+    }
+    manque <- strates[!file.exists(strates)]
+    if (length(manque) > 0) arreter(sprintf("strates introuvables : %s", paste(manque, collapse = ", ")))
+    strates <- do.call(rbind, lapply(strates, readRDS))
+  }
+  if (!is.data.frame(strates)) arreter("strates doit être un data.frame ou des chemins de fichiers")
+  if (any(grepl("^p1_", names(strates)))) strates <- couvert_depuis_comptes(strates)
+  cols <- paste0("c", 1:4, "_", reference)
+  verifier_colonnes(strates, c("x", "y", cols), "les couverts des strates")
+  as.data.frame(strates)[, c("x", "y", cols)]
+}
+
+# Pixel de chaque point (x, y), dans la grille du gabarit si on l'a ; sinon par centre
+# exact (arrondi au mm).
+apparier_pixels <- function(x_pix, y_pix, x, y, gabarit = NULL) {
+  if (!is.null(gabarit)) {
+    g <- grille_strates(gabarit)
+    return(match(cellules_xy(g, x, y), cellules_xy(g, x_pix, y_pix)))
+  }
+  match(paste(round(x, 3), round(y, 3)), paste(round(x_pix, 3), round(y_pix, 3)))
+}
+
+# Contrôle du couvert de la strate 1 contre le taux de couvert du producteur : le taux de
+# couvert (Tx_couv) se compare au couvert vu du dessus, c1, pas à la somme des strates,
+# qui n'a pas de sens (chaque strate est corrigée de l'occlusion ; mineur de 008).
+# Corrélation mesurée, sans seuil (décision du 2026-11-22) ; pas une validation.
+controle_couvert_c1 <- function(c1, couvert) {
+  ok <- !is.na(c1) & !is.na(couvert)
+  n <- sum(ok)
+  if (n < 3 || stats::sd(c1[ok]) == 0 || stats::sd(couvert[ok]) == 0) {
+    return(list(n = n, pearson = NA_real_, spearman = NA_real_))
+  }
+  list(n = n, pearson = stats::cor(c1[ok], couvert[ok]),
+       spearman = stats::cor(c1[ok], couvert[ok], method = "spearman"))
+}
+
+# Hauteur potentielle sans enveloppe (h_pot / k de la famille), comme references_strates().
+hpot_sans_enveloppe <- function(h_pot, famille, facteur) {
+  f <- unlist(facteur)
+  if (length(f) == 0) return(rep(NA_real_, length(h_pot)))
+  k <- if (is.null(famille)) rep(f[[1]], length(h_pot)) else f[match(as.character(famille), names(f))]
+  k[is.na(k)] <- f[[1]]
+  as.numeric(h_pot) / unname(k)
+}
+
+# Couverts des strates d'un nuage : une dalle à la fois, comptes additionnés.
+couverts_depuis_dalles <- function(dalles, gabarit, references, plancher_m = 1, ncores = NULL) {
+  if (is.null(gabarit)) arreter("strates depuis des dalles : les variables doivent porter leur gabarit")
+  cpt <- lapply(dalles, function(f) couvert_strates_dalle(f, gabarit, references,
+                                                          plancher_m = plancher_m, ncores = ncores))
+  couvert_depuis_comptes(do.call(rbind, cpt))
 }

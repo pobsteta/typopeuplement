@@ -32,7 +32,7 @@ typer_extrait <- function(..., ser = SER_EXEMPLE, configuration = chemin_config_
 test_that("couches_onf : conversions, gros bois a 47,5 cm, aucune souplesse en dur (bloc jeux)", {
   co <- couches_onf()
   expect_setequal(co$variable, c("G", "part_resineux", "part_gb", "h_dom", "couvert", "famille",
-                                 "typo_etage"))
+                                 "typo_etage", "N"))  # N : mission 012
   expect_false("Struc_fam.tif" %in% co$fichier)  # decision de Pascal : non utilisee
   expect_equal(co$facteur[co$variable == "part_resineux"], 0.01)
   expect_equal(co$seuil_cm[co$variable == "part_gb"], 47.5)

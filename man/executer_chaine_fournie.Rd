@@ -4,7 +4,15 @@
 \alias{executer_chaine_fournie}
 \title{Exécuter la chaîne sur des variables fournies par un producteur}
 \usage{
-executer_chaine_fournie(variables, conf, milieu = NULL)
+executer_chaine_fournie(
+  variables,
+  conf,
+  milieu = NULL,
+  strates = NULL,
+  reference_strates = "hpot",
+  modele_hp = NULL,
+  plancher_m = 1
+)
 }
 \arguments{
 \item{variables}{data.frame de pixels : \code{i}, \code{j} (indices de grille), \code{h_dom} (m),
@@ -18,6 +26,11 @@ neutralise ses conditions), et facultativement \code{x}, \code{y}, \code{famille
 ses colonnes utilisées sont celles de son attribut \code{variables_milieu} (posé par
 \code{\link[=milieu_pixels]{milieu_pixels()}}), sinon les \code{variables_milieu} de la configuration ; \code{NULL} :
 hauteur potentielle vide.}
+
+\item{strates, reference_strates, modele_hp}{Voir \code{\link[=typer_peuplements]{typer_peuplements()}}.}
+
+\item{plancher_m}{Bas de la strate 4, quand le couvert est calculé depuis des dalles
+(\code{\link[=comptes_strates]{comptes_strates()}}). \strong{Provisoire} : 1 m.}
 }
 \value{
 Objet \code{typo_resultat} : \code{carte}, \code{fiche_validation} (sans placette ni grappe,
@@ -33,8 +46,8 @@ du producteur (\code{typo_etage}), qui n'est pas une validation.
 }
 \details{
 Étages, chacun chronométré (\code{temps}) : \code{lecture} (repris de l'attribut
-\code{temps_lecture} des variables), \code{hauteur_potentielle}, \code{cle}, \code{lissage}, \code{decision},
-\code{controle} ; \code{ecriture_rasters} et \code{ecriture_tables} sont ajoutés par
+\code{temps_lecture} des variables), \code{hauteur_potentielle}, \code{strates} (si \code{strates} est
+donné), \code{cle}, \code{lissage}, \code{decision}, \code{controle} ; \code{ecriture_rasters} et \code{ecriture_tables} sont ajoutés par
 \code{\link[=ecrire_livrables]{ecrire_livrables()}}.
 \itemize{
 \item Les pixels \code{non_precomptable} ne sont pas typés (type vide).
@@ -42,6 +55,17 @@ du producteur (\code{typo_etage}), qui n'est pas une validation.
 nommé par la colonne \code{jeu} de l'attribut \code{couches}, voir \code{\link[=couches_onf]{couches_onf()}}) remplacent
 celles de la clé pour leurs variables : réglage du jeu, dit dans la fiche pour les
 variables que la clé utilise.
+\item Variables de la clé (mission 012) : la clé reçoit toute variable qu'elle cite et que
+la chaîne porte : celles de \code{variables} (dont \code{N}, densité de l'ONF), \code{h_pot}
+(hauteur potentielle avec l'enveloppe), \code{hpot} (sans l'enveloppe : h_pot / k de la
+famille, référence des strates par défaut), \code{rapport_h}, et les couverts des
+strates \verb{c1_<ref>} à \verb{c4_<ref>}. Une variable citée que la chaîne ne porte pas est
+vide : ses conditions sont neutralisées et la fiche la nomme.
+\item Couvert des strates (\code{strates}, voir \code{\link[=typer_peuplements]{typer_peuplements()}}) : rattaché aux pixels
+par \code{x}, \code{y} ; un pixel sans couvert a ses conditions de strates neutralisées. La
+fiche dit la référence (provisoire), la part des pixels couverts, et la corrélation
+de \verb{c1_<ref>} (strate haute vue du dessus) avec le taux de couvert du producteur
+(\code{couvert}), sans seuil : un contrôle, pas une validation.
 \item Variable absente : quand les types de tête ne se départagent que par une variable
 manquante, \code{type} est le groupe de ces types (\code{"R-PB-J | R-PB-C"}, voir
 \code{\link[=decider_type]{decider_type()}}) et \code{entre_deux} est levé ; \code{correspondance_types.csv} liste les

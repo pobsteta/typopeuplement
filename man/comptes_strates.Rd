@@ -34,7 +34,9 @@ pixel coupé par la limite de deux dalles reçoit les comptes des deux.
 \item strate 1 (Z ≥ 3/4 H) : premiers retours \code{p1}, sur \code{n_premiers} premiers retours ;
 \item strates 2 à 4 : tous les retours de la strate (\code{n2}, \code{n3}, \code{n4}), sur ceux qui
 sont arrivés sous son plafond (\code{s2} : Z < 3/4 H ; \code{s3} : Z < H/2 ; \code{s4} : Z < H/4).
-La strate 4 commence à \code{plancher_m}.
+La strate 4 commence à \code{plancher_m}. Un retour sous \code{plancher_m} est du sol pour
+toutes les strates : sous une référence de moins de 4 m (H/4 < 1 m), il ne compte
+ni en strate 4 ni dans les strates du dessus qui descendraient sous le plancher.
 }
 
 Les hauteurs Z négatives (sous le sol interpolé) valent 0. Seules les classes

@@ -223,11 +223,106 @@ declarations_milieu <- function(milieu, vm, conf, couches, mhp, incertaine) {
   out
 }
 
+#' Apprendre la hauteur potentielle sur des variables fournies
+#'
+#' Ajuste le modèle de hauteur potentielle exactement comme le fait
+#' [executer_chaine_fournie()] (pixels précomptables, variables de milieu de l'attribut
+#' `variables_milieu` de `milieu`, réglages `hauteur_potentielle` de la configuration),
+#' pour l'apprendre sur une grande emprise (le massif) et l'appliquer à une petite
+#' (une forêt) : `typer_peuplements(aoi, ..., modele_hp = m)`. Une petite emprise a trop
+#' peu de peuplements adultes fermés pour apprendre seule.
+#'
+#' @param variables data.frame de pixels ([lire_parametres_lidar()]) : `h_dom`,
+#'   `couvert`, `famille`, et `non_precomptable` s'il existe.
+#' @param milieu data.frame des variables de milieu, une ligne par ligne de `variables`
+#'   ([milieu_pixels()]).
+#' @param conf Configuration effective d'une SER ([lire_configuration()]) ; sa `graine`
+#'   (0 par défaut) est celle de la chaîne.
+#' @return Objet `typo_hauteur_potentielle` ([ajuster_hauteur_potentielle()]).
+#' @export
+apprendre_hauteur_potentielle <- function(variables, milieu, conf) {
+  vm <- attr(milieu, "variables_milieu") %||% conf$variables_milieu
+  if (nrow(milieu) != nrow(variables)) arreter("milieu doit avoir une ligne par ligne de variables")
+  verifier_colonnes(milieu, vm, "le milieu")
+  non_prec <- if ("non_precomptable" %in% names(variables)) {
+    as.logical(variables$non_precomptable) %in% TRUE
+  } else rep(FALSE, nrow(variables))
+  df <- cbind(as.data.frame(variables)[, setdiff(names(variables), vm), drop = FALSE],
+              as.data.frame(milieu)[, vm, drop = FALSE])
+  modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf, vm)
+}
+
 # Variables appelées par les conditions d'une clé.
 variables_cle <- function(cle) {
   unique(unlist(lapply(cle$types, function(t) {
     variables_type(t)
   })))
+}
+
+# Variables que porte la chaîne en mode « variables fournies », une colonne par variable,
+# une ligne par pixel : celles du producteur, puis la hauteur potentielle (h_pot, hpot,
+# rapport_h), puis les couverts des strates. Les dernières l'emportent à nom égal.
+variables_portees <- function(variables, hp, couverts = NULL) {
+  out <- as.list(as.data.frame(variables))
+  for (v in c("h_pot", "hpot", "rapport_h")) out[[v]] <- hp[[v]]
+  if (!is.null(couverts)) for (v in names(couverts)) out[[v]] <- couverts[[v]]
+  out
+}
+
+# Couverts des strates, une ligne par ligne de `variables` (NA pour un pixel sans
+# couvert) : colonnes c1_<ref> à c4_<ref>. `strates` : table (ou .rds) de couverts ou de
+# comptes, appariée aux pixels par ses coordonnées x, y (Lambert-93) ; ou dalles de nuage
+# de points (.las, .laz, .copc.laz) calculées ici, une à la fois, avec la référence prise
+# dans la chaîne (hpot : h_pot / k ; hpot_k : h_pot ; h0 : h_dom).
+preparer_strates <- function(strates, variables, hp, reference, plancher_m = 1) {
+  if (!is.character(reference) || length(reference) != 1 || !nzchar(reference)) {
+    arreter("reference_strates doit \u00eatre un nom de r\u00e9f\u00e9rence (hpot, hpot_k, h0)")
+  }
+  verifier_colonnes(variables, c("x", "y"), "les variables fournies (strates appari\u00e9es par x, y)")
+  gabarit <- attr(variables, "gabarit")
+  cols <- paste0("c", 1:4, "_", reference)
+  if (is.character(strates) && all(grepl("\\.la[sz]$", strates, ignore.case = TRUE))) {
+    refs_chaine <- list(hpot = hp$hpot, hpot_k = hp$h_pot, h0 = as.numeric(variables$h_dom))
+    if (!reference %in% names(refs_chaine)) {
+      arreter(sprintf("r\u00e9f\u00e9rence des strates inconnue de la cha\u00eene : %s (hpot, hpot_k, h0)",
+                      reference))
+    }
+    refs <- data.frame(x = variables$x, y = variables$y)
+    refs[[reference]] <- refs_chaine[[reference]]
+    cv <- couverts_depuis_dalles(strates, gabarit, refs, plancher_m = plancher_m)
+    cv <- as.data.frame(cv)[, c("x", "y", cols)]
+  } else {
+    cv <- lire_couverts_fournis(strates, reference)
+  }
+  k <- apparier_pixels(variables$x, variables$y, cv$x, cv$y, gabarit)
+  garde <- !is.na(k)
+  if (anyDuplicated(k[garde])) arreter("strates : deux lignes de couverts pour un m\u00eame pixel")
+  out <- as.data.frame(matrix(NA_real_, nrow(variables), 4, dimnames = list(NULL, cols)))
+  out[k[garde], ] <- as.matrix(cv[garde, cols])
+  out
+}
+
+# Lignes de la fiche sur le couvert des strates : référence, part des pixels couverts,
+# contrôle de c1 contre le taux de couvert du producteur (pas la somme des strates).
+declarations_strates <- function(couverts, variables, non_prec, reference) {
+  c1 <- couverts[[paste0("c1_", reference)]]
+  pc <- !non_prec
+  avec <- stats::complete.cases(couverts) & pc
+  out <- sprintf(paste0(
+    "Couvert des strates (GSM, quarts de la hauteur de r\u00e9f\u00e9rence) : r\u00e9f\u00e9rence %s, ",
+    "PROVISOIRE ; couverts pour %s %% des pixels pr\u00e9comptables (%d sur %d) ; sans couvert, ",
+    "les conditions des strates sont neutralis\u00e9es."),
+    reference, format(round(100 * sum(avec) / max(1, sum(pc)), 1), decimal.mark = ","),
+    sum(avec), sum(pc))
+  if ("couvert" %in% names(variables)) {
+    k <- controle_couvert_c1(c1[pc], as.numeric(variables$couvert)[pc])
+    out <- c(out, sprintf(paste0(
+      "Contr\u00f4le : c1_%s (couvert de la strate haute vu du dessus) contre le taux de ",
+      "couvert du producteur : r de Pearson %s, de Spearman %s (n = %d). Corr\u00e9lation ",
+      "mesur\u00e9e, sans seuil ; pas une validation."),
+      reference, fmt_nombre(k$pearson), fmt_nombre(k$spearman), k$n))
+  }
+  out
 }
 
 #' Exécuter la chaîne sur des variables fournies par un producteur
@@ -239,8 +334,8 @@ variables_cle <- function(cle) {
 #' du producteur (`typo_etage`), qui n'est pas une validation.
 #'
 #' Étages, chacun chronométré (`temps`) : `lecture` (repris de l'attribut
-#' `temps_lecture` des variables), `hauteur_potentielle`, `cle`, `lissage`, `decision`,
-#' `controle` ; `ecriture_rasters` et `ecriture_tables` sont ajoutés par
+#' `temps_lecture` des variables), `hauteur_potentielle`, `strates` (si `strates` est
+#' donné), `cle`, `lissage`, `decision`, `controle` ; `ecriture_rasters` et `ecriture_tables` sont ajoutés par
 #' [ecrire_livrables()].
 #'
 #' - Les pixels `non_precomptable` ne sont pas typés (type vide).
@@ -248,6 +343,17 @@ variables_cle <- function(cle) {
 #'   nommé par la colonne `jeu` de l'attribut `couches`, voir [couches_onf()]) remplacent
 #'   celles de la clé pour leurs variables : réglage du jeu, dit dans la fiche pour les
 #'   variables que la clé utilise.
+#' - Variables de la clé (mission 012) : la clé reçoit toute variable qu'elle cite et que
+#'   la chaîne porte : celles de `variables` (dont `N`, densité de l'ONF), `h_pot`
+#'   (hauteur potentielle avec l'enveloppe), `hpot` (sans l'enveloppe : h_pot / k de la
+#'   famille, référence des strates par défaut), `rapport_h`, et les couverts des
+#'   strates `c1_<ref>` à `c4_<ref>`. Une variable citée que la chaîne ne porte pas est
+#'   vide : ses conditions sont neutralisées et la fiche la nomme.
+#' - Couvert des strates (`strates`, voir [typer_peuplements()]) : rattaché aux pixels
+#'   par `x`, `y` ; un pixel sans couvert a ses conditions de strates neutralisées. La
+#'   fiche dit la référence (provisoire), la part des pixels couverts, et la corrélation
+#'   de `c1_<ref>` (strate haute vue du dessus) avec le taux de couvert du producteur
+#'   (`couvert`), sans seuil : un contrôle, pas une validation.
 #' - Variable absente : quand les types de tête ne se départagent que par une variable
 #'   manquante, `type` est le groupe de ces types (`"R-PB-J | R-PB-C"`, voir
 #'   [decider_type()]) et `entre_deux` est levé ; `correspondance_types.csv` liste les
@@ -279,12 +385,17 @@ variables_cle <- function(cle) {
 #'   ses colonnes utilisées sont celles de son attribut `variables_milieu` (posé par
 #'   [milieu_pixels()]), sinon les `variables_milieu` de la configuration ; `NULL` :
 #'   hauteur potentielle vide.
+#' @param strates,reference_strates,modele_hp Voir [typer_peuplements()].
+#' @param plancher_m Bas de la strate 4, quand le couvert est calculé depuis des dalles
+#'   ([comptes_strates()]). **Provisoire** : 1 m.
 #' @return Objet `typo_resultat` : `carte`, `fiche_validation` (sans placette ni grappe,
 #'   avec `controle` et `declarations`), `niveau_modele` (`"producteur"`), `ser`, `cle`
 #'   (souplesses du jeu comprises), `temps` (`etage`, `secondes`, `pixels`), `gabarit`.
 #' @seealso [typer_peuplements()], [controle_coherence()]
 #' @export
-executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
+executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NULL,
+                                    reference_strates = "hpot", modele_hp = NULL,
+                                    plancher_m = 1) {
   chrono <- new.env()
   chrono$temps <- data.frame(etage = character(0), secondes = numeric(0), pixels = integer(0),
                              stringsAsFactors = FALSE)
@@ -355,6 +466,10 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
   # (attribut `variables_milieu`, par exemple le relief de milieu_pixels()), sinon celles
   # de la configuration.
   vm <- if (is.null(milieu)) conf$variables_milieu else attr(milieu, "variables_milieu") %||% conf$variables_milieu
+  if (!is.null(modele_hp)) {
+    if (is.null(milieu)) arreter("modele_hp donn\u00e9 sans milieu : la hauteur potentielle ne peut pas \u00eatre pr\u00e9dite")
+    vm <- modele_hp$variables_milieu
+  }
   mhp <- NULL
   hp <- chronometrer(chrono, "hauteur_potentielle", n, {
     if (is.null(milieu)) {
@@ -367,11 +482,13 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
                   as.data.frame(milieu)[, vm, drop = FALSE])
       # Trop peu d'adultes fermés dans l'emprise : pas de modèle, hauteur potentielle
       # vide et signalée partout (dit dans la fiche), plutôt qu'une hauteur sans appui.
-      mhp <- tryCatch(modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf, vm),
-                      typo_erreur = function(e) {
-                        if (!grepl("trop peu de peuplements adultes", conditionMessage(e))) stop(e)
-                        NULL
-                      })
+      mhp <- if (!is.null(modele_hp)) modele_hp else {
+        tryCatch(modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf, vm),
+                 typo_erreur = function(e) {
+                   if (!grepl("trop peu de peuplements adultes", conditionMessage(e))) stop(e)
+                   NULL
+                 })
+      }
       if (is.null(mhp)) {
         data.frame(h_pot = rep(NA_real_, n), h_pot_sd = NA_real_, rapport_h = NA_real_,
                    hp_incertaine = TRUE)
@@ -380,6 +497,13 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
   })
   # Dispersion des arbres de la forêt (pas une erreur de prédiction), rendue à part.
   hp$sd_arbres <- attr(hp, "sd_arbres") %||% rep(NA_real_, n)
+  # Hauteur potentielle sans l'enveloppe (h_pot / k de la famille), exposée à la clé sous
+  # le nom `hpot` : c'est la référence des strates par défaut (décision du 2026-11-22).
+  hp$hpot <- if (is.null(mhp)) rep(NA_real_, n) else {
+    hpot_sans_enveloppe(hp$h_pot, if ((mhp$famille %||% "") %in% names(variables)) {
+      variables[[mhp$famille]]
+    } else NULL, mhp$facteur)
+  }
   if (is.null(milieu)) {
     declarations <- c(declarations, paste0(
       "Hauteur potentielle vide et signal\u00e9e partout (milieu non fourni) : ",
@@ -389,17 +513,43 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
       "Hauteur potentielle vide et signal\u00e9e partout (trop peu de peuplements adultes ",
       "ferm\u00e9s dans l'emprise pour l'apprendre) : rapport_h neutralis\u00e9 dans la cl\u00e9."))
   } else {
+    if (!is.null(modele_hp)) {
+      declarations <- c(declarations, paste0(
+        "Hauteur potentielle : mod\u00e8le fourni (modele_hp), appris hors de l'emprise ",
+        "(par exemple sur le massif) puis appliqu\u00e9 \u00e0 ses pixels."))
+    }
     declarations <- c(declarations, declarations_milieu(milieu, vm, conf, couches, mhp,
                                                         hp$hp_incertaine[!non_prec]))
   }
 
-  # 2. Clé floue sur les pixels précomptables.
+  # 1 bis. Couvert des strates (GSM), par pixel, pour la référence choisie.
+  couverts <- NULL
+  if (!is.null(strates)) {
+    couverts <- chronometrer(chrono, "strates", n, {
+      preparer_strates(strates, variables, hp, reference_strates, plancher_m)
+    })
+    declarations <- c(declarations, declarations_strates(couverts, variables, non_prec,
+                                                         reference_strates))
+  }
+
+  # 2. Clé floue sur les pixels précomptables. La clé reçoit toute variable qu'elle cite
+  # et que la chaîne porte : celles du producteur (dont N), la hauteur potentielle
+  # (h_pot, hpot, rapport_h), les couverts des strates. Une variable citée que la chaîne
+  # ne porte pas est vide : ses conditions sont neutralisées (groupe de types, drapeau
+  # entre_deux), et la fiche la nomme.
   ok <- which(!non_prec)
-  vars <- setdiff(variables_cle(cle), "rapport_h")
-  verifier_colonnes(variables, vars, "les variables fournies (variables de la cl\u00e9)")
+  vars <- variables_cle(cle)
+  portees <- variables_portees(variables, hp, couverts)
+  absentes <- sort(setdiff(vars, names(portees)))
+  if (length(absentes) > 0) {
+    declarations <- c(declarations, sprintf(paste0(
+      "Variables de la cl\u00e9 absentes de la cha\u00eene : %s ; leurs conditions sont ",
+      "neutralis\u00e9es (groupe de types, drapeau entre_deux)."), paste(absentes, collapse = ", ")))
+  }
   probas <- chronometrer(chrono, "cle", length(ok), {
-    entree <- as.data.frame(variables)[ok, vars, drop = FALSE]
-    entree$rapport_h <- hp$rapport_h[ok]
+    entree <- as.data.frame(lapply(stats::setNames(vars, vars), function(v) {
+      if (v %in% names(portees)) as.numeric(portees[[v]][ok]) else rep(NA_real_, length(ok))
+    }))
     appartenances_types(cle, entree)
   })
   hors_cle <- attr(probas, "hors_cle")
@@ -428,11 +578,12 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
     xy <- if (all(c("x", "y") %in% names(variables))) {
       data.frame(x = variables$x, y = variables$y)
     } else NULL
-    gardees <- intersect(c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "h_dom",
+    gardees <- intersect(c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "N", "h_dom",
                            "couvert", "famille", "typo_etage"), names(variables))
     morceaux <- list(data.frame(i = variables$i, j = variables$j), xy, tout,
                      as.data.frame(variables)[, gardees, drop = FALSE],
-                     hp[, c("h_pot", "h_pot_sd", "rapport_h", "hp_incertaine", "sd_arbres")],
+                     hp[, c("h_pot", "hpot", "h_pot_sd", "rapport_h", "hp_incertaine", "sd_arbres")],
+                     couverts,
                      data.frame(non_precomptable = non_prec, part_pb_absente = pb_absente,
                                 gb_interim = gb_interim & !non_prec),
                      p_cols)

@@ -18,6 +18,15 @@
 #' | `Tx_couv.tif` | `couvert` (0 à 1) | ÷ 100 |
 #' | `Compo1.tif` | `famille` (0 non précomptable, 1 feuillus, 2 résineux, 3 mélange) | aucune |
 #' | `Typo_etage.tif` | `typo_etage` (0 non précomptable, 1 non étagé, 2 faiblement étagé, 3 étagé) | aucune ; contrôle de cohérence seulement |
+#' | `N.tif` | `N` (tiges/ha) | aucune ; facultative |
+#'
+#' `N` est la densité prédite par l'ONF, en tiges par hectare (fiche p. 1 : placettes
+#' de calibration, N de 14,2 à 947,9, moyenne 374,4 ; p. 2 : biais en « t/ha »). Les
+#' placettes ont un diamètre précomptable de 17,5 cm (p. 1) : `N` compte donc, selon
+#' toute vraisemblance (la fiche ne le dit pas en toutes lettres), les tiges
+#' précomptables (colonne `seuil_cm`). Le seuil de 800 tiges/ha du GSM (types L et R)
+#' vise une régénération, qui n'y serait pas. Couche facultative : sans
+#' `N.tif`, la colonne manque et une clé qui la cite la neutralise.
 #'
 #' `Struc_fam` n'est pas utilisée (décision de Pascal, plan 006). `part_pb` n'existe pas
 #' dans le jeu : elle reste vide et le drapeau `part_pb_absente` est levé.
@@ -44,11 +53,11 @@ couches_onf <- function() {
   fiche <- "fiche ONF Vercors dr\u00f4mois (A. Hedel, 25/09/2024)"
   data.frame(
     fichier = c("G.tif", "p100GR.tif", "p100GGB.tif", "H0_lidar.tif", "Tx_couv.tif",
-                "Compo1.tif", "Typo_etage.tif"),
-    variable = c("G", "part_resineux", "part_gb", "h_dom", "couvert", "famille", "typo_etage"),
-    facteur = c(1, 0.01, 0.01, 1, 0.01, 1, 1),
-    obligatoire = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
-    seuil_cm = c(NA, NA, 47.5, NA, NA, NA, NA),
+                "Compo1.tif", "Typo_etage.tif", "N.tif"),
+    variable = c("G", "part_resineux", "part_gb", "h_dom", "couvert", "famille", "typo_etage", "N"),
+    facteur = c(1, 0.01, 0.01, 1, 0.01, 1, 1, 1),
+    obligatoire = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE),
+    seuil_cm = c(NA, NA, 47.5, NA, NA, NA, NA, 17.5),
     jeu = "vercors_onf",
     source = c(
       paste0(fiche, ", p. 4 : surface terri\u00e8re en m\u00b2/ha"),
@@ -57,7 +66,8 @@ couches_onf <- function() {
       paste0(fiche, ", p. 2 : hauteur dominante brute, non calibr\u00e9e"),
       paste0(fiche, ", p. 4 : taux de couvert en %"),
       paste0(fiche, ", p. 4 : 0 non pr\u00e9comptable, 1 feuillus, 2 r\u00e9sineux, 3 m\u00e9lange"),
-      paste0(fiche, ", p. 4 : \u00e9tagement, contr\u00f4le de coh\u00e9rence seulement")
+      paste0(fiche, ", p. 4 : \u00e9tagement, contr\u00f4le de coh\u00e9rence seulement"),
+      paste0(fiche, ", p. 1-2 : densit\u00e9 en tiges/ha (placettes \u00e0 \u00d8 pr\u00e9comptable 17,5 cm)")
     ),
     stringsAsFactors = FALSE
   )

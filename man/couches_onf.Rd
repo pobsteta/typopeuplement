@@ -25,8 +25,17 @@ Table de branchement des rasters du producteur sur les variables de la chaîne
    \code{Tx_couv.tif} \tab \code{couvert} (0 à 1) \tab ÷ 100 \cr
    \code{Compo1.tif} \tab \code{famille} (0 non précomptable, 1 feuillus, 2 résineux, 3 mélange) \tab aucune \cr
    \code{Typo_etage.tif} \tab \code{typo_etage} (0 non précomptable, 1 non étagé, 2 faiblement étagé, 3 étagé) \tab aucune ; contrôle de cohérence seulement \cr
+   \code{N.tif} \tab \code{N} (tiges/ha) \tab aucune ; facultative \cr
 }
 
+
+\code{N} est la densité prédite par l'ONF, en tiges par hectare (fiche p. 1 : placettes
+de calibration, N de 14,2 à 947,9, moyenne 374,4 ; p. 2 : biais en « t/ha »). Les
+placettes ont un diamètre précomptable de 17,5 cm (p. 1) : \code{N} compte donc, selon
+toute vraisemblance (la fiche ne le dit pas en toutes lettres), les tiges
+précomptables (colonne \code{seuil_cm}). Le seuil de 800 tiges/ha du GSM (types L et R)
+vise une régénération, qui n'y serait pas. Couche facultative : sans
+\code{N.tif}, la colonne manque et une clé qui la cite la neutralise.
 
 \code{Struc_fam} n'est pas utilisée (décision de Pascal, plan 006). \code{part_pb} n'existe pas
 dans le jeu : elle reste vide et le drapeau \code{part_pb_absente} est levé.

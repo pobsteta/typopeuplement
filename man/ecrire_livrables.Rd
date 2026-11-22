@@ -24,8 +24,10 @@ Le chemin du dossier, invisible.
 \item \code{types.tif} : \code{type} (valeur entière, voir la table de correspondance : un groupe de
 types, quand une variable manque, a sa propre valeur), \code{proba}, \code{type_second},
 \code{entre_deux} (0 ou 1) ;
-\item \code{variables.tif} : \code{G}, \code{part_resineux}, \code{part_pb}, \code{part_bm}, \code{part_gb}, \code{h_dom},
-\code{h_pot}, \code{h_pot_sd}, \code{rapport_h} ;
+\item \code{variables.tif} : \code{G}, \code{part_resineux}, \code{part_pb}, \code{part_bm}, \code{part_gb}, \code{N} (si
+lue), \code{h_dom}, \code{h_pot}, \code{hpot} (h_pot sans l'enveloppe, mode « variables fournies »),
+\code{h_pot_sd}, \code{rapport_h}, et les couverts des strates \verb{c1_<ref>} à \verb{c4_<ref>} s'ils
+ont été fournis ;
 \item \code{confiance.tif} : \code{hp_incertaine}, \code{hors_cle} (0 ou 1), \code{niveau_modele} (0 :
 variables du producteur, 1 : SER, 2 : grande région \emph{requise} — la bascule vers le
 modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a

@@ -46,6 +46,33 @@
 #'   et `source` disent ce que voit la hauteur potentielle (sinon les
 #'   `variables_milieu` de la configuration) ; `NULL` : hauteur potentielle vide et
 #'   signalée partout.
+#' @param strates En mode « variables fournies », couvert des strates du GSM pour la
+#'   clé (colonnes `c1_<ref>` à `c4_<ref>`, `<ref>` étant `reference_strates`) :
+#'   - `NULL` : pas de couvert ; une clé qui cite les strates les neutralise (groupe de
+#'     types, drapeau `entre_deux`) et la fiche le dit ;
+#'   - un data.frame de [couvert_depuis_comptes()] (ou de [comptes_strates()] avec `x`,
+#'     `y`), ou les chemins de fichiers `.rds` qui en contiennent (par exemple les
+#'     comptes de [couvert_strates_dalle()], une dalle par fichier : ils sont
+#'     additionnés) ; les lignes sont rattachées aux pixels par leurs coordonnées `x`,
+#'     `y` (Lambert-93) ; ces couverts doivent avoir été calculés avec la même hauteur de
+#'     référence que la chaîne (même milieu, même modèle de hauteur potentielle) ;
+#'   - les chemins de dalles de nuage de points (`.las`, `.laz`, `.copc.laz`) : le couvert
+#'     est calculé ici, une dalle à la fois, avec la référence tirée de la chaîne (lasR
+#'     requis ; choisir les dalles avec [dalles_sur_aoi()]).
+#' @param reference_strates Hauteur de référence des strates : `"hpot"` (hauteur
+#'   potentielle sans enveloppe, h_pot / k ; **par défaut, provisoire**, décision du
+#'   2026-11-22), `"hpot_k"` (h_pot) ou `"h0"` (h_dom). Voir [references_strates()].
+#' @param modele_hp En mode « variables fournies », modèle de hauteur potentielle déjà
+#'   appris ([apprendre_hauteur_potentielle()]), par exemple sur tout le massif, appliqué
+#'   aux pixels de l'emprise ; `NULL` : appris sur les pixels de l'emprise. Demande
+#'   `milieu`.
+#'
+#' @section Variables passées à la clé:
+#' Variables passées à la clé, en mode « variables fournies » : toute variable que la clé
+#' cite et que la chaîne porte — celles du producteur (`G`, parts, `couvert`, `N`…), la
+#' hauteur potentielle `h_pot` (avec l'enveloppe), `hpot` (sans l'enveloppe, h_pot / k),
+#' `rapport_h`, et les couverts des strates. Une variable citée que la chaîne ne porte
+#' pas est neutralisée (voir [executer_chaine_fournie()]).
 #'
 #' @return Objet `typo_resultat` (voir [executer_chaine()]), invisible si `sortie` est donné.
 #' @examples
@@ -57,7 +84,8 @@
 #' }
 #' @export
 typer_peuplements <- function(aoi, placettes = NULL, ser = NULL, configuration, sortie = NULL,
-                              graine = 0, variables = NULL, milieu = NULL) {
+                              graine = 0, variables = NULL, milieu = NULL, strates = NULL,
+                              reference_strates = "hpot", modele_hp = NULL) {
   if (!is.null(variables)) {
     if (is.null(ser)) arreter("SER non donn\u00e9e : en mode \u00ab variables fournies \u00bb, donner `ser`")
     conf <- lire_configuration(configuration, ser)
@@ -71,7 +99,8 @@ typer_peuplements <- function(aoi, placettes = NULL, ser = NULL, configuration, 
         for (k in names(a)) if (!is.null(a[[k]])) attr(milieu, k) <- a[[k]]
       }
     }
-    res <- executer_chaine_fournie(variables, conf, milieu)
+    res <- executer_chaine_fournie(variables, conf, milieu, strates = strates,
+                                   reference_strates = reference_strates, modele_hp = modele_hp)
     if (!is.null(sortie)) {
       ecrire_livrables(res, sortie)
       return(invisible(res))
@@ -204,8 +233,10 @@ correspondance_types <- function(cle, types = NULL) {
 #' - `types.tif` : `type` (valeur entière, voir la table de correspondance : un groupe de
 #'   types, quand une variable manque, a sa propre valeur), `proba`, `type_second`,
 #'   `entre_deux` (0 ou 1) ;
-#' - `variables.tif` : `G`, `part_resineux`, `part_pb`, `part_bm`, `part_gb`, `h_dom`,
-#'   `h_pot`, `h_pot_sd`, `rapport_h` ;
+#' - `variables.tif` : `G`, `part_resineux`, `part_pb`, `part_bm`, `part_gb`, `N` (si
+#'   lue), `h_dom`, `h_pot`, `hpot` (h_pot sans l'enveloppe, mode « variables fournies »),
+#'   `h_pot_sd`, `rapport_h`, et les couverts des strates `c1_<ref>` à `c4_<ref>` s'ils
+#'   ont été fournis ;
 #' - `confiance.tif` : `hp_incertaine`, `hors_cle` (0 ou 1), `niveau_modele` (0 :
 #'   variables du producteur, 1 : SER, 2 : grande région *requise* — la bascule vers le
 #'   modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
@@ -249,8 +280,8 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
     type_second = match(carte$type_second, corr$code),
     entre_deux = as.numeric(carte$entre_deux)
   )
-  noms_var <- c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "h_dom", "h_pot",
-                "h_pot_sd", "rapport_h")
+  noms_var <- c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "N", "h_dom", "h_pot",
+                "hpot", "h_pot_sd", "rapport_h", grep("^c[1-4]_", names(carte), value = TRUE))
   variables <- carte[, intersect(noms_var, names(carte)), drop = FALSE]
   confiance <- data.frame(
     hp_incertaine = as.numeric(carte$hp_incertaine),
