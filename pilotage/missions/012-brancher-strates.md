@@ -64,3 +64,18 @@ Pascal va voir les 3 pixels nommés à Léoncel.
 ## Qui tranche
 
 `relecteur`, puis Pascal. 3 allers-retours au plus.
+
+## Aller-retour 1/3 (2026-11-22)
+
+1. **Bloquant : les pixels hors clé** (couvert < 0,1, soit 247 pixels à Léoncel) ne
+   reçoivent plus de type.
+   - Après `decider_type`, `type`, `proba`, `type_second` et `entre_deux` sont vides ; le
+     drapeau `hors_cle` est gardé.
+   - Dans `lisser_probabilites`, ces pixels ont un poids nul : leurs probabilités ne
+     diluent pas celles des voisins et ne leur en empruntent pas.
+   - Un test le vérifie. La fiche donne la part de pixels hors clé et la répartition des types.
+2. Refaire la carte de Léoncel : répartition, part « entre deux », trois pixels de terrain
+   (coordonnées vérifiées dans les deux sens). Le pixel 3 est en y 6 426 005,9.
+3. Mineur : arrondir la résolution du MNT dans `R/milieu.R`, pour que `terra::focalMat` ne
+   juge plus les pixels « non carrés ». Le périmètre s'étend à `R/milieu.R` pour ce seul point.
+4. Mineur : le nombre de tests sautés rapporté exactement.
