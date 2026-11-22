@@ -24,7 +24,7 @@
 
 ## Terminé
 
-_Prêtes selon le relecteur, en attente de la fusion de la PR n° 1 par Pascal._
+_Fusionnées dans main le 2026-11-22 (PR n° 1)._
 
 - [001-environnement-r](missions/001-environnement-r.md) · depuis le cycle 1
   - Homme : `dev` (sonnet) · Mission : R et commande de tests · Moyens : apt, testthat
