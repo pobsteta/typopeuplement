@@ -63,3 +63,17 @@ Pascal vérifie la SER d'une forêt qu'il connaît.
 ## Comment saura-t-on que ça marche ?
 
 La SER d'une forêt connue de Pascal tombe juste.
+
+## Remarques du relecteur (aller-retour 1/3, 2026-11-22)
+
+1. **Bloquant.** Dans `docs/referentiels/ser.md`, La Chapelle-en-Vercors (donnée à
+   44,7456 N ; 5,3639 E) et Lente (44,70 N ; 5,40 E) sont placées dans le Diois. Positions
+   IGN : La Chapelle 44,967 N ; 5,414 E et Ferme de Lente 44,938 N ; 5,315 E, toutes deux
+   en H10 (WFS et `communes_ser.csv` de nemeton). Corriger les coordonnées et le tableau.
+2. **Bloquant.** Refaire le contrôle de rattachement sur le contour réel des forêts du jeu
+   « Paramètres forestiers LiDAR – Vercors drômois 2021-2022 » (couches du jeu, ou masque
+   forestier dans son emprise), pas sur le rectangle. Dire, chiffres à l'appui, si des
+   forêts du jeu tombent en H30, et la part de surface de chaque SER, ou pourquoi on ne
+   peut pas la calculer.
+3. Mineur, à poser à Pascal, pas à trancher : copie des 86 lignes de nemeton contre lien.
+4. Mineur, pour le testeur (004) : test des décomptes 86 / 5 / 11.
