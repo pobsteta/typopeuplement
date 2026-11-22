@@ -33,6 +33,13 @@ manque, elle est traitée comme la plus faible. À égalité, le premier type de
 une variable manquante (chacun porte une condition sur une variable inconnue de la
 ligne), on ne choisit pas le premier de la clé : \code{type} est le groupe des types
 possibles, codes réunis par \code{" | "} (par exemple \code{"R-PB-J | R-PB-C"}), dans l'ordre de
-la clé, et \code{entre_deux} est levé. Le second type est alors le meilleur type hors du
-groupe. Sans \code{touche_na}, le comportement est celui de toujours.
+la clé, et \code{entre_deux} est levé. La probabilité du groupe (\code{proba}) est la somme des
+probabilités de ses membres (décision du 2026-11-22). Le second type est alors le
+meilleur type hors du groupe. Sans \code{touche_na}, le comportement est celui de toujours.
+
+\strong{Limite : \code{touche_na} est lu au pixel.} Il dit quelles variables manquent au pixel
+lui-même, alors que les probabilités ont pu être lissées avec celles des voisins
+(\code{\link[=lisser_probabilites]{lisser_probabilites()}}). En bordure d'une zone sans milieu (par exemple sans
+hauteur potentielle), un pixel dont la variable est connue peut donc prendre un type
+franc alors que ses voisins forment un groupe, et inversement.
 }

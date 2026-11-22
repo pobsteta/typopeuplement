@@ -4,12 +4,14 @@
 \alias{predire_hauteur_potentielle}
 \title{Prédire la hauteur potentielle et le rapport des hauteurs}
 \usage{
-predire_hauteur_potentielle(modele, df)
+predire_hauteur_potentielle(modele, df, taille_paquet = 20000L)
 }
 \arguments{
 \item{modele}{Objet rendu par \code{\link[=ajuster_hauteur_potentielle]{ajuster_hauteur_potentielle()}}.}
 
 \item{df}{data.frame : variables de milieu, \code{h_dom}, et la colonne de famille si elle existe.}
+
+\item{taille_paquet}{Nombre de lignes prédites à la fois. \strong{Provisoire} : 20 000.}
 }
 \value{
 data.frame : \code{h_pot} (m), \code{h_pot_sd} (m), \code{rapport_h}, \code{hp_incertaine}.
@@ -19,5 +21,10 @@ Hauteur potentielle (moyenne des arbres de la forêt, enveloppe comprise), son
 incertitude (dispersion des arbres et erreur de validation croisée), et le rapport
 hauteur dominante mesurée / hauteur potentielle. Là où l'incertitude relative dépasse
 \code{incertitude_relative_max}, le rapport est vide (\code{NA}) et \code{hp_incertaine} est vrai :
-la clé s'en tient alors à la hauteur mesurée.
+la clé s'en tient alors à la hauteur mesurée. Là où une variable de milieu manque
+(pixel hors du MNT), \code{h_pot} et \code{h_pot_sd} sont vides et \code{hp_incertaine} est vrai.
+}
+\details{
+La prédiction se fait par paquets de \code{taille_paquet} lignes, pour borner la mémoire
+(une valeur par arbre et par ligne).
 }

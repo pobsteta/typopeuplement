@@ -6,11 +6,11 @@
 #                                    v
 #                      clé floue par SER --> lissage --> type, probabilité, drapeaux
 
-modele_hp_depuis_conf <- function(pixels, conf) {
+modele_hp_depuis_conf <- function(pixels, conf, variables_milieu = conf$variables_milieu) {
   hp <- conf$hauteur_potentielle %||% list()
   ajuster_hauteur_potentielle(
     pixels,
-    variables_milieu = conf$variables_milieu,
+    variables_milieu = variables_milieu,
     couvert_min = hp$couvert_min %||% 0.7,
     hauteur_min_m = hp$hauteur_min_m %||% 15,
     incertitude_relative_max = hp$incertitude_relative_max %||% 0.2,
@@ -165,6 +165,44 @@ chronometrer <- function(env, etage, pixels, expr) {
   valeur
 }
 
+# Lignes de la fiche sur la hauteur potentielle apprise sur un milieu fourni : ce qu'elle
+# voit (source du milieu), ce qui lui manque (variables de la configuration absentes),
+# l'erreur de validation croisée par famille, la part de pixels « incertaine », et la
+# hauteur dominante non calibrée du producteur.
+declarations_milieu <- function(milieu, vm, conf, couches, mhp, incertaine) {
+  out <- character(0)
+  src <- attr(milieu, "source")
+  out <- c(out, sprintf("Hauteur potentielle apprise sur : %s.",
+                        src %||% paste(vm, collapse = ", ")))
+  absentes <- setdiff(conf$variables_milieu, vm)
+  if (length(absentes) > 0) {
+    out <- c(out, sprintf(paste0("Variables de milieu de la configuration absentes du milieu ",
+                                 "fourni : %s ; non invent\u00e9es."),
+                          paste(absentes, collapse = ", ")))
+  }
+  if (!is.null(mhp)) {
+    r <- unlist(mhp$rmse_cv)
+    out <- c(out, sprintf("RMSE de validation crois\u00e9e de la hauteur potentielle (m) : %s.",
+                          paste(sprintf("famille %s : %s", names(r),
+                                        format(round(r, 2), decimal.mark = ",")), collapse = " ; ")))
+  }
+  if (length(incertaine) > 0) {
+    out <- c(out, sprintf("Hauteur potentielle incertaine sur %s %% des pixels pr\u00e9comptables.",
+                          format(round(100 * mean(incertaine), 1), decimal.mark = ",")))
+  }
+  src_h <- if (!is.null(couches) && all(c("variable", "source") %in% names(couches))) {
+    couches$source[couches$variable == "h_dom"]
+  } else character(0)
+  if (length(src_h) == 1 && grepl("non calibr", src_h)) {
+    out <- c(out, paste0(
+      "h_dom est la hauteur dominante brute du producteur, non calibr\u00e9e : la hauteur ",
+      "potentielle est apprise dans la m\u00eame \u00e9chelle. Le rapport h_dom / h_pot ",
+      "en est peu affect\u00e9 (biais commun) ; la hauteur potentielle en m\u00e8tres ne ",
+      "se compare ni aux courbes de station ni aux quarts de hauteur du GSM sans calibration."))
+  }
+  out
+}
+
 # Variables appelées par les conditions d'une clé.
 variables_cle <- function(cle) {
   unique(unlist(lapply(cle$types, function(t) {
@@ -197,6 +235,12 @@ variables_cle <- function(cle) {
 #' - Si le seuil de gros bois du producteur diffère de `seuils_diametre$bm_gb_cm` de la
 #'   configuration, le drapeau `gb_interim` est levé sur tous les pixels typés et la
 #'   fiche le déclare.
+#' - Avec `milieu`, la fiche dit ce que voit la hauteur potentielle (attribut `source`),
+#'   les variables de milieu de la configuration absentes (jamais inventées), la RMSE de
+#'   validation croisée par famille, la part de pixels « incertaine » et, si le
+#'   producteur la déclare non calibrée, ce qu'implique une hauteur dominante brute.
+#' - Jeu sans bloc `jeux` dans la configuration : la fiche le déclare (souplesses de la
+#'   clé).
 #' - Sans `milieu`, la hauteur potentielle est vide et signalée partout
 #'   (`hp_incertaine`) ; la clé s'en tient alors aux autres variables.
 #' - Une clé vide (SER sans typologie sourcée) arrête la chaîne : aucune carte de types
@@ -207,9 +251,10 @@ variables_cle <- function(cle) {
 #'   neutralise ses conditions), et facultativement `x`, `y`, `famille`, `typo_etage`,
 #'   `non_precomptable`, `part_pb_absente`.
 #' @param conf Configuration effective d'une SER ([lire_configuration()]).
-#' @param milieu data.frame des `variables_milieu` de la configuration, une ligne par
-#'   ligne de `variables` ; `NULL` : hauteur potentielle vide.
-#'
+#' @param milieu data.frame des variables de milieu, une ligne par ligne de `variables` ;
+#'   ses colonnes utilisées sont celles de son attribut `variables_milieu` (posé par
+#'   [milieu_pixels()]), sinon les `variables_milieu` de la configuration ; `NULL` :
+#'   hauteur potentielle vide.
 #' @return Objet `typo_resultat` : `carte`, `fiche_validation` (sans placette ni grappe,
 #'   avec `controle` et `declarations`), `niveau_modele` (`"producteur"`), `ser`, `cle`
 #'   (souplesses du jeu comprises), `temps` (`etage`, `secondes`, `pixels`), `gabarit`.
@@ -240,6 +285,11 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
   jeux <- if (!is.null(couches) && "jeu" %in% names(couches)) unique(stats::na.omit(couches$jeu)) else character(0)
   utilisees <- variables_cle(cle)
   for (jeu in jeux) {
+    if (is.null(conf$jeux[[jeu]])) {
+      declarations <- c(declarations, sprintf(
+        "Jeu %s : souplesses de la cl\u00e9, faute de bloc jeux.", jeu))
+      next
+    }
     sou <- conf$jeux[[jeu]]$souplesse
     for (v in names(sou)) {
       cle$souplesse[[v]] <- as.numeric(sou[[v]])
@@ -277,25 +327,44 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
       format(seuil_prod, decimal.mark = ","), format(as.numeric(seuil_conf), decimal.mark = ",")))
   }
 
-  # 1. Hauteur potentielle.
+  # 1. Hauteur potentielle. Les variables de milieu sont celles que porte `milieu`
+  # (attribut `variables_milieu`, par exemple le relief de milieu_pixels()), sinon celles
+  # de la configuration.
+  vm <- if (is.null(milieu)) conf$variables_milieu else attr(milieu, "variables_milieu") %||% conf$variables_milieu
+  mhp <- NULL
   hp <- chronometrer(chrono, "hauteur_potentielle", n, {
     if (is.null(milieu)) {
       data.frame(h_pot = rep(NA_real_, n), h_pot_sd = NA_real_, rapport_h = NA_real_,
                  hp_incertaine = TRUE)
     } else {
       if (nrow(milieu) != n) arreter("milieu doit avoir une ligne par ligne de variables")
-      verifier_colonnes(milieu, conf$variables_milieu, "le milieu")
-      df <- cbind(as.data.frame(variables)[, setdiff(names(variables), conf$variables_milieu),
-                                           drop = FALSE],
-                  as.data.frame(milieu)[, conf$variables_milieu, drop = FALSE])
-      mhp <- modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf)
-      predire_hauteur_potentielle(mhp, df)
+      verifier_colonnes(milieu, vm, "le milieu")
+      df <- cbind(as.data.frame(variables)[, setdiff(names(variables), vm), drop = FALSE],
+                  as.data.frame(milieu)[, vm, drop = FALSE])
+      # Trop peu d'adultes fermés dans l'emprise : pas de modèle, hauteur potentielle
+      # vide et signalée partout (dit dans la fiche), plutôt qu'une hauteur sans appui.
+      mhp <- tryCatch(modele_hp_depuis_conf(df[!non_prec, , drop = FALSE], conf, vm),
+                      typo_erreur = function(e) {
+                        if (!grepl("trop peu de peuplements adultes", conditionMessage(e))) stop(e)
+                        NULL
+                      })
+      if (is.null(mhp)) {
+        data.frame(h_pot = rep(NA_real_, n), h_pot_sd = NA_real_, rapport_h = NA_real_,
+                   hp_incertaine = TRUE)
+      } else predire_hauteur_potentielle(mhp, df)
     }
   })
   if (is.null(milieu)) {
     declarations <- c(declarations, paste0(
       "Hauteur potentielle vide et signal\u00e9e partout (milieu non fourni) : ",
       "rapport_h neutralis\u00e9 dans la cl\u00e9."))
+  } else if (is.null(mhp)) {
+    declarations <- c(declarations, paste0(
+      "Hauteur potentielle vide et signal\u00e9e partout (trop peu de peuplements adultes ",
+      "ferm\u00e9s dans l'emprise pour l'apprendre) : rapport_h neutralis\u00e9 dans la cl\u00e9."))
+  } else {
+    declarations <- c(declarations, declarations_milieu(milieu, vm, conf, couches, mhp,
+                                                        hp$hp_incertaine[!non_prec]))
   }
 
   # 2. Clé floue sur les pixels précomptables.
@@ -368,7 +437,7 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
       carte = carte,
       fiche_validation = fiche,
       erreurs_variables = NULL,
-      rmse_hauteur_potentielle = NULL,
+      rmse_hauteur_potentielle = if (is.null(mhp)) NULL else unlist(mhp$rmse_cv),
       types_observes = NULL,
       niveau_modele = "producteur",
       ser = ser,

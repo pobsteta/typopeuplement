@@ -82,7 +82,7 @@ test_that("critere 4 : les deux cotes de la limite voient la meme chose", {
   expect_equal(cote1$A, 0.45, tolerance = 1e-12)
 })
 
-test_that("critere 4 : le poids est continu et monotone, et nul de bande donne un poids de 1", {
+test_that("critere 4 : le poids est continu et monotone, et une largeur de bande nulle est refusee", {
   d <- seq(-800, 800, by = 50)
   w <- poids_transition(d, 500)
   expect_true(all(diff(w) >= -1e-12))

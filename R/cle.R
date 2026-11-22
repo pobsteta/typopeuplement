@@ -140,8 +140,15 @@ appartenances_types <- function(cle, variables) {
 #' une variable manquante (chacun porte une condition sur une variable inconnue de la
 #' ligne), on ne choisit pas le premier de la clé : `type` est le groupe des types
 #' possibles, codes réunis par `" | "` (par exemple `"R-PB-J | R-PB-C"`), dans l'ordre de
-#' la clé, et `entre_deux` est levé. Le second type est alors le meilleur type hors du
-#' groupe. Sans `touche_na`, le comportement est celui de toujours.
+#' la clé, et `entre_deux` est levé. La probabilité du groupe (`proba`) est la somme des
+#' probabilités de ses membres (décision du 2026-11-22). Le second type est alors le
+#' meilleur type hors du groupe. Sans `touche_na`, le comportement est celui de toujours.
+#'
+#' **Limite : `touche_na` est lu au pixel.** Il dit quelles variables manquent au pixel
+#' lui-même, alors que les probabilités ont pu être lissées avec celles des voisins
+#' ([lisser_probabilites()]). En bordure d'une zone sans milieu (par exemple sans
+#' hauteur potentielle), un pixel dont la variable est connue peut donc prendre un type
+#' franc alors que ses voisins forment un groupe, et inversement.
 #'
 #' @param probas data.frame ou matrice de probabilités, une colonne par code de type.
 #' @param marge_entre_deux Marge « entre deux types ». **Provisoire** : 0,15, reprise du
@@ -181,6 +188,10 @@ decider_type <- function(probas, marge_entre_deux = 0.15, touche_na = NULL) {
     if (any(groupe)) {
       type[groupe] <- vapply(which(groupe), function(r) paste(codes[ex_aequo[r, ]], collapse = " | "),
                              character(1))
+      # Probabilité d'un groupe : somme des probabilités de ses membres.
+      pg <- p
+      pg[!ex_aequo | is.na(pg)] <- 0
+      p1[groupe] <- rowSums(pg)[groupe]
     }
   }
   if (ncol(p) > 1) {

@@ -48,7 +48,9 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
          modeles = list(), rmse_cv = list(), facteur = list()),
     class = "typo_hauteur_potentielle"
   )
-  adultes <- df[peuplements_adultes(modele, df), , drop = FALSE]
+  # Adultes fermés au milieu connu : une ligne sans milieu n'apprend rien.
+  complet <- stats::complete.cases(as.data.frame(df)[, variables_milieu, drop = FALSE])
+  adultes <- df[peuplements_adultes(modele, df) & complet, , drop = FALSE]
   fam <- if (famille %in% names(adultes)) as.character(adultes[[famille]]) else
     rep("toutes", nrow(adultes))
   for (nom in sort(unique(fam), method = "radix")) {
@@ -76,7 +78,8 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
 #' Peuplements adultes fermés
 #'
 #' Masque des lignes retenues pour apprendre la hauteur potentielle :
-#' `couvert >= couvert_min` et `h_dom >= hauteur_min_m` (seuils du modèle).
+#' `couvert >= couvert_min` et `h_dom >= hauteur_min_m` (seuils du modèle). Une ligne
+#' où le couvert ou la hauteur manque n'est pas adulte (`FALSE`, jamais `NA`).
 #'
 #' @param modele Objet rendu par [ajuster_hauteur_potentielle()] (ou toute liste portant
 #'   `couvert_min` et `hauteur_min_m`).
@@ -84,7 +87,7 @@ ajuster_hauteur_potentielle <- function(df, variables_milieu, couvert_min = 0.7,
 #' @return Vecteur logique.
 #' @export
 peuplements_adultes <- function(modele, df) {
-  as.vector(df$couvert >= modele$couvert_min & df$h_dom >= modele$hauteur_min_m)
+  as.vector(df$couvert >= modele$couvert_min & df$h_dom >= modele$hauteur_min_m) %in% TRUE
 }
 
 #' Prédire la hauteur potentielle et le rapport des hauteurs
@@ -93,13 +96,18 @@ peuplements_adultes <- function(modele, df) {
 #' incertitude (dispersion des arbres et erreur de validation croisée), et le rapport
 #' hauteur dominante mesurée / hauteur potentielle. Là où l'incertitude relative dépasse
 #' `incertitude_relative_max`, le rapport est vide (`NA`) et `hp_incertaine` est vrai :
-#' la clé s'en tient alors à la hauteur mesurée.
+#' la clé s'en tient alors à la hauteur mesurée. Là où une variable de milieu manque
+#' (pixel hors du MNT), `h_pot` et `h_pot_sd` sont vides et `hp_incertaine` est vrai.
+#'
+#' La prédiction se fait par paquets de `taille_paquet` lignes, pour borner la mémoire
+#' (une valeur par arbre et par ligne).
 #'
 #' @param modele Objet rendu par [ajuster_hauteur_potentielle()].
 #' @param df data.frame : variables de milieu, `h_dom`, et la colonne de famille si elle existe.
+#' @param taille_paquet Nombre de lignes prédites à la fois. **Provisoire** : 20 000.
 #' @return data.frame : `h_pot` (m), `h_pot_sd` (m), `rapport_h`, `hp_incertaine`.
 #' @export
-predire_hauteur_potentielle <- function(modele, df) {
+predire_hauteur_potentielle <- function(modele, df, taille_paquet = 20000L) {
   verifier_colonnes(df, c("h_dom", modele$variables_milieu), "la table \u00e0 pr\u00e9dire")
   n <- nrow(df)
   hp <- rep(NA_real_, n)
@@ -111,18 +119,22 @@ predire_hauteur_potentielle <- function(modele, df) {
     m <- modele$modeles[[cle]]
     rmse <- modele$rmse_cv[[cle]]
     k <- modele$facteur[[cle]]
-    idx <- which(fam == nom)
-    X <- matrice_num(df[idx, , drop = FALSE], modele$variables_milieu)
-    par_arbre <- k * stats::predict(m, data = as.data.frame(X), predict.all = TRUE,
-                                    num.threads = 1)$predictions
-    par_arbre <- matrix(par_arbre, nrow = length(idx))
-    moy <- rowMeans(par_arbre)
-    # Écart-type de population (comme numpy), puis erreur de validation croisée.
-    sd_arbres <- sqrt(rowMeans((par_arbre - moy)^2))
-    hp[idx] <- moy
-    sd[idx] <- sqrt(sd_arbres^2 + (k * rmse)^2)
+    complet <- stats::complete.cases(as.data.frame(df)[, modele$variables_milieu, drop = FALSE])
+    idx <- which(fam == nom & complet)
+    for (debut in seq.int(1L, by = taille_paquet, length.out = ceiling(length(idx) / taille_paquet))) {
+      ix <- idx[debut:min(length(idx), debut + taille_paquet - 1L)]
+      X <- matrice_num(df[ix, , drop = FALSE], modele$variables_milieu)
+      par_arbre <- k * stats::predict(m, data = as.data.frame(X), predict.all = TRUE,
+                                      num.threads = 1)$predictions
+      par_arbre <- matrix(par_arbre, nrow = length(ix))
+      moy <- rowMeans(par_arbre)
+      # Écart-type de population (comme numpy), puis erreur de validation croisée.
+      sd_arbres <- sqrt(rowMeans((par_arbre - moy)^2))
+      hp[ix] <- moy
+      sd[ix] <- sqrt(sd_arbres^2 + (k * rmse)^2)
+    }
   }
-  incertaine <- (sd / hp) > modele$incertitude_relative_max
+  incertaine <- is.na(hp) | (sd / hp) > modele$incertitude_relative_max
   rapport <- ifelse(incertaine, NA_real_, as.numeric(df$h_dom) / hp)
   data.frame(h_pot = hp, h_pot_sd = sd, rapport_h = rapport, hp_incertaine = incertaine)
 }

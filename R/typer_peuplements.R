@@ -41,8 +41,11 @@
 #' @param variables data.frame de pixels aux variables fournies
 #'   ([lire_parametres_lidar()]) ; `NULL` : mode « pixels préparés ».
 #' @param milieu En mode « variables fournies », data.frame des variables de milieu
-#'   (une ligne par ligne de `variables`) pour la hauteur potentielle ; `NULL` : hauteur
-#'   potentielle vide et signalée partout.
+#'   (une ligne par ligne de `variables`) pour la hauteur potentielle, par exemple le
+#'   relief tiré du MNT de l'IGN ([milieu_pixels()]) ; ses attributs `variables_milieu`
+#'   et `source` disent ce que voit la hauteur potentielle (sinon les
+#'   `variables_milieu` de la configuration) ; `NULL` : hauteur potentielle vide et
+#'   signalée partout.
 #'
 #' @return Objet `typo_resultat` (voir [executer_chaine()]), invisible si `sortie` est donné.
 #' @examples
@@ -62,7 +65,11 @@ typer_peuplements <- function(aoi, placettes = NULL, ser = NULL, configuration, 
     if (!is.null(aoi)) {
       garde <- pixels_dans_aoi(variables, aoi)
       variables <- garder_lignes(variables, garde)
-      if (!is.null(milieu)) milieu <- milieu[garde, , drop = FALSE]
+      if (!is.null(milieu)) {
+        a <- attributes(milieu)[c("variables_milieu", "source")]
+        milieu <- milieu[garde, , drop = FALSE]
+        for (k in names(a)) if (!is.null(a[[k]])) attr(milieu, k) <- a[[k]]
+      }
     }
     res <- executer_chaine_fournie(variables, conf, milieu)
     if (!is.null(sortie)) {

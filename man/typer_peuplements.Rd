@@ -34,8 +34,11 @@ n'est écrit.}
 (\code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}) ; \code{NULL} : mode « pixels préparés ».}
 
 \item{milieu}{En mode « variables fournies », data.frame des variables de milieu
-(une ligne par ligne de \code{variables}) pour la hauteur potentielle ; \code{NULL} : hauteur
-potentielle vide et signalée partout.}
+(une ligne par ligne de \code{variables}) pour la hauteur potentielle, par exemple le
+relief tiré du MNT de l'IGN (\code{\link[=milieu_pixels]{milieu_pixels()}}) ; ses attributs \code{variables_milieu}
+et \code{source} disent ce que voit la hauteur potentielle (sinon les
+\code{variables_milieu} de la configuration) ; \code{NULL} : hauteur potentielle vide et
+signalée partout.}
 }
 \value{
 Objet \code{typo_resultat} (voir \code{\link[=executer_chaine]{executer_chaine()}}), invisible si \code{sortie} est donné.

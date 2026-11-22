@@ -14,8 +14,10 @@ neutralise ses conditions), et facultativement \code{x}, \code{y}, \code{famille
 
 \item{conf}{Configuration effective d'une SER (\code{\link[=lire_configuration]{lire_configuration()}}).}
 
-\item{milieu}{data.frame des \code{variables_milieu} de la configuration, une ligne par
-ligne de \code{variables} ; \code{NULL} : hauteur potentielle vide.}
+\item{milieu}{data.frame des variables de milieu, une ligne par ligne de \code{variables} ;
+ses colonnes utilisées sont celles de son attribut \code{variables_milieu} (posé par
+\code{\link[=milieu_pixels]{milieu_pixels()}}), sinon les \code{variables_milieu} de la configuration ; \code{NULL} :
+hauteur potentielle vide.}
 }
 \value{
 Objet \code{typo_resultat} : \code{carte}, \code{fiche_validation} (sans placette ni grappe,
@@ -47,6 +49,12 @@ groupes.
 \item Si le seuil de gros bois du producteur diffère de \code{seuils_diametre$bm_gb_cm} de la
 configuration, le drapeau \code{gb_interim} est levé sur tous les pixels typés et la
 fiche le déclare.
+\item Avec \code{milieu}, la fiche dit ce que voit la hauteur potentielle (attribut \code{source}),
+les variables de milieu de la configuration absentes (jamais inventées), la RMSE de
+validation croisée par famille, la part de pixels « incertaine » et, si le
+producteur la déclare non calibrée, ce qu'implique une hauteur dominante brute.
+\item Jeu sans bloc \code{jeux} dans la configuration : la fiche le déclare (souplesses de la
+clé).
 \item Sans \code{milieu}, la hauteur potentielle est vide et signalée partout
 (\code{hp_incertaine}) ; la clé s'en tient alors aux autres variables.
 \item Une clé vide (SER sans typologie sourcée) arrête la chaîne : aucune carte de types
