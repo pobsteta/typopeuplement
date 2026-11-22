@@ -79,3 +79,5 @@ Pascal va voir les 3 pixels nommés à Léoncel.
 3. Mineur : arrondir la résolution du MNT dans `R/milieu.R`, pour que `terra::focalMat` ne
    juge plus les pixels « non carrés ». Le périmètre s'étend à `R/milieu.R` pour ce seul point.
 4. Mineur : le nombre de tests sautés rapporté exactement.
+
+Note (2026-11-22) : le périmètre s'est étendu à `R/lissage.R` pour le poids nul demandé à l'aller-retour 1/3.
