@@ -15,6 +15,11 @@
 
 ## Validé
 
+- [005-typologie-h10](missions/005-typologie-h10.md) · depuis le cycle 1
+  - Homme : `acquereur` (sonnet) · Mission : typologie locale de H10, sourcée · Moyens : jeu Vercors, guides, SRGS
+- [006-lecture-vercors](missions/006-lecture-vercors.md) · depuis le cycle 1
+  - Homme : `dev` (opus) · Mission : première carte réelle sur l'AOI · Moyens : CRAIG, terra, plan d'abord
+
 ## Planifié
 
 ## Terminé
