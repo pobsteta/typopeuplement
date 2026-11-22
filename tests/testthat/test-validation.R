@@ -130,7 +130,8 @@ test_that("critere 6 : la chaine rend precision et kappa a la placette et a la g
   # Valeurs de references_prototype.csv (jeu 30 x 30, 200 placettes, graine 1) :
   #   placette 0,84 (kappa 0,79), grappe 0,80 (kappa 0,73), 94 grappes.
   # Les forets aleatoires de ranger et de scikit-learn ne tirent pas les memes arbres : tolerances fixees par
-  # le testeur, a valider par Pascal : precision +- 0,10, kappa +- 0,15 (placette) ou +- 0,15 (grappe).
+  # le testeur, a valider par Pascal : precision +- 0,10 a la placette et +- 0,12 a la grappe (94 grappes
+  # seulement, donc plus de dispersion), kappa +- 0,15 aux deux echelles.
   ref <- references_prototype()
   f <- resultat_chaine()$fiche_validation
   expect_equal(f$placette$n, ref[["placette_n"]])

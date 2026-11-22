@@ -54,8 +54,10 @@ test_that("critere 3 : la carte de confiance dit le niveau de modele utilise (je
   res <- resultat_chaine()
   expect_identical(res$niveau_modele, "grande_region")
   obs <- table(factor(res$types_observes, levels = c("F", "M", "R-PB-J", "R-PB-C", "R-GB", "R-IRR")))
-  expect_equal(as.integer(obs[["R-PB-J"]]), 16L)
-  expect_equal(as.integer(obs[["R-PB-C"]]), 0L)
+  # Le partage observe entre R-PB-J et R-PB-C depend de rapport_h, donc des forets aleatoires (ranger contre
+  # scikit-learn) : meme tolerance que test-chaine.R, 4 placettes d'ecart par type.
+  expect_lte(abs(as.integer(obs[["R-PB-J"]]) - 16L), 4, label = "effectif observe R-PB-J")
+  expect_lte(abs(as.integer(obs[["R-PB-C"]]) - 0L), 4, label = "effectif observe R-PB-C")
 })
 
 test_that("critere 4 : sur la limite de SER, les deux modeles pesent chacun pour moitie", {

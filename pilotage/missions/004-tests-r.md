@@ -6,7 +6,9 @@
 d'acceptation 1 à 6 de la spec, à partir des tests Python, pour que le portage (003) ait
 un juge avant d'être écrit.
 
-**Redite par l'agent :** _à compléter par l'agent avant d'agir._
+**Redite par l'agent :** écrire en testthat les tests des critères d'acceptation 1 à 6 (un test nommé par critère, un équivalent par test Python, le décompte de `ser_codes.csv`), à partir de la spec et des noms de fonctions du plan 003, sans lire `R/`, pour que le portage ait un juge avant d'être écrit.
+
+_Aller-retour 1/3 : tolérances sur les effectifs dépendant des forêts aléatoires (R-PB-J, R-PB-C : ±4), précision à la grappe ±0,12 (commentaire accordé), redite complétée._
 
 ## Les trois questions
 
