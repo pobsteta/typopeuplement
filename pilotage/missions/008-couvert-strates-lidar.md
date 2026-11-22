@@ -68,3 +68,24 @@ Rappels :
 - la hauteur potentielle n'est pas calibrée (H0_lidar brute) ;
 - les strates du GSM sont des quarts de H0 potentielle. Le plan dit comment il traite
   cette échelle : sur une hauteur relative, ou en mètres avec réserve.
+
+## Plan validé par délégation (2026-11-22)
+
+Le plan rendu par le dev est résumé au journal ; ses décisions sont les suivantes.
+
+1. **Périmètre élargi** : `R/hauteur_potentielle.R`, `R/modeles.R`, `R/chaine.R` (mineurs de
+   009), `README.md` (lasR et GDAL).
+2. **Référence des strates non gelée.** `c1` à `c4` sont calculés pour trois références :
+   `h_pot` avec k (par défaut, provisoire, fidèle au GSM), `h_pot` sans k, et la H0 du pixel.
+   Le choix se fera sur Léoncel, sur la mesure et sur le terrain.
+3. **Méthode de calcul du couvert** : strate 1 par la part des premiers retours ; strates 2
+   à 4 corrigées de l'occlusion.
+4. **Contrôle contre `Tx_couv`** : la corrélation mesurée est rapportée, sans seuil inventé
+   et sans contact avec l'ONF.
+5. **Calcul sur Léoncel seulement** (22 dalles), une dalle à la fois, supprimée après
+   calcul et gardée hors du dépôt. Le massif attend une décision de Pascal.
+6. **lasR** en Suggests, avec `Additional_repositories` vers r-universe ; les tests qui en
+   dépendent sont sautés s'il est absent.
+
+Le dev rend les couverts de Léoncel pour les trois références, avec la distribution de
+chaque strate, la corrélation avec `Tx_couv` et le tableau croisé avec `Typo_etage`.
