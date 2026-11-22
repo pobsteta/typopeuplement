@@ -19,6 +19,15 @@ data.frame à une colonne par code de type, avec l'attribut logique \code{hors_c
 Pour chaque ligne de \code{variables}, probabilité d'appartenir à chaque type de la clé
 (les probabilités d'une ligne somment à 1). Une ligne qui ne satisfait aucun type
 (hors clé) reçoit des probabilités égales et est signalée dans l'attribut \code{hors_cle}.
+L'attribut \code{touche_na} (matrice logique lignes x types) dit quels types portent une
+condition sur une variable inconnue de la ligne (voir \code{\link[=decider_type]{decider_type()}}).
+}
+\details{
+Un type est défini par des \code{conditions} reliées par « et » (produit) et, facultatif,
+par des \code{alternatives} : plusieurs jeux de conditions reliés par « ou ». L'appartenance
+d'un type est le produit de ses \code{conditions} par le \strong{maximum} des produits de ses
+alternatives. Une clé sans \code{alternatives} se lit comme avant. Format JSON : voir
+\code{\link[=lire_configuration]{lire_configuration()}}.
 }
 \seealso{
 \code{\link[=classer_types]{classer_types()}}, \code{\link[=decider_type]{decider_type()}}

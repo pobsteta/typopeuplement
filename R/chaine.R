@@ -168,7 +168,7 @@ chronometrer <- function(env, etage, pixels, expr) {
 # Variables appelées par les conditions d'une clé.
 variables_cle <- function(cle) {
   unique(unlist(lapply(cle$types, function(t) {
-    vapply(t$conditions, function(cd) as.character(cd$variable), character(1))
+    variables_type(t)
   })))
 }
 
@@ -186,9 +186,14 @@ variables_cle <- function(cle) {
 #' [ecrire_livrables()].
 #'
 #' - Les pixels `non_precomptable` ne sont pas typés (type vide).
-#' - Les souplesses de la table de branchement (attribut `couches`, voir [couches_onf()])
-#'   remplacent celles de la configuration pour leurs variables : réglage du jeu, dit
-#'   dans la fiche.
+#' - Les souplesses du jeu (bloc `jeux.<jeu>.souplesse` de la configuration, le jeu étant
+#'   nommé par la colonne `jeu` de l'attribut `couches`, voir [couches_onf()]) remplacent
+#'   celles de la clé pour leurs variables : réglage du jeu, dit dans la fiche pour les
+#'   variables que la clé utilise.
+#' - Variable absente : quand les types de tête ne se départagent que par une variable
+#'   manquante, `type` est le groupe de ces types (`"R-PB-J | R-PB-C"`, voir
+#'   [decider_type()]) et `entre_deux` est levé ; `correspondance_types.csv` liste les
+#'   groupes.
 #' - Si le seuil de gros bois du producteur diffère de `seuils_diametre$bm_gb_cm` de la
 #'   configuration, le drapeau `gb_interim` est levé sur tous les pixels typés et la
 #'   fiche le déclare.
@@ -230,12 +235,20 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
   couches <- attr(variables, "couches")
   declarations <- character(0)
 
-  # Souplesses du jeu (erreurs du producteur), à la place de celles de la configuration.
-  if (!is.null(couches) && "souplesse" %in% names(couches)) {
-    for (k in which(!is.na(couches$souplesse))) {
-      cle$souplesse[[couches$variable[k]]] <- couches$souplesse[k]
-      declarations <- c(declarations, sprintf("Souplesse de %s : %s (%s).", couches$variable[k],
-                                              format(couches$souplesse[k], decimal.mark = ","), couches$source[k]))
+  # Souplesses du jeu (erreurs du producteur), à la place de celles de la clé : elles
+  # viennent du bloc `jeux` de la configuration, jamais du code.
+  jeux <- if (!is.null(couches) && "jeu" %in% names(couches)) unique(stats::na.omit(couches$jeu)) else character(0)
+  utilisees <- variables_cle(cle)
+  for (jeu in jeux) {
+    sou <- conf$jeux[[jeu]]$souplesse
+    for (v in names(sou)) {
+      cle$souplesse[[v]] <- as.numeric(sou[[v]])
+      # Une souplesse d'une variable que la clé n'utilise pas n'est pas déclarée.
+      if (v %in% utilisees) {
+        source <- conf$jeux[[jeu]]$source %||% paste0("jeu ", jeu)
+        declarations <- c(declarations, sprintf("Souplesse de %s : %s (%s).", v,
+                                                format(as.numeric(sou[[v]]), decimal.mark = ","), source))
+      }
     }
   }
 
@@ -295,7 +308,9 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
     appartenances_types(cle, entree)
   })
   hors_cle <- attr(probas, "hors_cle")
+  touche_na <- attr(probas, "touche_na")
   attr(probas, "hors_cle") <- NULL
+  attr(probas, "touche_na") <- NULL
 
   # 3. Lissage à l'échelle de lecture.
   probas <- chronometrer(chrono, "lissage", length(ok), {
@@ -304,7 +319,8 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL) {
 
   # 4. Décision et assemblage de la carte (une ligne par pixel, vide hors précomptable).
   carte <- chronometrer(chrono, "decision", length(ok), {
-    dec <- decider_type(probas, as.numeric(cle$marge_entre_deux %||% 0.15))
+    # Variable absente : les types qui ne se départagent que par elle forment un groupe.
+    dec <- decider_type(probas, as.numeric(cle$marge_entre_deux %||% 0.15), touche_na = touche_na)
     codes <- names(probas)
     tout <- data.frame(type = rep(NA_character_, n), proba = NA_real_,
                        type_second = NA_character_, proba_second = NA_real_,

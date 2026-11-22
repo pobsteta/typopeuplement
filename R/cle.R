@@ -5,6 +5,16 @@
 # sigmoïdes dont la pente est réglée par une « souplesse » propre à la variable. Quand la
 # souplesse est nulle, on retrouve exactement la clé à seuils durs. Une variable inconnue
 # (NA) neutralise la condition qui la porte.
+#
+# Disjonctions (« ou »). Un type peut porter, à côté de `conditions` (reliées par « et »,
+# produit), une liste `alternatives` : plusieurs jeux de conditions reliés par « ou ».
+# En JSON : "alternatives": [[cond, cond], [cond]] ; chaque jeu est un tableau de
+# conditions {"variable", "min", "max"}. L'appartenance d'un type est
+#   produit(conditions) x max(sur les alternatives : produit(conditions du jeu)).
+# Le « ou » est le maximum (clé floue) ; le « et » reste le produit de sigmoïdes
+# (choix provisoire, à juger sur la carte de H10). Un type sans `alternatives` se lit
+# exactement comme avant ; un type peut n'avoir que des `alternatives`. Avec une
+# souplesse nulle, le « ou » devient un vrai « ou » de la clé dure.
 
 sigmoide <- function(x) 0.5 * (1 + tanh(0.5 * x))
 
@@ -23,6 +33,31 @@ appartenance_condition <- function(v, cond, s) {
   ifelse(is.na(v), 1, m)
 }
 
+# Conditions « et » d'un type, puis ses jeux « ou » (liste de listes de conditions).
+alternatives_type <- function(type) {
+  alts <- type$alternatives
+  if (length(alts) == 0) return(list())
+  if (!is.list(alts) || !is.null(names(alts))) {
+    arreter(sprintf("type %s : `alternatives` doit \u00eatre une liste de jeux de conditions",
+                    as.character(type$code)))
+  }
+  for (a in alts) {
+    if (!is.list(a) || !is.null(names(a)) || length(a) == 0 ||
+        !all(vapply(a, function(cd) is.list(cd) && !is.null(cd$variable), logical(1)))) {
+      arreter(sprintf(paste0("type %s : chaque alternative doit \u00eatre un tableau non vide ",
+                             "de conditions {\"variable\", \"min\", \"max\"}"),
+                      as.character(type$code)))
+    }
+  }
+  alts
+}
+
+# Toutes les variables citées par un type (conditions et alternatives).
+variables_type <- function(type) {
+  conds <- c(type$conditions, unlist(alternatives_type(type), recursive = FALSE))
+  unique(vapply(conds, function(cd) as.character(cd$variable), character(1)))
+}
+
 codes_cle <- function(cle) vapply(cle$types, function(t) as.character(t$code), character(1))
 
 libelles_cle <- function(cle) {
@@ -34,6 +69,14 @@ libelles_cle <- function(cle) {
 #' Pour chaque ligne de `variables`, probabilité d'appartenir à chaque type de la clé
 #' (les probabilités d'une ligne somment à 1). Une ligne qui ne satisfait aucun type
 #' (hors clé) reçoit des probabilités égales et est signalée dans l'attribut `hors_cle`.
+#' L'attribut `touche_na` (matrice logique lignes x types) dit quels types portent une
+#' condition sur une variable inconnue de la ligne (voir [decider_type()]).
+#'
+#' Un type est défini par des `conditions` reliées par « et » (produit) et, facultatif,
+#' par des `alternatives` : plusieurs jeux de conditions reliés par « ou ». L'appartenance
+#' d'un type est le produit de ses `conditions` par le **maximum** des produits de ses
+#' alternatives. Une clé sans `alternatives` se lit comme avant. Format JSON : voir
+#' [lire_configuration()].
 #'
 #' @param cle La clé d'une SER, telle que la rend `lire_configuration(...)$cle`.
 #' @param variables data.frame des variables de la clé (une ligne par pixel ou placette).
@@ -47,14 +90,28 @@ appartenances_types <- function(cle, variables) {
   types <- cle$types
   codes <- codes_cle(cle)
   scores <- matrix(1, nrow = n, ncol = length(types))
-  for (k in seq_along(types)) {
-    for (cond in types[[k]]$conditions) {
+  touche_na <- matrix(FALSE, nrow = n, ncol = length(types))
+  produit <- function(conds) {
+    m <- rep(1, n)
+    for (cond in conds) {
       if (!(cond$variable %in% names(variables))) {
         arreter(sprintf("variable absente pour la cl\u00e9 : %s", cond$variable))
       }
       v <- as.numeric(variables[[cond$variable]])
       s <- as.numeric(cle$souplesse[[cond$variable]] %||% 0)
-      scores[, k] <- scores[, k] * appartenance_condition(v, cond, s)
+      m <- m * appartenance_condition(v, cond, s)
+    }
+    m
+  }
+  for (k in seq_along(types)) {
+    scores[, k] <- produit(types[[k]]$conditions)
+    alts <- alternatives_type(types[[k]])
+    if (length(alts) > 0) {
+      ou <- do.call(pmax, lapply(alts, produit))
+      scores[, k] <- scores[, k] * ou
+    }
+    for (nom in variables_type(types[[k]])) {
+      touche_na[, k] <- touche_na[, k] | is.na(as.numeric(variables[[nom]]))
     }
   }
   total <- rowSums(scores)
@@ -64,6 +121,8 @@ appartenances_types <- function(cle, variables) {
   out <- as.data.frame(probas)
   names(out) <- codes
   attr(out, "hors_cle") <- hors_cle
+  colnames(touche_na) <- codes
+  attr(out, "touche_na") <- touche_na
   out
 }
 
@@ -73,13 +132,27 @@ appartenances_types <- function(cle, variables) {
 #' « entre deux types » : levé quand l'écart entre les deux premières probabilités est
 #' inférieur à `marge_entre_deux`.
 #'
+#' Les probabilités ne contiennent pas de `NA` (la clé n'en produit pas) ; si une valeur
+#' manque, elle est traitée comme la plus faible. À égalité, le premier type de la clé.
+#'
+#' **Groupe de types.** Avec `touche_na` (attribut du même nom rendu par
+#' [appartenances_types()]), quand les types à égalité de tête ne se départagent que par
+#' une variable manquante (chacun porte une condition sur une variable inconnue de la
+#' ligne), on ne choisit pas le premier de la clé : `type` est le groupe des types
+#' possibles, codes réunis par `" | "` (par exemple `"R-PB-J | R-PB-C"`), dans l'ordre de
+#' la clé, et `entre_deux` est levé. Le second type est alors le meilleur type hors du
+#' groupe. Sans `touche_na`, le comportement est celui de toujours.
+#'
 #' @param probas data.frame ou matrice de probabilités, une colonne par code de type.
 #' @param marge_entre_deux Marge « entre deux types ». **Provisoire** : 0,15, reprise du
 #'   prototype ; à mesurer sur les SER pilotes.
+#' @param touche_na Matrice logique (une ligne par ligne de `probas`, une colonne par
+#'   type) des types qui portent une condition sur une variable manquante ; `NULL` : pas
+#'   de groupe.
 #'
 #' @return data.frame : `type`, `proba`, `type_second`, `proba_second`, `entre_deux`.
 #' @export
-decider_type <- function(probas, marge_entre_deux = 0.15) {
+decider_type <- function(probas, marge_entre_deux = 0.15, touche_na = NULL) {
   p <- as.matrix(probas)
   storage.mode(p) <- "double"
   codes <- colnames(p)
@@ -93,22 +166,42 @@ decider_type <- function(probas, marge_entre_deux = 0.15) {
   lignes <- seq_len(n)
   k1 <- indice_max_ligne(p)
   p1 <- p[cbind(lignes, k1)]
+  type <- codes[k1]
+  groupe <- rep(FALSE, n)
+  retire <- matrix(FALSE, n, ncol(p))
+  retire[cbind(lignes, k1)] <- TRUE
+  if (!is.null(touche_na) && ncol(p) > 1) {
+    tna <- as.matrix(touche_na)
+    if (!identical(dim(tna), dim(p))) arreter("touche_na doit avoir les dimensions de probas")
+    tna <- tna & !is.na(tna)
+    ex_aequo <- !is.na(p) & abs(p - p1) <= 1e-9 & tna & tna[cbind(lignes, k1)]
+    ex_aequo[cbind(lignes, k1)] <- TRUE
+    groupe <- tna[cbind(lignes, k1)] & rowSums(ex_aequo) > 1
+    retire <- retire | (ex_aequo & groupe)
+    if (any(groupe)) {
+      type[groupe] <- vapply(which(groupe), function(r) paste(codes[ex_aequo[r, ]], collapse = " | "),
+                             character(1))
+    }
+  }
   if (ncol(p) > 1) {
     reste <- p
-    reste[cbind(lignes, k1)] <- -Inf
+    reste[retire] <- -Inf
     k2 <- indice_max_ligne(reste)
     p2 <- p[cbind(lignes, k2)]
     second <- codes[k2]
+    vide <- rowSums(!retire) == 0
+    p2[vide] <- 0
+    second[vide] <- NA_character_
   } else {
     p2 <- rep(0, n)
     second <- rep(NA_character_, n)
   }
   data.frame(
-    type = codes[k1],
+    type = type,
     proba = p1,
     type_second = second,
     proba_second = p2,
-    entre_deux = (p1 - p2) < marge_entre_deux,
+    entre_deux = ((p1 - p2) < marge_entre_deux) | groupe,
     stringsAsFactors = FALSE
   )
 }

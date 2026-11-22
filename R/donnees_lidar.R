@@ -28,21 +28,16 @@
 #' `part_gb` ; la chaîne lève le drapeau `gb_interim` quand ce seuil diffère de celui de
 #' la configuration.
 #'
-#' **Souplesses : réglage du jeu Vercors**, tirées des erreurs du producteur (fiche, p. 3,
-#' « Synthèse des corrections de biais à appliquer par contexte »), sans correction de
-#' biais :
-#' - `part_resineux` : 0,10 (« ordre de grandeur de +/- 4 m²/ha et +/- 10 % », p. 3) ;
-#' - `part_gb` : 0,11 (plus forte correction de %GGB du tableau, « -11 % » pour
-#'   G < 11 m²/ha, p. 3) ;
-#' - `G` : 6,7 m²/ha (plus forte correction de G du tableau, « -6.7 » pour G < 11 m²/ha et
-#'   « +6.7 » pour G > 48 m²/ha, p. 3).
-#'
-#' Ces souplesses ne sont pas des paramètres de la SER : elles disent l'erreur de ce jeu.
-#' Elles remplacent celles de la configuration pour ces variables, et la fiche le dit.
+#' **Souplesses : dans la configuration, pas ici.** Les souplesses du jeu (erreurs du
+#' producteur, fiche p. 3) ne sont plus portées par cette table : elles se déclarent dans
+#' le bloc `jeux.vercors_onf.souplesse` de la configuration ([lire_configuration()]), que
+#' la chaîne applique quand les variables viennent de ce jeu (colonne `jeu`). Elles ne
+#' sont pas des paramètres de la SER : elles disent l'erreur de ce jeu. Les valeurs
+#' (EQM de la fiche ONF, p. 1) viennent de la mission 010.
 #'
 #' @return data.frame : `fichier`, `variable`, `facteur` (multiplicateur), `obligatoire`,
-#'   `seuil_cm` (seuil de diamètre du producteur, `NA` sinon), `souplesse` (`NA` si aucune),
-#'   `source`.
+#'   `seuil_cm` (seuil de diamètre du producteur, `NA` sinon), `jeu` (nom du jeu dans le
+#'   bloc `jeux` de la configuration : `"vercors_onf"`), `source`.
 #' @seealso [lire_parametres_lidar()]
 #' @export
 couches_onf <- function() {
@@ -54,12 +49,11 @@ couches_onf <- function() {
     facteur = c(1, 0.01, 0.01, 1, 0.01, 1, 1),
     obligatoire = c(TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE),
     seuil_cm = c(NA, NA, 47.5, NA, NA, NA, NA),
-    souplesse = c(6.7, 0.10, 0.11, NA, NA, NA, NA),
+    jeu = "vercors_onf",
     source = c(
-      paste0(fiche, ", p. 3 : correction de G jusqu'\u00e0 6,7 m\u00b2/ha (r\u00e9glage du jeu Vercors)"),
-      paste0(fiche, ", p. 3 : erreur de %R de l'ordre de 10 % (r\u00e9glage du jeu Vercors)"),
-      paste0(fiche, ", p. 1 : GB \u00e0 47,5 cm ; p. 3 : correction de %GGB jusqu'\u00e0 11 % ",
-             "(r\u00e9glage du jeu Vercors)"),
+      paste0(fiche, ", p. 4 : surface terri\u00e8re en m\u00b2/ha"),
+      paste0(fiche, ", p. 4 : part de r\u00e9sineux en %"),
+      paste0(fiche, ", p. 1 : GB \u00e0 47,5 cm ; p. 4 : part de gros bois en %"),
       paste0(fiche, ", p. 2 : hauteur dominante brute, non calibr\u00e9e"),
       paste0(fiche, ", p. 4 : taux de couvert en %"),
       paste0(fiche, ", p. 4 : 0 non pr\u00e9comptable, 1 feuillus, 2 r\u00e9sineux, 3 m\u00e9lange"),

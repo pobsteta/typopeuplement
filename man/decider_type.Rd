@@ -4,13 +4,17 @@
 \alias{decider_type}
 \title{Décider du type à partir des probabilités}
 \usage{
-decider_type(probas, marge_entre_deux = 0.15)
+decider_type(probas, marge_entre_deux = 0.15, touche_na = NULL)
 }
 \arguments{
 \item{probas}{data.frame ou matrice de probabilités, une colonne par code de type.}
 
 \item{marge_entre_deux}{Marge « entre deux types ». \strong{Provisoire} : 0,15, reprise du
 prototype ; à mesurer sur les SER pilotes.}
+
+\item{touche_na}{Matrice logique (une ligne par ligne de \code{probas}, une colonne par
+type) des types qui portent une condition sur une variable manquante ; \code{NULL} : pas
+de groupe.}
 }
 \value{
 data.frame : \code{type}, \code{proba}, \code{type_second}, \code{proba_second}, \code{entre_deux}.
@@ -19,4 +23,16 @@ data.frame : \code{type}, \code{proba}, \code{type_second}, \code{proba_second},
 Type retenu (plus forte probabilité), sa probabilité, le second type et le drapeau
 « entre deux types » : levé quand l'écart entre les deux premières probabilités est
 inférieur à \code{marge_entre_deux}.
+}
+\details{
+Les probabilités ne contiennent pas de \code{NA} (la clé n'en produit pas) ; si une valeur
+manque, elle est traitée comme la plus faible. À égalité, le premier type de la clé.
+
+\strong{Groupe de types.} Avec \code{touche_na} (attribut du même nom rendu par
+\code{\link[=appartenances_types]{appartenances_types()}}), quand les types à égalité de tête ne se départagent que par
+une variable manquante (chacun porte une condition sur une variable inconnue de la
+ligne), on ne choisit pas le premier de la clé : \code{type} est le groupe des types
+possibles, codes réunis par \code{" | "} (par exemple \code{"R-PB-J | R-PB-C"}), dans l'ordre de
+la clé, et \code{entre_deux} est levé. Le second type est alors le meilleur type hors du
+groupe. Sans \code{touche_na}, le comportement est celui de toujours.
 }

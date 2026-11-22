@@ -8,7 +8,10 @@ Authors@R: c(
 Description: Chaine de traitement qui produit, pour les forets de France
     hexagonale, une carte du type de peuplement (composition, structure,
     capital) calibree par sylvoecoregion. La typologie est descriptive. Chaque
-    carte porte sa couche de confiance. Package compagnon de nemeton.
+    carte porte sa couche de confiance. Package compagnon de nemeton. Version
+    minimale de ranger : 0.15.0, qui introduit le parametre min.bucket (taille
+    minimale des feuilles) utilise par les forets aleatoires (NEWS de ranger,
+    version 0.15.0).
 License: GPL-3
 Encoding: UTF-8
 Depends:

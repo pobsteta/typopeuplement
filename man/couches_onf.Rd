@@ -8,8 +8,8 @@ couches_onf()
 }
 \value{
 data.frame : \code{fichier}, \code{variable}, \code{facteur} (multiplicateur), \code{obligatoire},
-\code{seuil_cm} (seuil de diamètre du producteur, \code{NA} sinon), \code{souplesse} (\code{NA} si aucune),
-\code{source}.
+\code{seuil_cm} (seuil de diamètre du producteur, \code{NA} sinon), \code{jeu} (nom du jeu dans le
+bloc \code{jeux} de la configuration : \code{"vercors_onf"}), \code{source}.
 }
 \description{
 Table de branchement des rasters du producteur sur les variables de la chaîne
@@ -37,19 +37,12 @@ H10 est 42,5 cm (Pascal, 2026-11-22). La colonne \code{seuil_cm} porte 47,5 pour
 \code{part_gb} ; la chaîne lève le drapeau \code{gb_interim} quand ce seuil diffère de celui de
 la configuration.
 
-\strong{Souplesses : réglage du jeu Vercors}, tirées des erreurs du producteur (fiche, p. 3,
-« Synthèse des corrections de biais à appliquer par contexte »), sans correction de
-biais :
-\itemize{
-\item \code{part_resineux} : 0,10 (« ordre de grandeur de +/- 4 m²/ha et +/- 10 \% », p. 3) ;
-\item \code{part_gb} : 0,11 (plus forte correction de \%GGB du tableau, « -11 \% » pour
-G < 11 m²/ha, p. 3) ;
-\item \code{G} : 6,7 m²/ha (plus forte correction de G du tableau, « -6.7 » pour G < 11 m²/ha et
-« +6.7 » pour G > 48 m²/ha, p. 3).
-}
-
-Ces souplesses ne sont pas des paramètres de la SER : elles disent l'erreur de ce jeu.
-Elles remplacent celles de la configuration pour ces variables, et la fiche le dit.
+\strong{Souplesses : dans la configuration, pas ici.} Les souplesses du jeu (erreurs du
+producteur, fiche p. 3) ne sont plus portées par cette table : elles se déclarent dans
+le bloc \code{jeux.vercors_onf.souplesse} de la configuration (\code{\link[=lire_configuration]{lire_configuration()}}), que
+la chaîne applique quand les variables viennent de ce jeu (colonne \code{jeu}). Elles ne
+sont pas des paramètres de la SER : elles disent l'erreur de ce jeu. Les valeurs
+(EQM de la fiche ONF, p. 1) viennent de la mission 010.
 }
 \seealso{
 \code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}

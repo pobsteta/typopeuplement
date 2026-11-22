@@ -4,15 +4,19 @@
 \alias{correspondance_types}
 \title{Table de correspondance des types}
 \usage{
-correspondance_types(cle)
+correspondance_types(cle, types = NULL)
 }
 \arguments{
 \item{cle}{La clé d'une SER (\code{lire_configuration(...)$cle}).}
+
+\item{types}{Codes de types d'une carte, ou \code{NULL} (types de la clé seulement).}
 }
 \value{
 data.frame : \code{valeur}, \code{code}, \code{libelle}.
 }
 \description{
 Valeur entière de chaque type dans \code{types.tif}, son code et son libellé dans la clé de
-la SER.
+la SER. Avec \code{types} (la colonne \code{type} d'une carte), les \strong{groupes de types} qu'elle
+contient (codes réunis par \code{" | "}, voir \code{\link[=decider_type]{decider_type()}}) sont ajoutés après les types
+de la clé, avec une valeur propre, le libellé étant la réunion des libellés.
 }

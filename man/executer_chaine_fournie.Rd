@@ -36,9 +36,14 @@ du producteur (\code{typo_etage}), qui n'est pas une validation.
 \code{\link[=ecrire_livrables]{ecrire_livrables()}}.
 \itemize{
 \item Les pixels \code{non_precomptable} ne sont pas typés (type vide).
-\item Les souplesses de la table de branchement (attribut \code{couches}, voir \code{\link[=couches_onf]{couches_onf()}})
-remplacent celles de la configuration pour leurs variables : réglage du jeu, dit
-dans la fiche.
+\item Les souplesses du jeu (bloc \verb{jeux.<jeu>.souplesse} de la configuration, le jeu étant
+nommé par la colonne \code{jeu} de l'attribut \code{couches}, voir \code{\link[=couches_onf]{couches_onf()}}) remplacent
+celles de la clé pour leurs variables : réglage du jeu, dit dans la fiche pour les
+variables que la clé utilise.
+\item Variable absente : quand les types de tête ne se départagent que par une variable
+manquante, \code{type} est le groupe de ces types (\code{"R-PB-J | R-PB-C"}, voir
+\code{\link[=decider_type]{decider_type()}}) et \code{entre_deux} est levé ; \code{correspondance_types.csv} liste les
+groupes.
 \item Si le seuil de gros bois du producteur diffère de \code{seuils_diametre$bm_gb_cm} de la
 configuration, le drapeau \code{gb_interim} est levé sur tous les pixels typés et la
 fiche le déclare.

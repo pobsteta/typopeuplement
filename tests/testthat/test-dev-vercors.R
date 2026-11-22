@@ -10,6 +10,15 @@ dossier_vercors <- function() testthat::test_path("fixtures", "vercors")
 
 lire_extrait <- function(...) lire_parametres_lidar(dossier_vercors(), ...)
 
+# Configuration temporaire : l'exemple du package plus un bloc `jeux` (texte JSON).
+conf_exemple_avec_jeux <- function(jeux_json) {
+  conf <- jsonlite::fromJSON(chemin_config_exemple(), simplifyVector = FALSE)
+  conf$jeux <- jsonlite::fromJSON(jeux_json, simplifyVector = FALSE)
+  f <- tempfile(fileext = ".json")
+  writeLines(jsonlite::toJSON(conf, auto_unbox = TRUE, digits = NA), f, useBytes = TRUE)
+  f
+}
+
 conf_json_vide <- function() {
   ecrire_json('{"national": {"seuils_diametre": {"bm_gb_cm": 42.5},
     "cle": {"types": []}}, "ser": {"H10": {}}}')
@@ -20,18 +29,15 @@ typer_extrait <- function(..., ser = SER_EXEMPLE, configuration = chemin_config_
                     variables = lire_extrait(), ...)
 }
 
-test_that("couches_onf : conversions, gros bois a 47,5 cm et souplesses sourcees (fiche p. 3)", {
+test_that("couches_onf : conversions, gros bois a 47,5 cm, aucune souplesse en dur (bloc jeux)", {
   co <- couches_onf()
   expect_setequal(co$variable, c("G", "part_resineux", "part_gb", "h_dom", "couvert", "famille",
                                  "typo_etage"))
   expect_false("Struc_fam.tif" %in% co$fichier)  # decision de Pascal : non utilisee
   expect_equal(co$facteur[co$variable == "part_resineux"], 0.01)
   expect_equal(co$seuil_cm[co$variable == "part_gb"], 47.5)
-  expect_equal(co$souplesse[match(c("part_resineux", "part_gb", "G"), co$variable)],
-               c(0.10, 0.11, 6.7))
-  s <- co$source[!is.na(co$souplesse)]
-  expect_true(all(grepl("p. 3", s, fixed = TRUE)))
-  expect_true(all(grepl("réglage du jeu Vercors", s, fixed = TRUE)))
+  expect_false("souplesse" %in% names(co))  # les valeurs viennent de la configuration (jeux)
+  expect_true(all(co$jeu == "vercors_onf"))
 })
 
 test_that("lecture : un pixel du terrain tombe au bon endroit (Lambert-93, x puis y)", {
@@ -129,11 +135,19 @@ test_that("variables fournies : gb_interim baisse si la SER a le meme seuil que 
   expect_false(grepl("INTÉRIM", md, fixed = TRUE))
 })
 
-test_that("variables fournies : souplesses du jeu a la place de celles de la configuration", {
-  res <- typer_extrait()
+test_that("variables fournies : souplesses du jeu lues dans le bloc jeux de la configuration", {
+  res <- typer_extrait()  # configuration d'exemple : pas de bloc jeux, rien n'est remplace
+  expect_equal(res$cle$souplesse$part_resineux, 0.05)
+  conf <- conf_exemple_avec_jeux('{"vercors_onf": {"source": "fiche d essai",
+    "souplesse": {"part_resineux": 0.10, "part_gb": 0.11, "G": 6.7}}}')
+  res <- typer_extrait(configuration = conf)
   expect_equal(res$cle$souplesse$part_resineux, 0.10)
   expect_equal(res$cle$souplesse$part_gb, 0.11)
   expect_equal(res$cle$souplesse$rapport_h, 0.05)  # non fournie : celle de la configuration
+  # Declaration pour les variables que la cle utilise, pas pour G (absente de la cle).
+  decl <- paste(res$fiche_validation$declarations, collapse = "\n")
+  expect_match(decl, "Souplesse de part_resineux : 0,1 (fiche d essai)", fixed = TRUE)
+  expect_false(grepl("Souplesse de G", decl, fixed = TRUE))
 })
 
 test_that("variables fournies : fiche sans validation, controle de coherence et declarations", {

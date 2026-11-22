@@ -163,22 +163,40 @@ raster_couches <- function(xy, valeurs, taille_pixel, crs, gabarit = NULL) {
 #' Table de correspondance des types
 #'
 #' Valeur entière de chaque type dans `types.tif`, son code et son libellé dans la clé de
-#' la SER.
+#' la SER. Avec `types` (la colonne `type` d'une carte), les **groupes de types** qu'elle
+#' contient (codes réunis par `" | "`, voir [decider_type()]) sont ajoutés après les types
+#' de la clé, avec une valeur propre, le libellé étant la réunion des libellés.
 #'
 #' @param cle La clé d'une SER (`lire_configuration(...)$cle`).
+#' @param types Codes de types d'une carte, ou `NULL` (types de la clé seulement).
 #' @return data.frame : `valeur`, `code`, `libelle`.
 #' @export
-correspondance_types <- function(cle) {
+correspondance_types <- function(cle, types = NULL) {
   codes <- codes_cle(cle)
-  data.frame(valeur = seq_along(codes), code = codes, libelle = libelles_cle(cle),
-             stringsAsFactors = FALSE)
+  libelles <- libelles_cle(cle)
+  corr <- data.frame(valeur = seq_along(codes), code = codes, libelle = libelles,
+                     stringsAsFactors = FALSE)
+  groupes <- sort(unique(stats::na.omit(as.character(types))))
+  groupes <- groupes[!(groupes %in% codes)]
+  if (length(groupes) > 0) {
+    # Dans l'ordre de la clé, pour un ordre stable d'une carte à l'autre.
+    ordre <- order(vapply(strsplit(groupes, " | ", fixed = TRUE),
+                          function(g) min(match(g, codes), na.rm = TRUE), numeric(1)), groupes)
+    groupes <- groupes[ordre]
+    lib <- vapply(strsplit(groupes, " | ", fixed = TRUE),
+                  function(g) paste(libelles[match(g, codes)], collapse = " | "), character(1))
+    corr <- rbind(corr, data.frame(valeur = length(codes) + seq_along(groupes), code = groupes,
+                                   libelle = lib, stringsAsFactors = FALSE))
+  }
+  corr
 }
 
 #' Écrire les livrables d'une emprise
 #'
 #' Écrit dans `dossier` :
-#' - `types.tif` : `type` (valeur entière, voir la table de correspondance), `proba`,
-#'   `type_second`, `entre_deux` (0 ou 1) ;
+#' - `types.tif` : `type` (valeur entière, voir la table de correspondance : un groupe de
+#'   types, quand une variable manque, a sa propre valeur), `proba`, `type_second`,
+#'   `entre_deux` (0 ou 1) ;
 #' - `variables.tif` : `G`, `part_resineux`, `part_pb`, `part_bm`, `part_gb`, `h_dom`,
 #'   `h_pot`, `h_pot_sd`, `rapport_h` ;
 #' - `confiance.tif` : `hp_incertaine`, `hors_cle` (0 ou 1), `niveau_modele` (0 :
@@ -187,7 +205,9 @@ correspondance_types <- function(cle) {
 #'   servi) ; en mode « variables fournies », aussi `non_precomptable`, `part_pb_absente`
 #'   et `gb_interim` (0 ou 1) ;
 #' - `fiche_validation.md` ; `carte_types.csv` (la carte, une ligne par pixel) ;
-#' - `correspondance_types.csv` (`valeur`, `code`, `libelle`) ;
+#' - `correspondance_types.csv` (`valeur`, `code`, `libelle`), groupes de types compris ;
+#' - `correspondance_niveau_modele.csv` (`valeur`, `niveau`, `sens`) : les codes de
+#'   `niveau_modele` de `confiance.tif` ;
 #' - `temps_etages.csv` (`etage`, `secondes`, `pixels`), si la chaîne a chronométré ses
 #'   étages ([executer_chaine_fournie()]) ; les étages `ecriture_rasters` (les trois
 #'   GeoTIFF) et `ecriture_tables` (fiche et CSV) y sont ajoutés.
@@ -213,7 +233,7 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
   dir.create(dossier, recursive = TRUE, showWarnings = FALSE)
   gabarit <- resultat$gabarit
   carte <- resultat$carte
-  corr <- correspondance_types(resultat$cle)
+  corr <- correspondance_types(resultat$cle, c(carte$type, carte$type_second))
   xy <- centres_pixels(carte, taille_pixel)
 
   types <- data.frame(
@@ -243,6 +263,7 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
                      file.path(dossier, "fiche_validation.md"))
   ecrire_csv_utf8(carte, file.path(dossier, "carte_types.csv"))
   ecrire_csv_utf8(corr, file.path(dossier, "correspondance_types.csv"))
+  ecrire_csv_utf8(table_niveau_modele(), file.path(dossier, "correspondance_niveau_modele.csv"))
   if (!is.null(resultat$temps)) {
     temps <- rbind(resultat$temps,
                    data.frame(etage = c("ecriture_rasters", "ecriture_tables"),
@@ -252,6 +273,19 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
     ecrire_csv_utf8(temps, file.path(dossier, "temps_etages.csv"))
   }
   invisible(dossier)
+}
+
+# Table des codes de niveau_modele (confiance.tif), livrée à côté de lui.
+table_niveau_modele <- function() {
+  data.frame(
+    valeur = c(0, 1, 2),
+    niveau = c("producteur", "ser", "grande_region"),
+    sens = c("variables du producteur, pas de mod\u00e8le ajust\u00e9",
+             "mod\u00e8le ajust\u00e9 sur la SER",
+             paste0("grande r\u00e9gion requise (trop peu de placettes par type) ; la bascule n'est ",
+                    "pas \u00e9crite, c'est le mod\u00e8le de la SER qui a servi")),
+    stringsAsFactors = FALSE
+  )
 }
 
 # Code du niveau de modèle dans confiance.tif : 0 producteur, 1 SER, 2 grande région requise.
