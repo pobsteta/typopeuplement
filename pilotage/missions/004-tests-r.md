@@ -69,3 +69,18 @@ Pascal lit la liste des tests en regard des critères de la spec.
 ## Comment saura-t-on que ça marche ?
 
 Chaque critère d'acceptation 1 à 6 de la spec renvoie à un test nommé.
+
+## Remarques du relecteur (aller-retour 1/3, 2026-11-22)
+
+1. **Bloquant.** `test-ser.R`, test « critère 3 : la carte de confiance dit le niveau de
+   modèle utilisé » : il exige exactement `R-PB-J = 16` et `R-PB-C = 0`. Or ce partage
+   dépend de `rapport_h`, donc des forêts aléatoires, qui diffèrent entre ranger et
+   scikit-learn. Retirer ces deux décomptes exacts, ou leur appliquer la même tolérance
+   de ±4 que `test-chaine.R`. L'assertion `niveau_modele == "grande_region"` reste.
+2. Mineur. `test-validation.R` : le commentaire annonce ±0,10 pour la précision à la
+   grappe, mais le code prend ±0,12. Accorder le commentaire et le code, et dire la
+   valeur retenue.
+3. Mineur. Compléter la rubrique « Redite par l'agent » de cette fiche (sous-rubrique de
+   la mission, en tête) : c'est ton seul droit d'écriture dans `pilotage/`.
+4. Pour Pascal, rien à faire ici : `poids_transition(d, 0)` vaut 1 (rupture si la bande
+   est nulle) ; `greco_de_ser("Z99")` → erreur, supposé.
