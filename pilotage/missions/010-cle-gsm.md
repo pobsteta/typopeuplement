@@ -29,6 +29,10 @@ Mineurs reportés de la relecture de 005 :
 - citation du SRGS sans « expressément » ;
 - réserve « lu sur image » retirée, puisque le texte du PDF suffit.
 
+Souplesses du jeu Vercors (Pascal, 2026-11-22) : EQM de la fiche ONF, p. 1, à écrire dans
+`jeux.vercors_onf.souplesse` : G 7,32 m²/ha, part de résineux 0,199, part de gros bois 0,163.
+L'ONF compte les très gros bois dans la part de gros bois (Pascal).
+
 ## Dépend de / rouge attendu jusqu'à
 
 Dépend de 007, 008 et 009 (noms des variables). Ordre : en dernier.

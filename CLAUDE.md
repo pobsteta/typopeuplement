@@ -61,5 +61,6 @@ l'effort.**
 ## Règles techniques communes
 
 - **Pas de code sans tests.** Commande de tests : `.claude/test-command`.
-- **Formats ouverts, logiciels libres** (Python, numpy, pandas, scipy, scikit-learn).
+- **Formats ouverts, logiciels libres** : R (sf, terra, ranger, e1071, MASS, jsonlite), ADR 0004.
+  Le prototype Python (`src/`) ne sert plus que de référence de comparaison.
 - **Jamais de push direct sur `main`.** Tout passe par une PR.
