@@ -2,6 +2,10 @@
 
 21 novembre 2026 · Pascal Obstetar
 
+## Ma réponse d'abord
+
+« je m'en passe » — Pascal, 2026-11-22
+
 ## En bref
 
 Le projet vise une chaîne de traitement automatique qui produit, pour toute forêt de France hexagonale, une carte du **type de peuplement** (composition, structure, capital), calibrée par sylvoécorégion (SER).
