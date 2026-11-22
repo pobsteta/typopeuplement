@@ -32,3 +32,5 @@
 2026-11-22 · Pascal · ADR 0001 · « On part sur R. » Stack R, package compagnon de nemeton ; ADR 0004 acceptée, remplace 0001
 2026-11-22 · Pascal · brief · « Pas de message à l'IGN, les placettes servent pour contrôle » : pas de contact IGN ni de convention d'accès IFN ; les placettes IFN servent au contrôle (validation), pas à la calibration
 2026-11-22 · Claude (orchestrateur) · brief · spec rédigée (docs/spec.md), à valider par Pascal ; la commande de tests reste Python jusqu'à la mission de portage en R, qui la remplacera par testthat
+2026-11-22 · Pascal · brief · « Je valide » : spec validée ; porte n° 1 passée (brief, spec, ADR 0003 et 0004)
+2026-11-22 · Claude (orchestrateur) · mission · /mission : 4 missions proposées (001 environnement R, 002 référentiel SER, 003 portage en R en prendre la main, 004 tests testthat) ; 3 en attente des SER et de l'AOI pilotes ; à valider par Pascal (porte n° 2)

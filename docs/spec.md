@@ -1,6 +1,6 @@
 # Spécification — typopeuplement
 
-2026-11-22 · rédigée par Claude (orchestrateur) d'après le brief validé par Pascal · **à valider par Pascal**
+2026-11-22 · rédigée par Claude (orchestrateur) d'après le brief validé par Pascal · validée par Pascal le 2026-11-22
 
 Brief : [`brief-typologie-peuplements.md`](brief-typologie-peuplements.md). Stack : [ADR 0004](adr/0004-r-package-compagnon-de-nemeton.md) (R).
 
