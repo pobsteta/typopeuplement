@@ -51,3 +51,19 @@ Pascal juge la carte de H0 potentielle sur une forêt qu'il connaît.
 ## Qui tranche
 
 `relecteur`, puis Pascal.
+
+## Ajouts du 2026-11-22 (relecture de 007, décisions par délégation)
+
+1. **Probabilité d'un groupe de types** : c'est la somme des probabilités de ses membres.
+2. **Jeu sans bloc `jeux` dans la configuration** : la fiche le déclare (« souplesses de la
+   clé, faute de bloc jeux »).
+3. **`touche_na`** : il reste lu au pixel. La limite est documentée dans `decider_type` :
+   en bordure d'une zone sans milieu, un pixel peut prendre un type franc.
+4. **Titre faux** dans `tests/testthat/test-ser.R` (« nul de bande donne un poids de 1 ») :
+   le corriger. C'est la seule écriture permise dans ce fichier.
+5. **Forêt pilote** : vérifier que la forêt domaniale de Léoncel est dans l'emprise du jeu
+   et en H10 (WFS des SER de l'INRAE ; contour de la forêt publique par l'ONF ou l'IGN, en
+   données ouvertes). Sinon, la forêt de Lente.
+
+Périmètre étendu : `R/cle.R`, `R/chaine.R`, `R/validation.R`, `R/typer_peuplements.R`,
+`R/donnees_lidar.R`, et le titre de ce seul test dans `tests/testthat/test-ser.R`.
