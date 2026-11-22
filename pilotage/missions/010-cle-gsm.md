@@ -50,3 +50,14 @@ Pascal relit le logigramme et reconnaît les types sur une forêt du Vercors.
 ## Qui tranche
 
 `relecteur`, puis Pascal.
+
+## Reprise courte, après 012 (décisions par délégation, 2026-11-22)
+
+1. Le seuil de 15 m (CH contre les autres types) porte sur la hauteur potentielle sans
+   enveloppe, comme les strates. La variable est exposée par 012 sous le nom `hpot`.
+2. Ajouter à la doc la lecture littérale de l'arrondi (déficitaire ≤ 0,2, prépondérant ≥ 0,5)
+   comme alternative. Le défaut 0,25 / 0,45 est gardé, provisoire.
+3. Ajouter à la notice : « taillis et peuplements sans rôle de production non détectés »
+   (types X et T non exprimables).
+4. Un test automatique de la clé de H10, confié au `testeur` : 16 types et 4 non
+   exprimables, soit 20 codes, une `source` par type, et l'exclusivité en clé dure.

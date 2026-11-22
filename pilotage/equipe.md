@@ -21,7 +21,7 @@
   l'extérieur et ne se défait pas (contact IGN, convention d'accès IFN)
 - **Inscrite au journal le :** 2026-11-22 (close : arbitrages reportés)
 
-### Délégation n° 2 (en cours)
+### Délégation n° 2 (échue le 2026-11-22, fin de la mission 010)
 
 - **Mots de Pascal :** « Valide toi même les plans et arbitrage » (2026-11-22)
 - **Portée :** les plans des missions en « prendre la main » ou en « plan d'abord » (008 et
