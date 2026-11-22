@@ -1,10 +1,10 @@
 # Typologie de peuplements de la SER pilote H10 (Préalpes du Nord) — Vercors drômois
 
 - **Propriétaire :** Pascal Obstétar
-- **Consulté le :** 2026-11-22 (agent `acquereur`, mission 005)
-- **Décision éclairée :** quelle clé de types (noms, seuils, limite des gros bois) la première carte réelle de H10 doit parler, pour que les gestionnaires du Vercors la lisent sans traduction.
-- **Fichier de configuration :** `inst/extdata/config/vercors-h10.json` (se charge ; **clé de types vide**, voir « Ce qui ne passe pas dans la chaîne »).
-- **Statut : NON PRÊT à geler.** Deux décisions de Pascal ouvertes (limite BM/GB ; clé à exprimer ou à faire évoluer). Rien n'est tranché ici.
+- **Consulté le :** 2026-11-22 (agent `acquereur`, missions 005 et 010)
+- **Décision éclairée :** quelle clé de types (noms, seuils, limite des gros bois) la première carte réelle de H10 doit parler, pour que les gestionnaires du Vercors la lisent sans traduction. Depuis la mission 010, la clé GSM est transcrite dans la configuration (voir « Transcription dans la configuration (mission 010) » plus bas).
+- **Fichier de configuration :** `inst/extdata/config/vercors-h10.json` (se charge ; **clé GSM transcrite : 16 types sur 20**, 4 non exprimables, voir plus bas).
+- **Statut : transcrite, NON GELÉE.** Limite BM/GB tranchée par Pascal le 2026-11-22 (42,5 cm). Reste ouvert : sept ambiguïtés du logigramme, la convention d'arrondi des couverts, 4 types non exprimables dans la chaîne actuelle (X, P, A, T) et 2 types partiels (L, R). Rien de ce qui est ouvert n'est tranché ici.
 
 ## Sources (une seule par référence)
 
@@ -13,7 +13,7 @@
 | S1 | *Guide des Sylvicultures de Montagne, Alpes du Nord françaises* (GSM), Cemagref / ONF Rhône-Alpes (coord. X. Gauquelin, B. Courbaud), CRPF Rhône-Alpes ; PDF `auvergnerhonealpes.cnpf.fr/sites/socle/files/cnpf-old/402343_gsm_1_1.pdf` (147 p., fichier créé le 2013-10-23) | validé ONF 13/01/2006, CRPF 20/03/2006 (p. « Auteurs et collaborateurs ») | La **typologie de structure « MASSIF ALPIN »** : clé des structures de peuplements, 20 types |
 | S2 | SRGS Auvergne-Rhône-Alpes, `draaf.auvergne-rhone-alpes.agriculture.gouv.fr/IMG/pdf/aura_srgs_vf.pdf` (125 p.) | arrêté paru au JO du 14 décembre 2023 | Les **8 types de peuplements** des documents de gestion et le tableau des catégories de grosseur (p. 11-12 du PDF) |
 | S3 | Fiche synthétique du jeu LiDAR (A. Hedel, ONF, 25/09/2024, 9 p.), `drive.opendata.craig.fr/.../2024_vercors_dromois/2024_Vercors_dromois_fiche_synthetique.pdf` (identique octet pour octet à `2026_Vercors_dromois_fiche_synthetique.pdf`, md5 1fd12a99…) | 2024-09-25 | La légende des couches `Typo_etage`, `Struc_fam`, `Compo1`, `Typo_cap`, `Typo_dens` (p. 4) |
-| S4 | ONF, forêt domaniale de Léoncel (26), aménagement 2019-2038, `onf.fr/++amgt++A029043A/++zfiles++6915e996` (80 p.) | 2018-09 (carte), période 2019-2038 | Preuve d'usage : « Type de station et de peuplement : selon typologie GSM Alpes du Nord » (p. 60 imprimée) ; GSM 2006 cité en documents de référence (p. 12) |
+| S4 | ONF, forêt domaniale de Léoncel (26), aménagement 2019-2038, `onf.fr/++amgt++A029043A/++zfiles++6915e996` (80 p.) | 2018-09 (carte), période 2019-2038 | Preuve d'usage : « Type de station et de peuplement : selon typologie GSM Alpes du Nord » (p. 60 imprimée, PDF p. 64) ; GSM 2006 cité en documents de référence (p. 4 imprimée, PDF p. 10) |
 
 La couche `Typo_etage` n'a pas de fichier de légende (.qml, .sld, .csv) sur le serveur : le dossier ne contient que les rasters, l'emprise et la fiche (PROPFIND, profondeur 2). Les rasters n'embarquent ni table de couleurs ni noms de classes (métadonnées GDAL : licence, producteur, date). La seule légende est la fiche S3, p. 4.
 
@@ -59,7 +59,7 @@ Le GSM la décrit (p. 52 imprimée, PDF p. 28) : « La typologie de structure MA
 
 Recomptage : 3 + 1 + 1 + 3 + 2 + 2 + 4 + 2 + 2 = **20 types**, et la clé en logigramme (p. 54-55) aboutit aux mêmes 20 codes (X, P, A, CH, T, L, R, 3, 1, 1GB, 2, 2GB, 12, 12GB, 13, 13GB, 23, C, J, JGB).
 
-Seuils de la clé (p. 54-55) : Hₒ potentielle < 15 m → CH ; G < 10 m²/ha avec Hₒ potentielle > 15 m → L (couvert strates 3 et 4 < 5/10 ou moins de 800 tiges/ha), 3 (couvert strate 3 ≥ 5/10), R (couvert strate 4 ≥ 5/10 ou plus de 800 tiges/ha, et strate 3 < 5/10) ; G ≥ 10 m²/ha : types 1, 2, 3 (une ou deux strates prépondérantes, ou une majoritaire), 12, 13, 23 (une strate déficitaire), C (3 strates déficitaires), J (strates 1, 2 et 3 moyennes) ; suffixe GB quand G(GB+TGB) ≥ 60 % de G. Les cases de la clé sont à recopier de l'image, non du texte : à relire par Pascal sur la page 55 du guide avant tout usage.
+Seuils de la clé (p. 54-55) : Hₒ potentielle < 15 m → CH ; G < 10 m²/ha avec Hₒ potentielle > 15 m → L (couvert strates 3 et 4 < 5/10 ou moins de 800 tiges/ha), 3 (couvert strate 3 ≥ 5/10), R (couvert strate 4 ≥ 5/10 ou plus de 800 tiges/ha, et strate 3 < 5/10) ; G ≥ 10 m²/ha : types 1, 2, 3 (une ou deux strates prépondérantes, ou une majoritaire), 12, 13, 23 (une strate déficitaire), C (3 strates déficitaires), J (strates 1, 2 et 3 moyennes) ; suffixe GB quand G(GB+TGB) ≥ 60 % de G. Le logigramme (p. 54-55) se lit dans le texte du PDF (`pdftotext -layout`) ; la relecture de Pascal sur la page 55 reste la vérification de terrain.
 
 Le GSM place les structures dans une démarche de **diagnostic de terrain** (relascope + estimation à l'œil des couverts) : l'estimation de G(GB+TGB) à ≥ 60 % est faite « à l'aide d'un relascope » en surface terrière, pas sur arbre pointé.
 
@@ -71,15 +71,15 @@ Catégories de grosseur (p. 12 imprimée) : PB classes 20 et 25 ; BM 30 à 45 ; 
 
 ## Écarts relevés entre sources (non tranchés)
 
-1. **Limite BM/GB.** Quatre lectures :
+1. **Limite BM/GB** (tranchée par Pascal le 2026-11-22 : 42,5 cm pour H10, fidèle au GSM ; l'écart reste documenté). Quatre lectures :
    - GSM (S1) : GB commence à la classe 45, soit 42,5 cm (inférence de la convention des classes) ; TGB à 62,5 cm.
-   - SRGS (S2) : 47,5 cm pour toutes essences, « normalement 42.5 cm pour résineux : possible de la conserver quand des typologies sont utilisées » ; TGB à 67,5 cm. Le SRGS autorise donc expressément de garder la valeur du GSM quand la typologie GSM est utilisée.
+   - SRGS (S2) : 47,5 cm pour toutes essences, « normalement 42.5 cm pour résineux : possible de la conserver quand des typologies sont utilisées » ; TGB à 67,5 cm. Le SRGS dit donc qu'il est possible de garder la valeur du GSM quand une typologie comme le GSM est utilisée.
    - Fiche du jeu LiDAR (S3, p. 1) : BM 27,5 à 42,5 ; GB 47,5 à 62,5 ; TGB ≥ 62,5 : un trou de 42,5 à 47,5 cm, et un mélange (BM/GB du GSM résineux, GB de SRGS ; TGB du GSM). Sa cohérence avec le modèle n'est pas établie.
    - Souchon (2020), règles du projet : 42,5 cm en Savoie et Pyrénées, 47,5 cm dans les Vosges ; rien de publié ici pour le Vercors.
 2. **S1 ne couvre peut-être pas tout le Vercors drômois.** Le titre dit « Alpes du Nord françaises » ; la forêt domaniale de Léoncel (Drôme, plan 2019-2038) l'applique (S4). Pas trouvé : les directives locales d'aménagement du Vercors (DILAM) citées par un plan ONF 2007-2026 du Vercors, qui pourraient fixer une autre règle.
 3. **Cibles différentes.** Le jeu LiDAR (S3) livre des familles (`Struc_fam`) et un étagement (`Typo_etage`), pas les 20 types du GSM ; aucun seuil publié pour ces classes.
 
-## Ce qui ne passe pas dans la chaîne (à dire, pas à inventer)
+## Ce qui ne passe pas dans la chaîne (état de la mission 005 ; mis à jour par la mission 010 plus bas)
 
 Variables de la clé GSM, face aux variables de la chaîne (`variables_cibles` : G, part_resineux, part_pb, part_bm, part_gb ; plus `rapport_h`) :
 
@@ -93,14 +93,72 @@ Variables de la clé GSM, face aux variables de la chaîne (`variables_cibles` :
 | couvert total, rôle de production ou de protection (types X, P, A) | non (masque forestier et décision de gestion) |
 | part de résineux | oui, mais **le GSM ne s'en sert pas** : sa clé est indépendante de l'essence |
 
-Contrainte de format : le format de clé de `exemple.json` n'accepte que des conjonctions de conditions min/max par type. La clé GSM contient des « ou » (« strate 1 prépondérante **ou** majoritaire ») : deux types distincts de la chaîne ne peuvent pas porter le même code. C'est pourquoi `vercors-h10.json` a `"types": []` pour H10, et non une clé d'exemple qui se ferait passer pour la typologie locale.
+Contrainte de format (levée par la mission 007) : le format de clé n'acceptait que des conjonctions ; il accepte maintenant les « ou » (`alternatives`). La clé de H10 n'est plus vide : voir la section suivante.
 
-Convention d'arrondi à définir si la clé était exprimée : les couverts du GSM sont des entiers en dixièmes ; la frontière « 2/10 ou moins » / « 3/10 » ne tombe pas sur un nombre sans choix (0,25 ou 0,3).
+Convention d'arrondi : voir ci-dessous (ambiguïté 3).
 
-## Questions à Pascal
+## Transcription dans la configuration (mission 010)
 
-1. **Limite BM/GB pour H10 : 42,5 ou 47,5 cm ?** Sources : GSM (42,5 par les classes, p. 54), SRGS 2023 (47,5 p. 12, avec la possibilité de garder 42,5 si typologie GSM), fiche du jeu (47,5 avec trou 42,5 à 47,5). La valeur reste **à trancher** (le JSON hérite 42,5 du socle national en attendant, sans que ce soit une décision). Pose-t-on la question aux gestionnaires ONF/CNPF du Vercors avant de trancher (mission : « Pascal leur pose le fait ») ?
-2. **Quelle typologie pour la carte de H10 ?**
+`inst/extdata/config/vercors-h10.json`, SER H10, `cle.types` : **16 types exprimés** (CH, L, 3, R, 1, 1GB, 2, 2GB, 12, 12GB, 13, 13GB, 23, C, J, JGB) et **4 non exprimables** (X, P, A, T), listés dans `cle.non_exprimables` avec leur raison : 16 + 4 = **20 types du GSM**. Chaque type porte sa `source` (page du logigramme et du tableau) et, pour L et R, un `statut` « partiel ». Souplesses du jeu Vercors dans `jeux.vercors_onf.souplesse` : G 7,32 m²/ha ; part de résineux 0,199 ; part de gros bois 0,163 (EQM de la fiche ONF, p. 1, vérifiées à la source : G « 7.32 (25%) », % F/R « 19.9 (40%) », P100GGB « 16.28 (49%) » ; décision de Pascal, 2026-11-22). La limite BM/GB à 42,5 cm est écrite pour H10 (`seuils_diametre.bm_gb_cm`).
+
+### Lecture du GSM, pages
+
+| Élément | Page du GSM (imprimée ; PDF) |
+|---|---|
+| Classes de couvert : prépondérante ≥ 5/10, moyenne 3/10 ou 4/10, déficitaire ≤ 2/10 ; une strate moyenne avec 2 déficitaires = majoritaire | p. 54 (encadré) ; PDF p. 29 ; aussi p. 53, PDF p. 28 (couvert estimé « en 1/10 de recouvrement du sol ») |
+| Couvert total ≥ 1/10 (espaces boisés) ; Hₒ potentielle < 15 m (CH) ; Hₒ potentielle > 15 m ; G < 10 m²/ha ; L, 3, R | p. 54 ; PDF p. 29 |
+| G ≥ 10 m²/ha ; types 1, 1GB, 2, 2GB, 3, 12, 12GB, 13, 13GB, 23, C, J, JGB ; G(GB+TGB) < 60 % / ≥ 60 % | p. 55 ; PDF p. 29 |
+| Tableau récapitulatif : X, P, A, CH, T | p. 56 ; PDF p. 30 |
+| Tableau récapitulatif : tous les types de futaies | p. 57 ; PDF p. 30 |
+
+Le logigramme est lu dans le texte du PDF (`pdftotext -layout`). Les classes de couvert **par strate** du tableau (p. 57) ne sont qu'en couleurs (violet foncé = prépondérante, moyen = moyenne, clair = déficitaire, « q » = quelconque) : elles ont été lues sur l'image rendue de la page, et recoupées avec le logigramme (voir ambiguïtés 1, 2 et 5 pour les écarts).
+
+### Variables de la chaîne utilisées
+
+`c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `h_pot`, `couvert`. Rien d'autre.
+
+Variables du GSM **absentes** de la chaîne : le nombre de tiges par hectare `N` (seuil de 800 pour L et R ; le jeu ONF a un raster `N`, mais `couches_onf()` ne le lit pas), la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). **Câblage à vérifier :** `h_pot` est calculée par la chaîne, mais seule `rapport_h` est passée à la clé (`R/chaine.R`, lignes 78 et 398-402) ; une condition sur `h_pot` (CH et les 15 autres types) demande donc que la chaîne la fournisse à la clé, sans quoi « variable absente pour la clé ». De même les `c*_hpot` ne sont pas encore branchés dans la chaîne (mineur de 008, sans mission). La config se charge ; son exécution sur la chaîne attend ce câblage.
+
+### Types non exprimables
+
+| Code | Libellé (recopié) | Raison |
+|---|---|---|
+| X | Peuplement sans rôle de production ou de protection | décision de gestion, pas une mesure |
+| P | Pelouses d'altitude et prairies à usage agricole | espace non boisé ; P ou A demande l'usage du sol |
+| A | Autres espaces non boisés | idem |
+| T | Taillis (couvert taillis ≥ 2/3, couvert futaie < 1/3) | part du taillis absente |
+
+Conséquence : ces types sont testés **avant** les autres dans le logigramme (X en tête, puis P/A, T après CH). Sans eux, un taillis ou un peuplement sans rôle tombe dans l'un des 16 types exprimés. Le couvert total < 1/10 (espaces non boisés) n'est transcrit que comme absence du « couvert ≥ 0,1 » qui conditionne les 16 types : un pixel non boisé n'a donc aucun type (hors clé), faute de P et de A.
+
+### Conventions prises (signalées, à trancher)
+
+- **Couverts en parts** : le GSM estime le couvert en dixièmes entiers et ne dit pas comment arrondir. Convention prise : dixième le plus proche, donc **déficitaire c < 0,25 ; moyenne 0,25 ≤ c < 0,45 ; prépondérante c ≥ 0,45**. Autre lecture possible : coupures à 0,3 et 0,5. Les deux sont défendables ; aucune n'est écrite dans le GSM. **À trancher.**
+- **Valeur 15 m** : CH si Hₒ potentielle < 15 m, les autres si > 15 m ; 15 n'est dans aucun cas. Prise : `h_pot ≥ 15` pour les autres. **À trancher.**
+- **Couvert total** : « couvert total ≥ 1/10 » transcrit par `couvert ≥ 0,1` (taux de couvert du jeu ONF) ; équivalence avec le couvert total du GSM non vérifiée.
+- **Souplesses** : aucune sur `c1_hpot` à `c4_hpot`, `h_pot`, `couvert` (conditions dures) ; G, part_resineux, part_gb ont celles de la fiche ONF. Le mélange dur/souple est un effet de ce qui est donné ; **à trancher.** `part_resineux` n'est pas utilisée par la clé GSM.
+- **Seuil 60 %** : `part_gb ≥ 0,6` pour « GB », `< 0,6` sinon (limites écrites ainsi dans le GSM). La part de gros bois du jeu ONF est à 47,5 cm, très gros bois inclus (intérim, drapeau `gb_interim`).
+- **Exclusivité** : la clé du GSM est un arbre de décision ordonné ; transcrite à plat, chaque type porte toutes les conditions qui l'excluent des autres. Contrôle fait : sur une grille de 216 combinaisons (couverts, G, part_gb), avec souplesse nulle, **un seul type** est vrai par combinaison pour les 16 types exprimés.
+
+### Ambiguïtés du logigramme, posées à Pascal (non tranchées par l'acquéreur, sauf mention)
+
+1. **Types 2 et 2GB, tableau p. 57 ou logigramme p. 55 ?** Le logigramme dit « strate 2 prépondérante ou majoritaire **et strate 1 non prépondérante** » (strate 1 moyenne ou déficitaire). Le tableau montre, pour la strate 2 prépondérante, la strate 1 **moyenne** seulement ; une strate 1 déficitaire avec une strate 2 prépondérante n'y figure pas. Transcrit : le logigramme (strate 1 non prépondérante). À confirmer.
+2. **Types 3, tableau et logigramme.** Le logigramme exige « strates 1 et 2 non prépondérantes » ; le tableau met « quelconque » pour les strates 1 et 2 quand la strate 3 est prépondérante (le type 1 ou 2 l'emporte alors dans l'ordre du logigramme). Transcrit : le logigramme.
+3. **Arrondi des classes de couvert** (voir conventions) : 0,25 / 0,45 ou 0,3 / 0,5.
+4. **Valeur 15 m** (voir conventions).
+5. **L et R : « couvert strates 3 et 4 » du logigramme (p. 54) contre « couvert strates [3+4] » du tableau (p. 57).** Le tableau écrit « [3 + 4] < 5/10 » pour L et « [3 + 4] > 5/10 » pour R (strict, donc 5/10 exactement n'est dans aucun des deux) ; le logigramme écrit « strates 3 et 4 < 5/10 », « strate 3 ≥ 5/10 », « strate 4 ≥ 5/10 et strate 3 < 5/10 ». Le couvert de la strate « [3+4] » (les deux réunies ?) n'est pas défini dans le GSM. Transcrit : le logigramme, strates 3 et 4 séparées.
+6. **L et R : « ou plus de 800 tiges/ha », « ou moins de 800 tiges/ha ».** La branche de densité est un « ou » : un pixel peut satisfaire à la fois la branche de couvert de L et celle de densité de R (cas c4 < 5/10 et N > 800, ou l'inverse), ou être à la fois L et 3 (c3 ≥ 5/10 et N < 800). Le GSM ne dit pas laquelle l'emporte, ni si le « ou » est exclusif. De plus N n'est pas lue par la chaîne. Transcrit : **la branche du couvert seulement** (suffisante si le « ou » est inclusif), types marqués « partiel ». Pascal tranche : garder L et R partiels, ou les marquer non exprimables tant que N n'est pas branchée et la règle fixée.
+7. **Ordre des tests X et T.** X (rôle faible) est testé avant tout, T après CH, dans le logigramme ; non exprimables ici, leur absence change le type attribué aux pixels qu'ils auraient absorbés (voir conséquence plus haut).
+
+### Trois points au sol (clé GSM)
+
+1. Un peuplement à une seule strate haute dense (strate 1 à 6/10, G 25 m²/ha, 70 % de GB) : 1GB, mais avec un couvert mesuré de 0,47 la convention d'arrondi (0,45 ou 0,5) décide entre « strate 1 prépondérante » (1GB) et « strate 1 moyenne » (un autre type selon les strates 2 et 3) : à voir sur le terrain.
+2. Un peuplement de hêtres sous grands sapins (strates 1 et 3 moyennes, strate 2 déficitaire) : 13 ou 13GB, ce que la couche `Typo_etage = 3` ne distingue pas.
+3. Une clairière de régénération (G < 10, strate 4 à 6/10, strate 3 à 2/10) : R si le couvert de la strate 4 est mesuré par `c4_hpot` ; vérifier que les tiges « plus de 800 tiges/ha » (branche omise) ne la rangent pas ailleurs.
+
+## Questions à Pascal (mission 005, mises à jour)
+
+1. ~~Limite BM/GB pour H10 : 42,5 ou 47,5 cm ?~~ **Tranchée par Pascal le 2026-11-22 : 42,5 cm**, fidèle au GSM Alpes du Nord. La part de gros bois de l'ONF (47,5 cm, très gros bois inclus) est un intérim déclaré.
+2. **Quelle typologie pour la carte de H10 ?** (tranchée : les 20 types du GSM, cap du 2026-11-22 ; les options ci-dessous restent pour mémoire)
    - (a) les 20 types du GSM (langue des gestionnaires ONF/CRPF) : il faut alors ajouter à la chaîne le couvert des strates (et accepter les « ou » dans la clé) ; changement de périmètre ;
    - (b) les familles du jeu LiDAR (`Struc_fam`, `Compo1`, …) : déjà cartographiées, mais sans seuils publiés ; à demander à A. Hedel (ONF) ;
    - (c) les 8 types du SRGS : trop grossiers.
@@ -118,11 +176,23 @@ Quelle décision cette donnée va-t-elle éclairer ? **Le choix de la typologie 
 
 ## Liste de contrôle
 
-1. Chiffre / source / page / version / date : passé pour S1 à S4 (pages imprimées et PDF indiquées). Sauf : limite GB du GSM à 42,5 cm = inférence, signalée ; codes de la clé lus sur l'image des p. 54-57, non sur le texte.
-2. Décomptes : 20 types GSM (recompté deux fois), 9 familles, 8 types SRGS, 5 couches documentées, 494 812 pixels. Passé.
-3. Termes exacts : recopiés (libellés, seuils), sauf lecture de l'image du logigramme à relire.
-4. Statut : **non prêt à geler** ; deux décisions de Pascal ouvertes.
+Mission 005 (mise à jour par la mission 010) :
+
+1. Chiffre / source / page / version / date : passé pour S1 à S4 (pages imprimées et PDF indiquées). Réserve restante : limite GB du GSM à 42,5 cm = inférence de la convention des classes, signalée ; décidée par Pascal pour H10.
+2. Décomptes : 20 types GSM (recompté), 9 familles, 8 types SRGS, 5 couches documentées, 494 812 pixels. Passé.
+3. Termes exacts : recopiés (libellés, seuils). Le logigramme se lit dans le texte du PDF ; les classes de couvert par strate du tableau p. 57 ont été lues sur image (couleurs).
+4. Statut : transcrite, **non gelée** ; ambiguïtés et conventions ouvertes (voir mission 010).
+
+Mission 010 :
+
+1. Chaque seuil a sa page : passé (champ `source` de chaque type, tableau « Lecture du GSM, pages »).
+2. Les 20 codes comptés : 16 dans `cle.types` + 4 dans `cle.non_exprimables` = 20 ; chargement vérifié (16 types lus).
+3. Termes recopiés de la source : passé pour les libellés et les conditions.
+4. Ambiguïtés du logigramme posées, non tranchées : passé pour les sept ; les transcriptions prises par défaut sont dites (ambiguïtés 1, 2, 5, 6).
+5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `h_pot` et `c*_hpot` vers la clé, et `N`, à faire avant exécution.
 
 ## Journal (proposé)
 
 `2026-11-22 · acquereur · 005 · typologie H10 : GSM Alpes du Nord (20 types, couvert des strates) trouvée, non exprimable dans la chaîne actuelle ; limite BM/GB 42,5 / 47,5 non tranchée ; config H10 chargeable à clé vide`
+
+`2026-11-22 · acquereur · 010 · clé GSM transcrite dans vercors-h10.json : 16 types sur 20 (L et R partiels), X, P, A, T non exprimables ; limite BM/GB 42,5 cm, souplesses du jeu ONF (G 7,32 ; part_resineux 0,199 ; part_gb 0,163) ; 7 ambiguïtés du logigramme et l'arrondi des couverts (0,25 / 0,45 prise) à trancher par Pascal ; non gelée`
