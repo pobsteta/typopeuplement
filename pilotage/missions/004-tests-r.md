@@ -86,3 +86,9 @@ Chaque critère d'acceptation 1 à 6 de la spec renvoie à un test nommé.
    la mission, en tête) : c'est ton seul droit d'écriture dans `pilotage/`.
 4. Pour Pascal, rien à faire ici : `poids_transition(d, 0)` vaut 1 (rupture si la bande
    est nulle) ; `greco_de_ser("Z99")` → erreur, supposé.
+
+## Remarque de la mission 003 (aller-retour 2/3, 2026-11-22)
+
+`test-typer-peuplements.R:113` utilise `CODES_EXEMPLE`, défini seulement dans
+`test-chaine.R` ; testthat isole chaque fichier. Déplacer `CODES_EXEMPLE` dans
+`helper-donnees.R`.

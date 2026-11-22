@@ -18,7 +18,14 @@ Imports:
     terra (>= 1.7-0),
     ranger,
     e1071,
-    MASS
+    MASS,
+    jsonlite,
+    stats,
+    utils
 Suggests:
+    nemeton,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+Language: fr
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1

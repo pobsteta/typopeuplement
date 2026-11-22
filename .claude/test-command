@@ -1,1 +1,1 @@
-Rscript -e 'testthat::test_local()' && python3 -m pytest -q
+LC_ALL=C.UTF-8 Rscript -e 'testthat::test_local()' && python3 -m pytest -q

@@ -12,3 +12,10 @@
 ^pyproject\.toml$
 ^tests/.*\.py$
 ^tests/__pycache__$
+^src$
+^config$
+^pyproject\.toml$
+^sorties$
+^pilotage$
+^docs$
+^CLAUDE\.md$
