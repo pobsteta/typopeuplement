@@ -57,3 +57,9 @@ mesure montre un goulot que lasR ne lève pas.
 - lasR : https://github.com/r-lidar/lasR
 - IGN, MNH LiDAR HD : https://www.data.gouv.fr/datasets/mnh-lidar-hd
 - nemeton, `DESCRIPTION` et `R/reticulate_isolated.R` : https://github.com/pobsteta/nemeton
+
+## Précisions ultérieures (ajout daté, rien n'est effacé ci-dessus)
+
+- 2026-11-23 · réconciliation des cadrages · lasR reste l'outil du nuage de points mais
+  isolé derrière une interface interne, avec PDAL en repli : voir
+  [ADR 0016](0016-nuage-de-points-lasr-isole-pdal-et-reproductibilite.md) (arbitrage C10 de Pascal).

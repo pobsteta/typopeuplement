@@ -55,15 +55,33 @@ test_that("typer_peuplements : une AOI en sf localise la SER par nemeton puis s'
   )
 })
 
-test_that("localiser_ser de nemeton : un point en Savoie tombe dans une SER des Alpes (jamais en Somalie)", {
+test_that("localiser_ser de nemeton : des points connus tombent dans la bonne SER, donc la bonne GRECO (jamais en Somalie)", {
   skip_if_not_installed("nemeton")
-  # Regle de test du projet : un point du terrain doit tomber au bon endroit. Point en Lambert-93 (m),
-  # Chambery environ (x 925 000, y 6 505 000). La GRECO attendue est H (Alpes), la premiere lettre du code.
-  pt <- sf::st_sf(id = 1, geometry = sf::st_sfc(sf::st_point(c(925000, 6505000)), crs = 2154))
-  ser <- nemeton::localiser_ser(pt)
-  code <- as.character(unlist(ser)[1])
-  expect_true(code %in% utils::read.csv(chemin_ser_codes(), comment.char = "#")$code_ser)
-  expect_identical(unname(greco_de_ser(code)), "H")
+  # Regle de test du projet : un point du terrain doit tomber au bon endroit. Attendus tires du
+  # referentiel du projet (docs/referentiels/ser.md, positions de controle, WFS INRAE inrae:ser_l93),
+  # points donnes en WGS84 (latitude, longitude) puis passes en Lambert-93.
+  #  - La Chapelle-en-Vercors (44,9683 N ; 5,4161 E) : H10, GRECO H.
+  #  - Lus-la-Croix-Haute (44,6654 N ; 5,7052 E) : H30, GRECO H.
+  #  - Chambery, chef-lieu (45,5646 N ; 5,9178 E) : C52 "Plaines et piemonts alpins", GRECO C, et NON H.
+  #    Verifie le 2026-11-23 par une requete directe au WFS INRAE (BBOX autour du point, intersection),
+  #    qui concorde avec nemeton. Le point Lambert-93 (925 000 ; 6 505 000), a 5 km au nord de
+  #    Chambery, est aussi en C52 : l'ancien attendu « GRECO H » etait faux, ce n'est pas un ecart de nemeton.
+  lieux <- data.frame(
+    lieu = c("La Chapelle-en-Vercors", "Lus-la-Croix-Haute", "Chambery"),
+    lat = c(44.9683, 44.6654, 45.5646), lon = c(5.4161, 5.7052, 5.9178),
+    ser = c("H10", "H30", "C52"), greco = c("H", "H", "C")
+  )
+  pts <- sf::st_transform(
+    sf::st_as_sf(lieux, coords = c("lon", "lat"), crs = 4326), 2154)
+  res <- nemeton::localiser_ser(pts)
+  expect_true("ser" %in% names(res))
+  codes_ref <- utils::read.csv(chemin_ser_codes(), comment.char = "#")$code_ser
+  for (i in seq_len(nrow(lieux))) {
+    code <- as.character(res$ser[i])
+    expect_true(code %in% codes_ref, info = lieux$lieu[i])
+    expect_identical(code, lieux$ser[i], info = lieux$lieu[i])
+    expect_identical(unname(greco_de_ser(code)), lieux$greco[i], info = lieux$lieu[i])
+  }
 })
 
 test_that("ecrire_livrables : les six fichiers de la spec, lisibles par terra et sf (critere 8)", {
