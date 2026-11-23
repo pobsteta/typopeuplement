@@ -157,3 +157,5 @@
 2026-11-23 · Pascal · 013 · strate 2 surestimée : « Retirer » — mission courte : retirer des strates 2 à 4 la part des retours qui tombent dans les houppiers de strate 1 déjà segmentés
 2026-11-23 · Pascal · 013 · paquets : « Pas possible de passer par un catalogue avec lidR ou lasR avec buffer ? » — oui : le code traite déjà une collection avec tampon ; la limite était le disque (plafond de 6 Go que s'était fixé l'orchestrateur, 56 Go libres) ; la reprise de 013 recalcule Léoncel en un seul catalogue de 19 dalles avec tampon
 2026-11-23 · Pascal · 013 · drapeau « strates basses estimées » : « Le graduer » — valeur entre 0 et 1, part des retours LiDAR qui passent sous la strate 1
+2026-11-23 · Pascal · 013 · pixel 3 : « Je ne sais pas » — à voir sur le terrain ; carte hybride gardée en attendant
+2026-11-23 · Claude (orchestrateur) · 013 · reprise lancée (aller-retour 1/3) : strates 2 à 4 sans les retours tombant dans les houppiers de strate 1, Léoncel en un seul catalogue de 19 dalles avec tampon, drapeau gradué, mineurs de la relecture

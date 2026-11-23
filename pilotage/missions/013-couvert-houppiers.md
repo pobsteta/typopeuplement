@@ -69,3 +69,26 @@ Les 3 pixels de Léoncel, et le pixel 2 en premier : jeune futaie, ou futaie adu
 - **Pas de nemeton** en contrôle croisé (Pascal).
 - **Carte de Léoncel refaite en mode hybride** (22 dalles), comparée à la carte de 012.
   Pixels 1, 2 et 3 : le pixel 2 est une jeune futaie (Pascal, sur le terrain).
+
+## Reprise, aller-retour 1/3 (2026-11-23, décisions de Pascal)
+
+1. **Strate 2 surestimée : retirer.** En mode hybride, les retours qui tombent dans un
+   houppier de strate 1 (cellule de ce houppier, vue du dessus) ne comptent plus dans les
+   tranches des strates 2 à 4. Les couverts redeviennent cohérents : dire ce que vaut la
+   somme c1 + … + c4 et sa distribution.
+2. **Un seul catalogue.** Léoncel est recalculé en un seul `exec` sur les 19 dalles, avec un
+   tampon de 20 m. Le dossier de travail peut monter à 12 Go (56 Go libres). Plus aucun
+   houppier coupé.
+3. **Drapeau gradué.** `strates_basses_estimees` devient une valeur entre 0 et 1 : la part
+   des retours LiDAR qui passent sous la strate 1 (au pixel). Nom à garder ou à préciser,
+   documenté.
+4. **Mineurs** :
+   - la fiche dit que la somme des couverts peut dépasser 1 (ou ne le peut plus, après le
+     point 1) ;
+   - `!is.na(h)` dans le numérateur de `couvert_houppiers` ;
+   - houppier numéro 0.
+5. **Carte de Léoncel refaite**, comparée à la carte hybride précédente : familles, part
+   « entre deux », pixels 1, 2 et 3. Le pixel 2 est une jeune futaie (terrain) ; le pixel 3
+   est inconnu.
+
+Périmètre : celui de la fiche. Ne pas toucher la clé.
