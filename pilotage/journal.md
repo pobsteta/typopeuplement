@@ -54,3 +54,4 @@
 2026-11-23 · hook tests_obligatoires · — · arrêt accepté au second essai sans tests verts (tests rouges, code 1, `Rscript -e 'testthat::test_local()'`) : mission non vérifiée, à reprendre.
 2026-11-23 · Pascal · — · porte n° 2 franchie : équipe et missions 001 à 007 validées ; cycle 1 = 001, 002, 003 ; 004 à 007 planifiées
 2026-11-23 · hook tests_obligatoires · — · arrêt accepté au second essai sans tests verts (tests rouges, code 1, `Rscript -e 'testthat::test_local()'`) : mission non vérifiée, à reprendre.
+2026-11-23 · Claude (orchestrateur) · — · PR de cadrage ouverte (branche docs/cadrage, commit f33b332) : brief, spec, ADR 0001-0013, pilotage, README, LICENSE · à fusionner par Pascal
