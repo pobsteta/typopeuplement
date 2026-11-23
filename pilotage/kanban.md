@@ -7,7 +7,7 @@
 
 ## Bac à sable
 
-- typologie-h10.md, tableau l. 89 et 92 (strates, N) à passer à « oui, mode variables fournies » · depuis le cycle 3
+- Doc de la clé H10 : « 7 ambiguïtés » à passer à six, écart N = 800 sans effet, transcription mise de côté à marquer, statut du type 3 (cascade) · depuis le cycle 3
 
 - Mineurs de 012 : règle hors clé en mode « pixels préparés », raster factice de focalMat en Lambert-93, part « entre deux » et effectifs dans la fiche · depuis le cycle 2
 
