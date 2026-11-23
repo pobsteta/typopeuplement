@@ -146,3 +146,4 @@
 2026-11-23 · Pascal · 013 · plan validé, mode « Hybride » : strate du haut par les houppiers (lasR, fenêtre 3 m, hauteur min 2 m, provisoires), strates basses par les tranches corrigées de l'occlusion, déclarées « estimées » dans la confiance
 2026-11-23 · Pascal · 012 · pixel 2 de Léoncel (44,915385 N ; 5,208395 E) : « Jeune futaie » — la carte a raison sur ce pixel ; premier retour terrain favorable à la hauteur potentielle (32 m) en ce point
 2026-11-23 · Pascal · 010 · seuil de 800 tiges/ha de L et R : « Densité de l'ONF » — utiliser N du jeu ONF (tiges précomptables, vraisemblablement ≥ 17,5 cm) ; à transcrire dans la clé de H10 (branche N de L et R)
+2026-11-23 · Pascal · 013 · nemeton en contrôle croisé : « Non » ; 013 lancée en exécution (hybride) ; transcription de la branche N de L et R confiée à l'acquéreur (vercors-h10.json), en parallèle

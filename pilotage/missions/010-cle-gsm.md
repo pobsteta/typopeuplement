@@ -76,3 +76,10 @@ Pascal relit le logigramme et reconnaît les types sur une forêt du Vercors.
    - le comptage des chevauchements se fait sur l'appartenance brute (avant
      normalisation), ou sur les probabilités strictement positives, pour qu'un
      chevauchement soit signalé comme chevauchement.
+
+## Branche N de L et R (2026-11-23, Pascal)
+
+Le seuil de 800 tiges/ha porte sur `N` du jeu ONF (tiges précomptables). Transcrire la
+branche N de L et R selon le logigramme (p. 54), avec les « ou » du format de 007.
+L'ambiguïté 6 (branches qui se recouvrent) reste à poser, pas à trancher. Le test
+`test-cle-h10.R` doit rester vert : il lit les seuils dans la clé.

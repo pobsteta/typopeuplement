@@ -53,3 +53,19 @@ Les 3 pixels de Léoncel, et le pixel 2 en premier : jeune futaie, ou futaie adu
 ## Qui tranche
 
 `relecteur`, puis Pascal.
+
+## Plan validé par Pascal (2026-11-23)
+
+- **Mode hybride :**
+  - strate 1 par les houppiers (lasR : MNH à 0,5 m, maxima locaux, `region_growing` ;
+    fenêtre de 3 m, hauteur minimale de 2 m, provisoires) ;
+  - strates 2 à 4 par les tranches de hauteur de 008, corrigées de l'occlusion ;
+  - les strates basses sont déclarées « estimées » dans la couche de confiance.
+- **Argument `methode_strates`** : « tranches », « houppiers » ou « hybride » (défaut :
+  hybride). Les colonnes `c*_<ref>` ne changent pas.
+- **Toutes les dalles passent en un seul `exec`**, avec un tampon, pour ne pas couper les
+  houppiers. La densité des houppiers est rendue mais ne sert pas à la clé : le seuil de
+  800 tiges/ha porte sur N de l'ONF (décision de Pascal).
+- **Pas de nemeton** en contrôle croisé (Pascal).
+- **Carte de Léoncel refaite en mode hybride** (22 dalles), comparée à la carte de 012.
+  Pixels 1, 2 et 3 : le pixel 2 est une jeune futaie (Pascal, sur le terrain).
