@@ -179,35 +179,116 @@ parcourir_blocs <- function(r, lignes_bloc, f) {
   invisible(NULL)
 }
 
+#' Sommets des houppiers d'une segmentation
+#'
+#' Sommet de chaque houppier = sa cellule la plus haute dans le MNH (à égalité, la
+#' première lue) ; sa hauteur est celle de l'arbre. Un numéro de houppier vaut un arbre,
+#' **0 compris** : lasR numérote ses houppiers à partir de 0 (à Léoncel, sur l'extrait de
+#' test, 281 sommets numérotés de 0 à 280). Une cellule sans hauteur (MNH vide) n'est
+#' pas lue.
+#'
+#' @param houppiers Objet `typo_houppiers` ([segmenter_houppiers()]), ou liste `houppiers`
+#'   et `mnh` (chemins ou `SpatRaster` de même grille).
+#' @param lignes_bloc Nombre de lignes du MNH lues à la fois.
+#' @return data.frame, un sommet par houppier : `id`, `h` (m), `x`, `y` (centre de la
+#'   cellule du sommet, m, système du nuage).
+#' @seealso [couvert_houppiers()], [couvert_strates_dalle()]
+#' @export
+sommets_houppiers <- function(houppiers, lignes_bloc = 1000L) {
+  sommets_rasters(rasters_houppiers(houppiers), lignes_bloc)
+}
+
+# Sommets à partir des rasters lus (rasters_houppiers()).
+sommets_rasters <- function(r, lignes_bloc = 1000L) {
+  som <- list()
+  parcourir_blocs(r, lignes_bloc, function(id, h, x, y) {
+    ok <- !is.na(id) & !is.na(h)
+    if (!any(ok)) return(NULL)
+    o <- which(ok)[order(id[ok], -h[ok])]
+    p <- o[!duplicated(id[o])]
+    som[[length(som) + 1L]] <<- data.frame(id = id[p], h = h[p], x = x[p], y = y[p])
+  })
+  if (length(som) == 0) {
+    return(data.frame(id = numeric(0), h = numeric(0), x = numeric(0), y = numeric(0)))
+  }
+  som <- do.call(rbind, som)
+  som <- som[order(som$id, -som$h), ]
+  som <- som[!duplicated(som$id), ]
+  rownames(som) <- NULL
+  som
+}
+
+# Strate (1 à 4) d'arbres de cime `h_cime`, par la hauteur de référence `H` (m) ; NA si H
+# manque. Même règle que les retours (comptes_strates) : quarts de H.
+strate_cime <- function(h_cime, H) 4L - findInterval(h_cime / H, rev(QUARTS_STRATES))
+
+# Cime de chaque point (x, y) : hauteur `h` du sommet du houppier où tombe le point (vu
+# du dessus, cellule du raster des houppiers), et pixel de ce sommet dans `grille`
+# (`cellule`). NA hors houppier. `masque` : list(ids = SpatRaster des houppiers,
+# sommets = sommets_houppiers()). La fenêtre du raster couvrant les points est lue une fois.
+cimes_points <- function(masque, grille, x, y) {
+  n <- length(x)
+  out <- list(h = rep(NA_real_, n), cellule = rep(NA_integer_, n))
+  if (n == 0 || nrow(masque$sommets) == 0) return(out)
+  ids <- masque$ids
+  rs <- terra::res(ids)
+  e0 <- as.vector(terra::ext(ids))
+  # Fenêtre alignée sur la grille du raster, coupée à son emprise.
+  xmin <- max(e0[["xmin"]], e0[["xmin"]] + floor((min(x) - e0[["xmin"]]) / rs[1]) * rs[1])
+  xmax <- min(e0[["xmax"]], e0[["xmin"]] + ceiling((max(x) - e0[["xmin"]]) / rs[1] + 1e-9) * rs[1])
+  ymin <- max(e0[["ymin"]], e0[["ymin"]] + floor((min(y) - e0[["ymin"]]) / rs[2]) * rs[2])
+  ymax <- min(e0[["ymax"]], e0[["ymin"]] + ceiling((max(y) - e0[["ymin"]]) / rs[2] + 1e-9) * rs[2])
+  if (xmax <= xmin || ymax <= ymin) return(out)
+  f <- terra::crop(ids, terra::ext(xmin, xmax, ymin, ymax), snap = "out")
+  e <- as.vector(terra::ext(f))
+  nc <- terra::ncol(f)
+  nr <- terra::nrow(f)
+  v <- terra::values(f, mat = FALSE)
+  col <- floor((x - e[["xmin"]]) / rs[1])
+  lig <- floor((e[["ymax"]] - y) / rs[2])
+  dedans <- which(col >= 0 & col < nc & lig >= 0 & lig < nr)
+  id <- v[lig[dedans] * nc + col[dedans] + 1]
+  k <- match(id, masque$sommets$id)
+  out$h[dedans] <- masque$sommets$h[k]
+  cel_som <- cellules_xy(grille, masque$sommets$x, masque$sommets$y)
+  out$cellule[dedans] <- cel_som[k]
+  out
+}
+
 #' Couvert des strates par houppier
 #'
 #' À partir d'une segmentation ([segmenter_houppiers()]), range chaque arbre dans une
 #' strate du GSM selon la hauteur de sa cime, puis additionne, pour chaque pixel de la
 #' grille, la surface des houppiers de chaque strate :
 #'
-#' - sommet d'un houppier = sa cellule la plus haute dans le MNH ; sa hauteur est celle
-#'   de l'arbre ;
+#' - sommet d'un houppier = sa cellule la plus haute dans le MNH
+#'   ([sommets_houppiers()]) ; sa hauteur est celle de l'arbre ; le houppier numéro 0
+#'   est un arbre comme les autres ;
 #' - strate de l'arbre = quart de la hauteur de référence H **du pixel de son sommet**
 #'   (strate 1 : cime ≥ 3/4 H ; 2 : ≥ H/2 ; 3 : ≥ H/4 ; 4 : en dessous), comme
 #'   [comptes_strates()] pour les retours. Un arbre dont le sommet tombe dans un pixel
 #'   sans référence (hors de `references`) prend, cellule par cellule, la référence du
 #'   pixel où tombe la cellule ;
 #' - `c<k>_<r>` = surface des cellules des houppiers de la strate k dans le pixel,
-#'   divisée par la surface du pixel couverte par le MNH. Un houppier à cheval sur deux
-#'   pixels compte dans chacun pour sa part, avec la strate de son arbre.
+#'   divisée par la surface du pixel couverte par le MNH. Numérateur et dénominateur ne
+#'   comptent que les cellules qui ont une hauteur : un couvert ne dépasse pas 1. Un
+#'   houppier à cheval sur deux pixels compte dans chacun pour sa part, avec la strate de
+#'   son arbre.
 #'
 #' C'est un couvert **vu du dessus** : chaque cellule n'appartient qu'à un houppier, et
 #' les quatre couverts s'additionnent au plus à 1. Les strates basses sont masquées par
 #' les houppiers du dessus (sous-étage sous-estimé) : d'où le mode hybride de la chaîne
-#' (strate 1 par les houppiers, strates 2 à 4 par les tranches, [typer_peuplements()]).
+#' (strate 1 par les houppiers, strates 2 à 4 par les tranches, sans les retours qui
+#' tombent dans les houppiers de la strate 1, [typer_peuplements()]).
 #'
 #' La densité des houppiers (`densite_houppiers`, sommets par hectare de MNH) est rendue
 #' pour la lecture ; elle ne sert pas à la clé (le seuil de densité de la clé de H10
 #' porte sur N du producteur, décision de Pascal du 2026-11-23).
 #'
-#' Plusieurs segmentations (une liste, par exemple par paquets de dalles) s'additionnent
-#' pixel par pixel ; un houppier coupé à la limite de deux segmentations y compte pour
-#' deux arbres. Les rasters sont lus par blocs de `lignes_bloc` lignes.
+#' Plusieurs segmentations (une liste) s'additionnent pixel par pixel ; un houppier coupé
+#' à la limite de deux segmentations y compte pour deux arbres : on segmente toutes les
+#' dalles en un seul `exec` ([segmenter_houppiers()], décision du 2026-11-23). Les
+#' rasters sont lus par blocs de `lignes_bloc` lignes.
 #'
 #' @param houppiers Objet `typo_houppiers` ([segmenter_houppiers()]), ou liste `houppiers`
 #'   (identifiants) et `mnh` (hauteurs, m) : chemins ou `SpatRaster` de même grille ; ou
@@ -222,7 +303,7 @@ parcourir_blocs <- function(r, lignes_bloc, f) {
 #'   `densite_houppiers` (tiges/ha), puis `c1_r` à `c4_r` pour chaque référence `r`
 #'   (vides si la référence du pixel manque). Attribut `parametres` : ceux de la
 #'   segmentation.
-#' @seealso [segmenter_houppiers()], [couvert_strates_dalle()]
+#' @seealso [segmenter_houppiers()], [sommets_houppiers()], [couvert_strates_dalle()]
 #' @examples
 #' # Deux pixels de 10 m ; MNH de 1 m ; un houppier de 4 x 4 m, cime à 18 m, dans le
 #' # premier pixel (H = 20 m) : strate 1, couvert 16 / 100.
@@ -250,17 +331,7 @@ couvert_houppiers <- function(houppiers, gabarit, references, lignes_bloc = 1000
   }
   grille <- grille_strates(gabarit)
   npix <- grille$ncol * grille$nrow
-  cel_ref <- cellules_xy(grille, references$x, references$y)
-  if (anyDuplicated(cel_ref[!is.na(cel_ref)])) arreter("references : deux lignes dans le même pixel")
-  # Référence de chaque pixel de la grille (NA sans référence valable).
-  H <- lapply(stats::setNames(noms, noms), function(r) {
-    v <- rep(NA_real_, npix)
-    ok <- !is.na(cel_ref)
-    v[cel_ref[ok]] <- as.numeric(references[[r]])[ok]
-    v[!is.na(v) & v <= 0] <- NA_real_
-    v
-  })
-  bornes <- rev(QUARTS_STRATES)
+  H <- references_par_pixel(references, noms, grille)
   n_cel <- numeric(npix)
   n_som <- numeric(npix)
   par_strate <- lapply(H, function(v) numeric(npix * 4))
@@ -269,38 +340,25 @@ couvert_houppiers <- function(houppiers, gabarit, references, lignes_bloc = 1000
     r <- rasters_houppiers(s)
     parametres <- parametres %||% s$parametres
     # Passe 1 : sommet de chaque houppier (cellule la plus haute), sur tous les blocs.
-    som <- list()
-    parcourir_blocs(r, lignes_bloc, function(id, h, x, y) {
-      ok <- !is.na(id) & !is.na(h)
-      if (!any(ok)) return(NULL)
-      o <- which(ok)[order(id[ok], -h[ok])]
-      p <- o[!duplicated(id[o])]
-      som[[length(som) + 1L]] <<- data.frame(id = id[p], h = h[p], x = x[p], y = y[p])
-    })
-    if (length(som) > 0) {
-      som <- do.call(rbind, som)
-      som <- som[order(som$id, -som$h), ]
-      som <- som[!duplicated(som$id), ]
-    } else som <- data.frame(id = numeric(0), h = numeric(0), x = numeric(0), y = numeric(0))
+    som <- sommets_rasters(r, lignes_bloc)
     som$pix <- cellules_xy(grille, som$x, som$y)
     n_som <- n_som + tabulate(som$pix[!is.na(som$pix)], nbins = npix)
     # Strate de chaque arbre, par la référence du pixel de son sommet.
-    strate_arbre <- lapply(H, function(v) {
-      4L - findInterval(som$h / v[som$pix], bornes)
-    })
-    # Passe 2 : chaque cellule de houppier compte dans son pixel, avec la strate de son arbre.
+    strate_arbre <- lapply(H, function(v) strate_cime(som$h, v[som$pix]))
+    # Passe 2 : chaque cellule de houppier compte dans son pixel, avec la strate de son
+    # arbre. Numérateur et dénominateur : les mêmes cellules, celles qui ont une hauteur.
     parcourir_blocs(r, lignes_bloc, function(id, h, x, y) {
       pix <- cellules_xy(grille, x, y)
       m <- !is.na(pix) & !is.na(h)
       n_cel <<- n_cel + tabulate(pix[m], nbins = npix)
-      c <- !is.na(pix) & !is.na(id)
+      c <- m & !is.na(id)
       if (!any(c)) return(NULL)
       k <- match(id[c], som$id)
       p <- pix[c]
       for (nom in noms) {
         st <- strate_arbre[[nom]][k]
         sans <- is.na(st)
-        if (any(sans)) st[sans] <- 4L - findInterval(som$h[k[sans]] / H[[nom]][p[sans]], bornes)
+        if (any(sans)) st[sans] <- strate_cime(som$h[k[sans]], H[[nom]][p[sans]])
         ok <- !is.na(st)
         par_strate[[nom]] <<- par_strate[[nom]] +
           tabulate(p[ok] + npix * (st[ok] - 1L), nbins = npix * 4L)
@@ -328,6 +386,27 @@ couvert_houppiers <- function(houppiers, gabarit, references, lignes_bloc = 1000
   rownames(out) <- NULL
   attr(out, "parametres") <- parametres
   out
+}
+
+# Référence de chaque pixel de la grille, une colonne de `references` par élément (NA sans
+# référence valable : vide, nulle ou négative).
+references_par_pixel <- function(references, noms, grille) {
+  npix <- grille$ncol * grille$nrow
+  cel_ref <- cellules_xy(grille, references$x, references$y)
+  if (anyDuplicated(cel_ref[!is.na(cel_ref)])) arreter("references : deux lignes dans le même pixel")
+  lapply(stats::setNames(noms, noms), function(r) {
+    v <- rep(NA_real_, npix)
+    ok <- !is.na(cel_ref)
+    v[cel_ref[ok]] <- as.numeric(references[[r]])[ok]
+    v[!is.na(v) & v <= 0] <- NA_real_
+    v
+  })
+}
+
+# Une seule segmentation (objet typo_houppiers, ou liste houppiers / mnh) ?
+segmentation_unique <- function(x) {
+  inherits(x, "typo_houppiers") ||
+    (is.list(x) && !is.data.frame(x) && !is.null(x$houppiers) && !is.null(x$mnh))
 }
 
 # Rôle d'une entrée de strates : couverts par houppiers (colonne n_houppiers),

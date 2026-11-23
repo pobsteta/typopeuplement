@@ -66,14 +66,19 @@
 #'   - les chemins de dalles de nuage de points (`.las`, `.laz`, `.copc.laz`) : le couvert
 #'     est calculé ici, avec la référence tirée de la chaîne (lasR requis ; choisir les
 #'     dalles avec [dalles_sur_aoi()]) : tranches une dalle à la fois, houppiers en un
-#'     seul `exec` avec tampon ([segmenter_houppiers()], paramètres par défaut) ;
+#'     seul `exec` avec tampon ([segmenter_houppiers()], paramètres par défaut) ; en
+#'     hybride, la segmentation sert à retirer des tranches les retours des houppiers de
+#'     la strate 1 ;
 #'   - un data.frame de couverts déjà calculés (`c1_<ref>` à `c4_<ref>`, sans comptes
 #'     ni `n_houppiers`) : pris tels quels, quelle que soit `methode_strates` (la fiche
 #'     le dit).
 #' @param methode_strates Méthode du couvert des strates (mission 013, plan validé par
 #'   Pascal le 2026-11-23) : `"hybride"` (**par défaut**) : strate 1 par les houppiers,
-#'   strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, déclarées
-#'   estimées ; `"houppiers"` : les quatre strates par les houppiers vus du dessus ;
+#'   strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, sans les
+#'   retours qui tombent dans les houppiers de la strate 1 (décision du 2026-11-23 ; il
+#'   faut une segmentation unique et des tranches calculées depuis les dalles, ou des
+#'   comptes de [couvert_strates_dalle()] avec `houppiers`), déclarées estimées
+#'   (`part_retours_sous_s1`) ; `"houppiers"` : les quatre strates par les houppiers vus du dessus ;
 #'   `"tranches"` : les quatre par les tranches (mission 008). Les colonnes
 #'   `c1_<ref>` à `c4_<ref>` gardent leurs noms. Une source manquante pour la méthode
 #'   arrête la chaîne.
@@ -261,8 +266,9 @@ correspondance_types <- function(cle, types = NULL) {
 #'   variables du producteur, 1 : SER, 2 : grande région *requise* — la bascule vers le
 #'   modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
 #'   servi) ; en mode « variables fournies », aussi `non_precomptable`, `part_pb_absente`
-#'   et `gb_interim` (0 ou 1), et `strates_basses_estimees` (0 ou 1) quand le couvert des
-#'   strates a été calculé par la chaîne ;
+#'   et `gb_interim` (0 ou 1), et `part_retours_sous_s1` (de 0 à 1 : part des retours
+#'   du pixel qui passent sous la strate 1 et servent aux strates 2 à 4, estimées ; vide
+#'   sans comptes de retours) quand le couvert des strates a été calculé par la chaîne ;
 #' - `fiche_validation.md` ; `carte_types.csv` (la carte, une ligne par pixel) ;
 #' - `correspondance_types.csv` (`valeur`, `code`, `libelle`), groupes de types compris ;
 #' - `correspondance_niveau_modele.csv` (`valeur`, `niveau`, `sens`) : les codes de
@@ -310,7 +316,7 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
     hors_cle = as.numeric(carte$hors_cle),
     niveau_modele = rep(code_niveau_modele(resultat$niveau_modele), nrow(carte))
   )
-  for (drapeau in c("non_precomptable", "part_pb_absente", "gb_interim", "strates_basses_estimees")) {
+  for (drapeau in c("non_precomptable", "part_pb_absente", "gb_interim", "part_retours_sous_s1")) {
     if (drapeau %in% names(carte)) confiance[[drapeau]] <- as.numeric(carte[[drapeau]])
   }
   couches <- list(types.tif = types, variables.tif = variables, confiance.tif = confiance)

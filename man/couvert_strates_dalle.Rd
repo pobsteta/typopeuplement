@@ -10,7 +10,9 @@ couvert_strates_dalle(
   references,
   plancher_m = 1,
   classes = 1:5,
-  ncores = NULL
+  ncores = NULL,
+  houppiers = NULL,
+  sommets = NULL
 )
 }
 \arguments{
@@ -31,6 +33,12 @@ mesure. Strictement positif : à 0, le sol compterait comme végétation.}
 \item{classes}{Classes de points gardées. \strong{Provisoire} : 1 à 5.}
 
 \item{ncores}{Nombre de cœurs donnés à lasR ; \code{NULL} : réglage de lasR.}
+
+\item{houppiers}{Segmentation (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, ou liste \code{houppiers} et \code{mnh}),
+une seule ; \code{NULL} : pas de retrait.}
+
+\item{sommets}{Sommets de cette segmentation (\code{\link[=sommets_houppiers]{sommets_houppiers()}}), pour ne pas les
+relire à chaque dalle ; \code{NULL} : lus ici.}
 }
 \value{
 Les comptes de \code{\link[=comptes_strates]{comptes_strates()}}, plus \code{x}, \code{y} (centre du pixel, m).
@@ -46,6 +54,11 @@ et se terminent par \code{\link[=couvert_depuis_comptes]{couvert_depuis_comptes(
 \details{
 La dalle est normalisée seule, sans tampon : au bord, le sol est interpolé avec les
 seuls points de la dalle.
+
+Avec \code{houppiers} (une segmentation de \code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, faite sur toutes les
+dalles en un seul \code{exec}), chaque retour reçoit la cime du houppier où il tombe, vu du
+dessus, et les retours des houppiers de la strate 1 sont retirés des strates 2 à 4
+(voir \code{\link[=comptes_strates]{comptes_strates()}} ; mode hybride, décision du 2026-11-23).
 
 lasR est en Suggests (installation : voir le README, il faut GDAL) ; sans lui, la
 fonction s'arrête.

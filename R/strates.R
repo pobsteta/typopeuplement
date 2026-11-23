@@ -76,6 +76,16 @@ references_strates <- function(carte, facteur = NULL) {
 #'   toutes les strates : sous une référence de moins de 4 m (H/4 < 1 m), il ne compte
 #'   ni en strate 4 ni dans les strates du dessus qui descendraient sous le plancher.
 #'
+#' **Retours sous les houppiers de la strate 1** (mission 013, décision de Pascal du
+#' 2026-11-23) : si `points` porte la cime de chaque retour (`h_cime`, `cellule_cime`,
+#' voir [couvert_strates_dalle()] avec `houppiers`), un retour qui tombe, vu du dessus,
+#' dans le houppier d'un arbre de la strate 1 et qui est sous 3/4 H ne compte plus dans
+#' les strates 2 à 4 : ni au numérateur (`n2`, `n3`, `n4`), ni au dénominateur (`s2`,
+#' `s3`, `s4`), sol compris. La strate de l'arbre se lit comme dans
+#' [couvert_houppiers()] : sa cime contre la référence du pixel de son sommet (à défaut,
+#' celle du pixel du retour). Les strates 2 à 4 se mesurent alors dans les trouées de la
+#' strate 1. Les retours retirés sont comptés dans `r1_r`.
+#'
 #' Les hauteurs Z négatives (sous le sol interpolé) valent 0. Seules les classes
 #' `classes` comptent (par défaut 1 à 5 de l'ASPRS, celles du LiDAR HD de l'IGN : non
 #' classé, sol, végétation basse, moyenne, haute) ; bâtiments, eau, ponts, bruit et
@@ -83,7 +93,9 @@ references_strates <- function(carte, facteur = NULL) {
 #' négative) a des comptes vides (`NA`) pour cette référence.
 #'
 #' @param points data.frame : `cellule` (numéro de pixel, entier), `Z` (hauteur au-dessus
-#'   du sol, m), `ReturnNumber`, `Classification`. Une ligne par retour.
+#'   du sol, m), `ReturnNumber`, `Classification`. Une ligne par retour. Facultatives :
+#'   `h_cime` (hauteur de la cime du houppier où tombe le retour, m ; vide hors
+#'   houppier) et `cellule_cime` (pixel du sommet de ce houppier) ; les deux ensemble.
 #' @param references data.frame : `cellule`, et une colonne numérique (m) par hauteur de
 #'   référence, nommée (par exemple celles de [references_strates()]). Une ligne par pixel.
 #' @param plancher_m Bas de la strate 4, en m : ce qui est plus bas est le sol (le bruit
@@ -92,7 +104,8 @@ references_strates <- function(carte, facteur = NULL) {
 #'   mesure. Strictement positif : à 0, le sol compterait comme végétation.
 #' @param classes Classes de points gardées. **Provisoire** : 1 à 5.
 #' @return data.frame, une ligne par pixel touché : `cellule`, `n_tous`, `n_premiers`, et
-#'   pour chaque référence `r` : `p1_r`, `n2_r`, `s2_r`, `n3_r`, `s3_r`, `n4_r`, `s4_r`.
+#'   pour chaque référence `r` : `p1_r`, `n2_r`, `s2_r`, `n3_r`, `s3_r`, `n4_r`, `s4_r`,
+#'   et `r1_r` (retours retirés) si les cimes sont données.
 #' @seealso [couvert_depuis_comptes()], [couvert_strates()]
 #' @export
 comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
@@ -109,7 +122,14 @@ comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
   if (length(plancher_m) != 1 || !is.finite(plancher_m) || plancher_m <= 0) {
     arreter("plancher_m doit être strictement positif (m)")
   }
+  cimes <- intersect(c("h_cime", "cellule_cime"), names(points))
+  if (length(cimes) == 1) arreter("points : h_cime et cellule_cime vont ensemble")
+  avec_cimes <- length(cimes) == 2
   garde <- points$Classification %in% classes & !is.na(points$cellule) & !is.na(points$Z)
+  if (avec_cimes) {
+    h_cime <- as.numeric(points$h_cime[garde])
+    cel_cime <- as.integer(points$cellule_cime[garde])
+  }
   cel <- as.integer(points$cellule[garde])
   z <- pmax(as.numeric(points$Z[garde]), 0)
   prem <- points$ReturnNumber[garde] == 1
@@ -129,10 +149,26 @@ comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
     valable <- !is.na(h_cel) & h_cel > 0
     h_cel[!valable] <- NA_real_
     strate <- 4L - findInterval(z / h_cel[k], bornes)
+    if (avec_cimes) {
+      # Retours dans un houppier de la strate 1 (vu du dessus), sous 3/4 H : retirés des
+      # strates 2 à 4, sol compris (mission 013). Strate de l'arbre : sa cime contre la
+      # référence du pixel de son sommet, à défaut celle du pixel du retour.
+      h_som <- as.numeric(references[[r]])[match(cel_cime, references$cellule)]
+      h_som[!is.na(h_som) & h_som <= 0] <- NA_real_
+      sans <- is.na(h_som)
+      h_som[sans] <- h_cel[k[sans]]
+      retire <- !is.na(h_cime) & strate_cime(h_cime, h_som) %in% 1L & !(strate %in% 1L)
+      rm(h_som, sans)
+    }
     # Sous le plancher, c'est le sol, quelle que soit la strate où tomberait le retour :
     # sous une référence de moins de 4 m, le quart du bas est sous le plancher et les
     # strates 3, 2 voire 1 y descendent (mineur de 008).
     strate[sol] <- 5L
+    if (avec_cimes) {
+      r1 <- tabulate(k[retire], nbins = nb)
+      strate[retire] <- NA_integer_
+      rm(retire)
+    }
     # Comptes par pixel (lignes) et par strate (colonnes) ; NA ignorés par tabulate().
     tous <- matrix(tabulate(k + nb * (strate - 1L), nbins = nb * 5L), nrow = nb, ncol = 5L)
     p1 <- tabulate(k[prem & strate == 1L], nbins = nb)
@@ -143,6 +179,7 @@ comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
       n3 = tous[, 3], s3 = rowSums(tous[, 3:5, drop = FALSE]),
       n4 = tous[, 4], s4 = rowSums(tous[, 4:5, drop = FALSE])
     )
+    if (avec_cimes) col$r1 <- r1
     for (nom in names(col)) {
       v <- as.integer(col[[nom]])
       v[!valable] <- NA_integer_
@@ -166,12 +203,20 @@ comptes_strates <- function(points, references, plancher_m = 1, classes = 1:5) {
 #'
 #' Les quatre couverts sont entre 0 et 1, chacun pour sa strate : ils ne s'additionnent
 #' pas en un couvert total (une strate basse cachée sous une strate haute compte pour son
-#' propre couvert). Dénominateur nul : `NA`.
+#' propre couvert, comme au GSM) ; leur somme peut dépasser 1. Dénominateur nul : `NA`.
+#'
+#' `sous_s1_r` = `s2 / n_tous` : part des retours du pixel qui passent sous la strate 1
+#' (sous 3/4 H, sol compris) et servent aux strates 2 à 4 ; sans les retours tombés dans
+#' les houppiers de la strate 1 si les comptes les ont retirés (`r1_r`). C'est la mesure
+#' sur laquelle reposent les strates basses : près de 0, elles sont estimées sur très
+#' peu de retours.
 #'
 #' @param comptes data.frame rendu par [comptes_strates()] (ou plusieurs, liés par
 #'   `rbind`). Les colonnes `x`, `y`, si elles y sont, sont reprises.
 #' @return data.frame, une ligne par pixel : `cellule`, `x`, `y` (si présents), `n_tous`,
-#'   `n_premiers`, puis `c1_r`, `c2_r`, `c3_r`, `c4_r` pour chaque référence `r`.
+#'   `n_premiers`, puis `c1_r`, `c2_r`, `c3_r`, `c4_r` et `sous_s1_r` pour chaque
+#'   référence `r`. Attribut `retrait_s1` : `TRUE` si les comptes ont retiré les retours
+#'   des houppiers de la strate 1 (colonnes `r1_*`).
 #' @export
 couvert_depuis_comptes <- function(comptes) {
   verifier_colonnes(comptes, c("cellule", "n_tous", "n_premiers"), "les comptes")
@@ -201,8 +246,10 @@ couvert_depuis_comptes <- function(comptes) {
     out[[paste0("c2_", r)]] <- part(s("n2"), s("s2"))
     out[[paste0("c3_", r)]] <- part(s("n3"), s("s3"))
     out[[paste0("c4_", r)]] <- part(s("n4"), s("s4"))
+    out[[paste0("sous_s1_", r)]] <- part(s("s2"), somme[, "n_tous"])
   }
   rownames(out) <- NULL
+  attr(out, "retrait_s1") <- any(grepl("^r1_", names(comptes)))
   out
 }
 
@@ -264,6 +311,11 @@ cellules_xy <- function(grille, x, y) {
 #' La dalle est normalisée seule, sans tampon : au bord, le sol est interpolé avec les
 #' seuls points de la dalle.
 #'
+#' Avec `houppiers` (une segmentation de [segmenter_houppiers()], faite sur toutes les
+#' dalles en un seul `exec`), chaque retour reçoit la cime du houppier où il tombe, vu du
+#' dessus, et les retours des houppiers de la strate 1 sont retirés des strates 2 à 4
+#' (voir [comptes_strates()] ; mode hybride, décision du 2026-11-23).
+#'
 #' lasR est en Suggests (installation : voir le README, il faut GDAL) ; sans lui, la
 #' fonction s'arrête.
 #'
@@ -274,6 +326,10 @@ cellules_xy <- function(grille, x, y) {
 #' @param references data.frame : `x`, `y` (centres des pixels, m, même système) et une
 #'   colonne par hauteur de référence (par exemple [references_strates()]).
 #' @param ncores Nombre de cœurs donnés à lasR ; `NULL` : réglage de lasR.
+#' @param houppiers Segmentation ([segmenter_houppiers()], ou liste `houppiers` et `mnh`),
+#'   une seule ; `NULL` : pas de retrait.
+#' @param sommets Sommets de cette segmentation ([sommets_houppiers()]), pour ne pas les
+#'   relire à chaque dalle ; `NULL` : lus ici.
 #' @inheritParams comptes_strates
 #' @return Les comptes de [comptes_strates()], plus `x`, `y` (centre du pixel, m).
 #' @examples
@@ -286,7 +342,8 @@ cellules_xy <- function(grille, x, y) {
 #' }
 #' @export
 couvert_strates_dalle <- function(fichier, gabarit, references, plancher_m = 1,
-                                  classes = 1:5, ncores = NULL) {
+                                  classes = 1:5, ncores = NULL, houppiers = NULL,
+                                  sommets = NULL) {
   if (!requireNamespace("lasR", quietly = TRUE)) {
     arreter(paste0("lasR n'est pas installé : le nuage de points ne peut pas être lu ",
                    "(installation depuis r-universe, voir le README)"))
@@ -299,12 +356,26 @@ couvert_strates_dalle <- function(fichier, gabarit, references, plancher_m = 1,
   refs$cellule <- cellules_xy(grille, refs$x, refs$y)
   refs <- refs[!is.na(refs$cellule), setdiff(names(refs), c("x", "y")), drop = FALSE]
   if (anyDuplicated(refs$cellule)) arreter("references : deux lignes dans le même pixel")
+  masque <- NULL
+  if (!is.null(houppiers)) {
+    if (!segmentation_unique(houppiers)) {
+      arreter("houppiers : une seule segmentation (toutes les dalles en un seul exec)")
+    }
+    r <- rasters_houppiers(houppiers)
+    masque <- list(ids = r$ids, sommets = sommets %||% sommets_rasters(r))
+    verifier_colonnes(masque$sommets, c("id", "h", "x", "y"), "les sommets")
+  }
 
   sol <- lasR::triangulate(filter = lasR::keep_ground())
   normalise <- lasR::transform_with(sol, "-")
   rappel <- lasR::callback(function(d) {
     pts <- data.frame(cellule = cellules_xy(grille, d$X, d$Y), Z = d$Z,
                       ReturnNumber = d$ReturnNumber, Classification = d$Classification)
+    if (!is.null(masque)) {
+      cm <- cimes_points(masque, grille, d$X, d$Y)
+      pts$h_cime <- cm$h
+      pts$cellule_cime <- cm$cellule
+    }
     comptes_strates(pts, refs, plancher_m, classes)
   }, expose = "xyzrc", no_las_update = TRUE)
   args <- list(sol + normalise + rappel, on = fichier, progress = FALSE)
@@ -379,6 +450,7 @@ dalles_sur_aoi <- function(dalles, aoi, gabarit = NULL, cote_m = 1000) {
 # comptes_strates() (colonnes p1_*), ou chemins de fichiers .rds (un ou plusieurs ; des
 # comptes de plusieurs dalles s'additionnent). Rend x, y et c1..c4 de la référence.
 lire_couverts_fournis <- function(strates, reference) {
+  retrait <- NA
   if (is.character(strates)) {
     if (!all(grepl("\\.rds$", strates, ignore.case = TRUE))) {
       arreter("strates : chemins .rds attendus (comptes ou couverts), ou dalles .la[sz]")
@@ -388,10 +460,18 @@ lire_couverts_fournis <- function(strates, reference) {
     strates <- do.call(rbind, lapply(strates, readRDS))
   }
   if (!is.data.frame(strates)) arreter("strates doit être un data.frame ou des chemins de fichiers")
-  if (any(grepl("^p1_", names(strates)))) strates <- couvert_depuis_comptes(strates)
+  if (any(grepl("^p1_", names(strates)))) {
+    strates <- couvert_depuis_comptes(strates)
+    retrait <- attr(strates, "retrait_s1")
+  }
   cols <- paste0("c", 1:4, "_", reference)
   verifier_colonnes(strates, c("x", "y", cols), "les couverts des strates")
-  as.data.frame(strates)[, c("x", "y", cols)]
+  # La part des retours sous la strate 1 vient des comptes ; des couverts déjà calculés
+  # ne la portent pas toujours.
+  sous <- paste0("sous_s1_", reference)
+  out <- as.data.frame(strates)[, c("x", "y", cols, intersect(sous, names(strates)))]
+  attr(out, "retrait_s1") <- retrait
+  out
 }
 
 # Pixel de chaque point (x, y), dans la grille du gabarit si on l'a ; sinon par centre
@@ -427,10 +507,14 @@ hpot_sans_enveloppe <- function(h_pot, famille, facteur) {
   as.numeric(h_pot) / unname(k)
 }
 
-# Couverts des strates d'un nuage : une dalle à la fois, comptes additionnés.
-couverts_depuis_dalles <- function(dalles, gabarit, references, plancher_m = 1, ncores = NULL) {
+# Couverts des strates d'un nuage : une dalle à la fois, comptes additionnés. Avec une
+# segmentation, les retours des houppiers de la strate 1 sont retirés des strates 2 à 4.
+couverts_depuis_dalles <- function(dalles, gabarit, references, plancher_m = 1, ncores = NULL,
+                                   houppiers = NULL) {
   if (is.null(gabarit)) arreter("strates depuis des dalles : les variables doivent porter leur gabarit")
+  sommets <- if (is.null(houppiers)) NULL else sommets_houppiers(houppiers)
   cpt <- lapply(dalles, function(f) couvert_strates_dalle(f, gabarit, references,
-                                                          plancher_m = plancher_m, ncores = ncores))
+                                                          plancher_m = plancher_m, ncores = ncores,
+                                                          houppiers = houppiers, sommets = sommets))
   couvert_depuis_comptes(do.call(rbind, cpt))
 }
