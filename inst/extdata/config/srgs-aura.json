@@ -1,0 +1,76 @@
+{
+  "_avertissement": "Clé SRGS Auvergne-Rhône-Alpes (2023), mission 016, rattachée à la SER H10 (Préalpes du Nord). Source : SRGS AURA, arrêté au JO du 14 décembre 2023 (aura_srgs_vf.pdf, 125 p. ; page imprimée = page PDF). Le SRGS donne 8 types (p. 11-12) mais AUCUN seuil de reconnaissance : la clé est donc PROVISOIRE et NON GELÉE. 3 types sont exprimés (FRE, FIR, TNU) ; 5 sont non exprimables dans la chaîne (MFT, TAS, PEU, ACC, LAN : voir cle.non_exprimables) : 3 + 5 = 8. FRE et FIR sont obtenus par SUBSTITUTION des types GSM de H10 (docs/referentiels/typologie-h10.md ; conditions recopiées de vercors-h10.json), correspondance provisoire décidée par l'orchestrateur (délégation n° 3) ; la règle par parts est documentée en alternative, non appliquée. Le bloc national et le bloc jeux sont des COPIES de vercors-h10.json (un fichier = une configuration), valeurs PROVISOIRES de exemple.json et de la fiche ONF. Doc : docs/referentiels/srgs-aura.md.",
+  "jeux": {
+    "vercors_onf": {
+      "source": "fiche synthétique du jeu LiDAR ONF Vercors drômois (A. Hedel, 25/09/2024), p. 1 : EQM des modèles de prédiction par placette (G 7,32 m²/ha ; % F/R 19,9 % ; P100GGB 16,28 %) ; valeurs retenues par Pascal le 2026-11-22 (copie de vercors-h10.json)",
+      "souplesse": {"G": 7.32, "part_resineux": 0.199, "part_gb": 0.163}
+    }
+  },
+  "national": {
+    "graine": 0,
+    "predicteurs": ["lidar_h95", "lidar_h50", "lidar_cv_h", "lidar_couvert", "lidar_sous_etage", "s2_ndvi_hiver", "s2_amplitude_ndvi"],
+    "variables_milieu": ["altitude", "pente", "bilan_hydrique", "reserve_utile"],
+    "variables_cibles": ["G", "part_resineux", "part_pb", "part_bm", "part_gb"],
+    "lissage_fenetre": 3,
+    "grappe_cote_m": 70.7,
+    "placettes_min_par_type": 30,
+    "transition_demi_largeur_m": 500,
+    "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5},
+    "hauteur_potentielle": {"couvert_min": 0.7, "hauteur_min_m": 15.0, "incertitude_relative_max": 0.2, "quantile_enveloppe": 0.9},
+    "cle": {
+      "marge_entre_deux": 0.15,
+      "souplesse": {"part_resineux": 0.05, "part_pb": 0.05, "part_gb": 0.05, "rapport_h": 0.05},
+      "types": []
+    }
+  },
+  "grandes_regions": {
+    "H": {}
+  },
+  "ser": {
+    "H10": {
+      "grande_region": "H",
+      "_code_ser": "H10 (Préalpes du Nord), SER pilote ; voir docs/referentiels/ser.md. Décision de l'orchestrateur (délégation n° 3) : entrée H10 seule.",
+      "_sources": "docs/referentiels/srgs-aura.md",
+      "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5, "gb_tgb_cm": 62.5},
+      "_seuils_diametre_source": "SRGS AURA p. 12 (tableau des classes de grosseur ; note sous le tableau) : PB classes 20 et 25 ; BM classes 30 à 45 ; GB classes 50 et + ; TGB classes 70 et +. Note : « la limite BM/GB est choisie à 47.5 cm pour toutes les essences (normalement 42.5 cm pour résineux : possible de la conserver quand des typologies sont utilisées) et celles des GB/TGB à 67.5 cm (au lieu de 62.5 cm pour résineux) ». VALEUR PROVISOIRE : BM/GB 42,5 cm et GB/TGB 62,5 cm (le SRGS permet de garder 42,5 quand une typologie est utilisée ; fidèle à la décision de Pascal du 2026-11-22 pour H10). ALTERNATIVE documentée, non appliquée : 47,5 et 67,5 cm (valeurs nominales du SRGS). Bornes en cm (17,5 ; 27,5) lues par les centres de classe : INFÉRENCE, le SRGS ne donne que des classes. gb_tgb_cm n'est lu par aucune fonction de la chaîne (part_gb = GB + TGB) : donnée documentaire.",
+      "cle": {
+        "_statut": "PROVISOIRE, NON GELÉE. 3 types exprimés (FRE, FIR, TNU), 5 non exprimables (MFT, TAS, PEU, ACC, LAN) : 3 + 5 = 8 types du SRGS (p. 11-12). Codes FRE, FIR, MFT, TAS, PEU, ACC, TNU : abréviations du SRGS (tableau p. 53, repris p. 76 ; « ceux utilisés pour la saisie en ligne des documents de gestion », p. 53). LAN : code du projet, pas du SRGS. Aucun seuil de reconnaissance n'est publié par le SRGS : les conditions de FRE et FIR sont celles des types GSM de H10, par substitution.",
+        "_conventions": {
+          "variables": "Mêmes variables et conventions que vercors-h10.json : c1_hpot à c4_hpot (couverts des strates, 0 à 1), hpot en m, couvert (0 à 1), G en m²/ha, part_gb (GB + TGB), N en tiges/ha. Mode « variables fournies » seulement (voir docs/referentiels/typologie-h10.md).",
+          "classes_de_couvert": "Reprises de la clé H10 (GSM p. 54) : déficitaire c < 0,25 ; moyenne 0,25 <= c < 0,45 ; prépondérante c >= 0,45. Valeur provisoire, à trancher (alternatives : 0,2 / 0,5 ; 0,3 / 0,5).",
+          "hauteur_15_m": "Reprise de la clé H10 : hpot >= 15 (GSM p. 54). À trancher.",
+          "couvert_total": "couvert >= 0,1 pour les types boisés (GSM p. 54 ; le SRGS p. 7 retient lui aussi 10 % de couvert pour l'état boisé). Souplesse nulle.",
+          "substitution_FRE_FIR": "Règle (décision de l'orchestrateur, délégation n° 3) : une strate ou deux strates adjacentes = FRE ; strates non adjacentes (13) ou structure jardinée (J, JGB) = FIR. FRE = types GSM 1, 1GB, 2, 2GB, 12, 12GB, 23, 3 ; FIR = types GSM 13, 13GB, J, JGB. Les suffixes GB suivent leur type de base (extension validée). Statut provisoire. Les types GSM R, L, C, CH ne sont rattachés à aucun type SRGS (voir _non_rattaches). Alternative documentée, non appliquée : FRE si une catégorie de grosseur porte une part >= 0,5 de G ; FIR si PB, BM et GB ont chacune une part >= 0,1 de G.",
+          "_non_rattaches": "Types GSM sans type SRGS attribué : R (régénération), L (peuplement ouvert), C (peuplement clair), CH (peuplement chétif), T (taillis), X, P, A. Les peuplements clairs relèvent de la ligne ACC du SRGS (« Peuplements clairs, accrus, prés-bois », p. 53 et p. 76) : non exprimée. Un pixel de ces types n'a aucun type SRGS (hors clé).",
+          "TNU": "couvert < 0,1 : seuil du SRGS p. 7 (état boisé : couvert >= 10 %) et du GSM p. 54 (espaces boisés : couvert total >= 1/10). Condition nécessaire, non suffisante : le SRGS dit « terrain nu à boiser ou à reboiser » (p. 11-12, p. 117), ce que le couvert seul ne distingue pas d'une prairie, d'une lande ou d'un espace non boisé.",
+          "exclusivite": "FRE et FIR héritent de l'exclusivité des types GSM qu'ils réunissent (aucun recouvrement entre types GSM) ; TNU (couvert < 0,1) exclut les deux autres (couvert >= 0,1)."
+        },
+        "types": [
+          {"code": "FRE", "libelle": "La futaie régulière", "source": "SRGS AURA p. 11 (liste des 8 types), p. 12 (critères de base), p. 53 (code FRE) ; critères de reconnaissance : AUCUN dans le SRGS ; conditions = substitution par les types GSM de H10 : 1, 1GB, 2, 2GB, 12, 12GB, 23 (GSM p. 55, PDF p. 29) et 3 (GSM p. 54-55, PDF p. 29), tableau GSM p. 57 (PDF p. 30)", "statut": "PROVISOIRE, substitution décidée par l'orchestrateur (délégation n° 3) : une strate ou deux strates adjacentes = FRE (types GSM 1, 2, 3, 12, 23) ; les suffixes GB (1GB, 2GB, 12GB) suivent leur type de base (extension validée). À confirmer par le CNPF (contact réservé à Pascal).", "conditions": [{"variable": "couvert", "min": 0.1}, {"variable": "hpot", "min": 15}], "alternatives": [
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "min": 0.45}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "min": 0.25, "max": 0.45}, {"variable": "c2_hpot", "max": 0.25}, {"variable": "c3_hpot", "max": 0.25}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "max": 0.45}, {"variable": "c2_hpot", "min": 0.45}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "max": 0.25}, {"variable": "c2_hpot", "min": 0.25, "max": 0.45}, {"variable": "c3_hpot", "max": 0.25}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "min": 0.25, "max": 0.45}, {"variable": "c2_hpot", "min": 0.25, "max": 0.45}, {"variable": "c3_hpot", "max": 0.25}],
+            [{"variable": "G", "max": 10}, {"variable": "c3_hpot", "min": 0.45}, {"variable": "N", "min": 800}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "max": 0.45}, {"variable": "c2_hpot", "max": 0.45}, {"variable": "c3_hpot", "min": 0.45}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "max": 0.25}, {"variable": "c2_hpot", "max": 0.25}, {"variable": "c3_hpot", "min": 0.25, "max": 0.45}],
+            [{"variable": "G", "min": 10}, {"variable": "c1_hpot", "max": 0.25}, {"variable": "c2_hpot", "min": 0.25, "max": 0.45}, {"variable": "c3_hpot", "min": 0.25, "max": 0.45}]
+          ]},
+          {"code": "FIR", "libelle": "La futaie irrégulière", "source": "SRGS AURA p. 11 (liste des 8 types), p. 12 (critères de base : proportion PB / BM / GB), p. 53 (code FIR) ; critères de reconnaissance : AUCUN dans le SRGS ; conditions = substitution par les types GSM de H10 : 13, 13GB, J, JGB (GSM p. 55, PDF p. 29), tableau GSM p. 57 (PDF p. 30)", "statut": "PROVISOIRE, substitution décidée par l'orchestrateur (délégation n° 3) : strates non adjacentes (13) ou structure jardinée (J, JGB) = FIR ; 13GB suit 13 (extension validée). Le SRGS range la « futaie jardinée » dans FIR (p. 53 : « Futaie irrégulière (& futaie jardinée) »).", "conditions": [{"variable": "couvert", "min": 0.1}, {"variable": "hpot", "min": 15}, {"variable": "G", "min": 10}], "alternatives": [
+            [{"variable": "c1_hpot", "min": 0.25, "max": 0.45}, {"variable": "c2_hpot", "max": 0.25}, {"variable": "c3_hpot", "min": 0.25, "max": 0.45}],
+            [{"variable": "c1_hpot", "min": 0.25, "max": 0.45}, {"variable": "c2_hpot", "min": 0.25, "max": 0.45}, {"variable": "c3_hpot", "min": 0.25, "max": 0.45}]
+          ]},
+          {"code": "TNU", "libelle": "Le terrain nu à (re)boiser", "source": "SRGS AURA p. 11-12 (liste des 8 types), p. 53 (code TNU), p. 117 (fiche G1 : « Terrain nu à reboiser ou à boiser, lande à boiser ») ; seuil de couvert : SRGS p. 7 (état boisé : couvert >= 10 % de la surface) et GSM p. 54 (couvert total >= 1/10)", "statut": "PROVISOIRE : couvert < 0,1, décidé par l'orchestrateur (délégation n° 3). Condition nécessaire, non suffisante (voir _conventions.TNU).", "conditions": [{"variable": "couvert", "max": 0.1}]}
+        ],
+        "non_exprimables": [
+          {"code": "MFT", "libelle": "Le mélange futaie-taillis", "source": "SRGS AURA p. 11 (liste), p. 12 (« en mélange futaie-taillis, la futaie et le taillis sont à décrire indépendamment »), p. 62 (« un taillis surmonté d'une futaie à faible capital plus ou moins irrégulière »), p. 53 (code MFT)", "raison": "origine des tiges (franc-pied ou rejet de souche) et part du couvert en taillis absentes de la chaîne ; le SRGS ne publie aucun seuil (repères de gestion seulement : futaie de 6 à 13 m²/ha, p. 95-96)", "variable_manquante": "origine_tiges, part_taillis"},
+          {"code": "TAS", "libelle": "Le taillis simple ou fureté", "source": "SRGS AURA p. 11 (liste : un seul type), p. 63-64 (définitions), p. 53 (code TAS) ; le tableau p. 53 et p. 76 distingue TAS et TAF (taillis fureté) : un seul type retenu ici, décision de l'orchestrateur (délégation n° 3)", "raison": "origine des tiges (rejets) absente de la chaîne ; simple ou fureté non distinguables ; âge et révolution absents ; le SRGS ne publie aucun seuil de reconnaissance (diamètres d'exploitation 15 à 30 cm, p. 57-58 : seuils de récolte, pas de reconnaissance)", "variable_manquante": "origine_tiges, age"},
+          {"code": "PEU", "libelle": "La peupleraie", "source": "SRGS AURA p. 11 (liste), p. 61 (peupliers « de culture », à distinguer des peupliers naturels des ripisylves ; densité de plantation 150 à 280 tiges/ha : caractéristique du traitement), p. 53 (code PEU)", "raison": "essence (peuplier de culture) et régularité de plantation absentes de la chaîne ; aucun seuil de reconnaissance publié", "variable_manquante": "essence (peuplier cultivé)"},
+          {"code": "ACC", "libelle": "Les accrus", "source": "SRGS AURA p. 11 (liste), p. 112 (définition : « Peuplements forestiers, souvent clairs et hétérogènes, qui ont colonisé naturellement des terrains par suite de l'abandon de leur utilisation précédente, généralement agricole »), p. 53 (code ACC : ligne « Peuplements clairs, accrus, prés-bois »)", "raison": "historique d'usage du sol (abandon agricole) non observable ; définition qualitative, aucun seuil ; pas de proxy sans accord de Pascal (décision de l'orchestrateur, délégation n° 3)", "variable_manquante": "usage_sol_historique"},
+          {"code": "LAN", "libelle": "Les landes, friches et maquis", "source": "SRGS AURA p. 11-12 (liste : « si conforme à la définition donnée au paragraphe 2 de l'introduction (800 tiges / ha ; parcelles accessoires ; faible surface…) »), p. 7-8 (landes et friches non considérées comme forêt, sauf parcelles accessoires et faibles surfaces ; définition d'un boisement : 800 tiges/ha, 70 % de la surface, 0,5 m), p. 118 (fiche G2, même définition)", "raison": "pas de masque d'occupation du sol dans la chaîne (lande hors du masque forestier) ; le SRGS n'attribue pas d'abréviation à ce type : code LAN = code du projet, pas du SRGS", "variable_manquante": "occupation_du_sol"}
+        ]
+      }
+    }
+  }
+}
