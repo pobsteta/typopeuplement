@@ -9,7 +9,7 @@ rendre_rapport(
   sortie = dossier,
   demo = FALSE,
   titre_aoi = "AOI",
-  etiquette_types = "Type GSM (H10)",
+  etiquette_types = NULL,
   configuration = NULL,
   ser = "H10",
   modele = modele_rapport()
@@ -25,7 +25,8 @@ données réelles.}
 
 \item{titre_aoi}{Nom de l'AOI affiché en titre.}
 
-\item{etiquette_types}{Titre de la légende de \code{types.tif}.}
+\item{etiquette_types}{Titre de la légende de \code{types.tif} ; \code{NULL} : « Type GSM (H10) » en
+mode réel, « clé d'exemple » en démonstration.}
 
 \item{configuration}{Chemin du JSON de configuration (optionnel) : sert à lister les
 types de la légende que la chaîne ne sait pas exprimer.}

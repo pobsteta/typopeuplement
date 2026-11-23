@@ -4,7 +4,13 @@
 \alias{limites_rapport}
 \title{Section « Limites » d'une carte}
 \usage{
-limites_rapport(dossier, demo = FALSE, configuration = NULL, ser = "H10")
+limites_rapport(
+  dossier,
+  demo = FALSE,
+  configuration = NULL,
+  ser = "H10",
+  etiquette_types = "Type GSM (H10)"
+)
 }
 \arguments{
 \item{dossier}{Dossier des livrables de l'AOI (\code{\link[=ecrire_livrables]{ecrire_livrables()}}).}
@@ -16,6 +22,8 @@ données réelles.}
 types de la légende que la chaîne ne sait pas exprimer.}
 
 \item{ser}{Nom de la SER dans la configuration.}
+
+\item{etiquette_types}{Titre de la légende de \code{types.tif}.}
 }
 \value{
 Vecteur de phrases.

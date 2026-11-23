@@ -9,7 +9,8 @@ tables_rapport(
   sortie,
   demo = FALSE,
   configuration = NULL,
-  ser = "H10"
+  ser = "H10",
+  etiquette_types = "Type GSM (H10)"
 )
 }
 \arguments{
@@ -24,6 +25,8 @@ données réelles.}
 types de la légende que la chaîne ne sait pas exprimer.}
 
 \item{ser}{Nom de la SER dans la configuration.}
+
+\item{etiquette_types}{Titre de la légende de \code{types.tif}.}
 }
 \value{
 La liste des chemins écrits, invisible.

@@ -4,13 +4,15 @@
 \alias{etat_de_preuve}
 \title{Table « état de preuve » d'une carte}
 \usage{
-etat_de_preuve(dossier, demo = FALSE)
+etat_de_preuve(dossier, demo = FALSE, ser = "H10")
 }
 \arguments{
 \item{dossier}{Dossier des livrables de l'AOI (\code{\link[=ecrire_livrables]{ecrire_livrables()}}).}
 
 \item{demo}{\code{TRUE} pour un jeu synthétique : tout chiffre est alors sans valeur sur
 données réelles.}
+
+\item{ser}{Nom de la SER, cité dans la phrase sur l'absence de validation.}
 }
 \value{
 Un \code{data.frame} : \code{chiffre}, \code{statut} (\code{mesure}, \code{provisoire}, \verb{non verifie}
@@ -20,6 +22,6 @@ avec accents dans le rapport), \code{commentaire}.
 Pour chaque chiffre du rapport : s'il est \strong{mesuré} (compté directement sur les
 livrables), \strong{provisoire} (valeur ou réglage non gelé, sortie non calibrée) ou
 \strong{non vérifié} (rien ne le confronte à la réalité). Il n'y a aucune validation
-indépendante : aucune placette publiée dans H10 (ADR 0006, 0010). Le nombre associé au
+indépendante : aucune placette indépendante géolocalisée au pixel (ADR 0006, 0010). Le nombre associé au
 type s'appelle \emph{appartenance} tant qu'il n'est pas calibré (arbitrage C12).
 }

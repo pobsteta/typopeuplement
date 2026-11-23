@@ -13,9 +13,9 @@ peuplement** calibrée par sylvoécorégion (SER), avec sa **probabilité** et u
 confiance** qui dit quand s'en méfier. Package compagnon de
 [nemeton](https://github.com/pobsteta/nemeton) (ADR 0004).
 
-Le projet est décrit dans [`docs/brief-typologie-peuplements.md`](docs/brief-typologie-peuplements.md)
-et [`docs/spec.md`](docs/spec.md). Son pilotage (méthode de l'Impératrice) est dans
-[`pilotage/`](pilotage/).
+Le projet est décrit dans [`docs/brief-typologie-peuplements.md`](https://github.com/pobsteta/typopeuplement/tree/main/docs/brief-typologie-peuplements.md)
+et [`docs/spec.md`](https://github.com/pobsteta/typopeuplement/tree/main/docs/spec.md). Son pilotage (méthode de l'Impératrice) est dans
+[`pilotage/`](https://github.com/pobsteta/typopeuplement/tree/main/pilotage).
 
 ## Où en est-on
 
@@ -113,7 +113,7 @@ de couverture est un SVG local écrit par la CI dans `.github/badges/`. Installe
 remotes::install_github("pobsteta/typopeuplement@v2026.11.1")
 ```
 
-Décision : [`docs/adr/0017-versions-calendaires-tags-et-releases.md`](docs/adr/0017-versions-calendaires-tags-et-releases.md).
+Décision : [`docs/adr/0017-versions-calendaires-tags-et-releases.md`](https://github.com/pobsteta/typopeuplement/tree/main/docs/adr/0017-versions-calendaires-tags-et-releases.md).
 
 ## Licence
 

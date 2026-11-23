@@ -39,7 +39,7 @@ test_that("etat de preuve : statuts permis, pas de validation independante, pas 
   v <- ep[grepl("Validation indépendante", ep$chiffre), ]
   expect_equal(nrow(v), 1L)
   expect_equal(v$statut, "non vérifié")
-  expect_match(v$commentaire, "aucune placette publiée dans H10")
+  expect_match(v$commentaire, "placette indépendante géolocalisée au pixel dans la SER H10")
   # Le nombre du type est une appartenance, non calibree (C12) : jamais une probabilite affirmee.
   app <- ep[ep$chiffre == "Appartenance au type", ]
   expect_equal(app$statut, "provisoire")
@@ -101,14 +101,16 @@ test_that("limites : phrase sans validation, drapeaux, houppiers, strates basses
   v$densite_houppiers <- v[[1]] * 0 + 120
   ajouter_ecrire(v, file.path(d, "variables.tif"))
   conf <- terra::rast(file.path(d, "confiance.tif"))
-  conf$strates_basses_estimees <- conf[[1]] * 0 + 1
+  conf$part_retours_sous_s1 <- conf[[1]] * 0 + 0.25
   ajouter_ecrire(conf, file.path(d, "confiance.tif"))
-  writeLines(c("# Journal", "- 013 : fenêtre de segmentation 3 m, provisoire"),
+  writeLines(c("# Journal", "- 013 : fenêtre de segmentation 3 m, provisoire",
+               "- 013 : les futaies jardinées (J) de Léoncel disparaissent par le retrait des retours de la strate 1"),
              file.path(d, "journal_aoi.md"), useBytes = TRUE)
   srgs <- normalizePath(testthat::test_path("..", "..", "inst", "extdata", "config", "srgs-aura.json"))
   lim <- limites_rapport(d, configuration = srgs, ser = "H10")
   expect_true(any(grepl("^Houppiers", lim)))
-  expect_true(any(grepl("100,0 % des pixels ont des strates basses", lim)))
+  expect_true(any(grepl("Strates basses : .*médiane 25,0 %", lim)))
+  expect_true(any(grepl("^Journal : .*futaies jardinées \\(J\\)", lim)))
   expect_true(any(grepl("^Journal : 013", lim)))
   expect_true(any(grepl("non exprimables.*MFT", lim)))
 })
@@ -125,7 +127,7 @@ test_that("rendu : le rapport de demonstration se rend sans reseau et dit 'non v
   expect_match(txt, "appartenance", ignore.case = TRUE)
   expect_match(txt, "État de preuve")
   expect_match(txt, "Limites")
-  # Mode reel : les livrables lus ne sont jamais modifies.
+  # Les livrables lus par le rapport ne sont jamais modifies (garantie du mode reel).
   apres <- tools::md5sum(names(avant))
   expect_equal(unname(apres), unname(avant))
 })
@@ -171,4 +173,17 @@ test_that("pipeline : en mode reel, les livrables sont suivis, jamais recalcules
   expect_equal(noms, c("modele", "livrables", "rapport"))
   cmd <- paste(deparse(cibles[[2]]$command$expr), collapse = " ")
   expect_false(grepl("lancer_demo|executer_chaine", cmd))
+})
+
+test_that("etiquette : la demonstration ne dit jamais GSM (H10) pour la cle d'exemple", {
+  d <- copie_livrables()
+  lim <- limites_rapport(d, etiquette_types = "Type (cl\u00e9 d'exemple)")
+  expect_false(any(grepl("GSM", lim)))
+  quarto_ok()
+  html <- rendre_rapport(d, sortie = file.path(d, "r2"), demo = TRUE)
+  txt <- paste(readLines(html, encoding = "UTF-8", warn = FALSE), collapse = "\n")
+  expect_false(grepl("GSM \\(H10\\)", txt))
+  expect_match(txt, "dans la SER H10")
+  # Le texte lu par le .qmd (tables) porte la meme etiquette.
+  expect_false(any(grepl("GSM", readLines(file.path(d, "r2", "limites.csv"), encoding = "UTF-8"))))
 })

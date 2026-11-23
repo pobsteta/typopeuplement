@@ -86,6 +86,7 @@ reference:
       - raccorder_probabilites
       - references_strates
       - segmenter_houppiers
+      - sommets_houppiers
       - surface_terriere_arbre
       - telecharger_mnt_ign
       - types_observes

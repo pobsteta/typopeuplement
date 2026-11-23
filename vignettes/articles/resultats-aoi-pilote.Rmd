@@ -42,6 +42,7 @@ corr <- utils::read.csv(file.path(dossier, "correspondance_types.csv"), fileEnco
 r <- types[["type"]]
 levels(r) <- data.frame(valeur = corr$valeur, type = corr$code)
 terra::plot(r, main = "Type (clé d'exemple, jeu synthétique)", mar = c(3.5, 5, 3.5, 7),
+            xlab = "x, Lambert-93 (m)", ylab = "y, Lambert-93 (m)",
             col = grDevices::hcl.colors(nrow(corr), "Dark 3"))
 ```
 
@@ -50,7 +51,19 @@ probabilité (arbitrage C12).
 
 ```{r appartenance}
 terra::plot(types[["proba"]], range = c(0, 1), mar = c(3.5, 5, 3.5, 7),
+            xlab = "x, Lambert-93 (m)", ylab = "y, Lambert-93 (m)",
             main = "Appartenance au type retenu (non calibrée)")
+```
+
+Une carte de drapeau : les pixels « entre deux types », où le second type est presque aussi
+plausible que le premier.
+
+```{r drapeau}
+d <- terra::ifel(types[["entre_deux"]] > 0, 1, 0)
+levels(d) <- data.frame(valeur = 0:1, drapeau = c("non", "oui"))
+terra::plot(d, col = c("grey90", "firebrick"), mar = c(3.5, 5, 3.5, 7),
+            xlab = "x, Lambert-93 (m)", ylab = "y, Lambert-93 (m)",
+            main = "Entre deux types")
 ```
 
 ## État de preuve
@@ -59,7 +72,7 @@ terra::plot(types[["proba"]], range = c(0, 1), mar = c(3.5, 5, 3.5, 7),
 knitr::kable(etat_de_preuve(dossier, demo = TRUE))
 ```
 
-La carte est **produite et non validée** : aucune placette n'est publiée dans H10, il n'y
+La carte est **produite et non validée** : aucune placette indépendante n'est géolocalisée au pixel dans la SER H10 (les placettes IFN, publiées au kilomètre, ne valident que des agrégats), il n'y
 a donc aucune validation indépendante (ADR 0006, 0010).
 
 ## Limites

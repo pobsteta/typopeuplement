@@ -5,18 +5,24 @@
 # correspondance_types_srgs.csv, mission 018 : convention supposee, a confirmer par 018).
 # Les tables sont calculees ici (testables) puis ecrites en CSV ; le modele .qmd les lit.
 
+# Pourquoi il n'y a pas de validation independante (decision de l'orchestrateur, ADR 0010).
+phrase_sans_placette <- function(ser) {
+  paste0("Aucune placette ind\u00e9pendante g\u00e9olocalis\u00e9e au pixel dans la SER ", ser,
+         " ; les placettes IFN, publi\u00e9es au kilom\u00e8tre, ne valident que des agr\u00e9gats (ADR 0010).")
+}
+
 # Etiquettes lisibles des couches de drapeaux (confiance.tif, types.tif).
 etiquettes_drapeaux <- function() {
   data.frame(
     couche = c("entre_deux", "hp_incertaine", "hors_cle", "non_precomptable",
-               "part_pb_absente", "gb_interim", "strates_basses_estimees"),
+               "part_pb_absente", "gb_interim", "part_retours_sous_s1"),
     drapeau = c("Entre deux types (\u00e9cart d'appartenance faible)",
                 "Hauteur potentielle incertaine",
                 "Hors cl\u00e9 (aucun type de la cl\u00e9 ne convient)",
                 "Non pr\u00e9comptable (tiges sous le seuil de pr\u00e9comptage)",
                 "Part de petits bois absente",
                 "Gros bois provisoire (interim)",
-                "Strates basses estim\u00e9es, non mesur\u00e9es"),
+                "Part des retours sous la strate 1, m\u00e9diane (haute : strates basses bien mesur\u00e9es)"),
     stringsAsFactors = FALSE
   )
 }
@@ -76,7 +82,10 @@ resume_drapeaux <- function(dossier) {
       v <- v[!is.na(v)]
       sortie[[couche]] <- data.frame(
         couche = couche, drapeau = et$drapeau[et$couche == couche], pixels = length(v),
-        part = if (length(v)) mean(v > 0) else NA_real_, stringsAsFactors = FALSE)
+        # Drapeau 0/1 : part des pixels leves. part_retours_sous_s1 est continue (0 a 1,
+        # haute = strates basses bien mesurees) : on en donne la mediane, pas une part de pixels.
+        part = if (!length(v)) NA_real_ else if (couche == "part_retours_sous_s1") stats::median(v) else mean(v > 0),
+        stringsAsFactors = FALSE)
     }
   }
   if (length(sortie) == 0) return(data.frame(couche = character(), drapeau = character(),
@@ -97,16 +106,17 @@ types_non_exprimables <- function(configuration, ser) {
 #' Pour chaque chiffre du rapport : s'il est **mesuré** (compté directement sur les
 #' livrables), **provisoire** (valeur ou réglage non gelé, sortie non calibrée) ou
 #' **non vérifié** (rien ne le confronte à la réalité). Il n'y a aucune validation
-#' indépendante : aucune placette publiée dans H10 (ADR 0006, 0010). Le nombre associé au
+#' indépendante : aucune placette indépendante géolocalisée au pixel (ADR 0006, 0010). Le nombre associé au
 #' type s'appelle *appartenance* tant qu'il n'est pas calibré (arbitrage C12).
 #'
 #' @param dossier Dossier des livrables de l'AOI ([ecrire_livrables()]).
+#' @param ser Nom de la SER, cité dans la phrase sur l'absence de validation.
 #' @param demo `TRUE` pour un jeu synthétique : tout chiffre est alors sans valeur sur
 #'   données réelles.
 #' @return Un `data.frame` : `chiffre`, `statut` (`mesure`, `provisoire`, `non verifie`
 #'   avec accents dans le rapport), `commentaire`.
 #' @export
-etat_de_preuve <- function(dossier, demo = FALSE) {
+etat_de_preuve <- function(dossier, demo = FALSE, ser = "H10") {
   ligne <- function(chiffre, statut, commentaire)
     data.frame(chiffre = chiffre, statut = statut, commentaire = commentaire,
                stringsAsFactors = FALSE)
@@ -122,8 +132,8 @@ etat_de_preuve <- function(dossier, demo = FALSE) {
   }
   lignes <- c(lignes, list(
     ligne("Validation ind\u00e9pendante de la carte", nv,
-          paste("Aucune validation ind\u00e9pendante : aucune placette publi\u00e9e dans H10",
-                "(ADR 0010). La carte est produite, non valid\u00e9e.")),
+          paste("Aucune validation ind\u00e9pendante. La carte est produite, non valid\u00e9e.",
+                phrase_sans_placette(ser))),
     ligne("Nombre de pixels, part de chaque type, part de chaque drapeau", mesure,
           "Comptage direct sur les rasters livr\u00e9s ; ce n'est pas une exactitude."),
     ligne("Type d'un pixel", nv,
@@ -158,12 +168,14 @@ etat_de_preuve <- function(dossier, demo = FALSE) {
 #' @param configuration Chemin du JSON de configuration (optionnel) : sert à lister les
 #'   types de la légende que la chaîne ne sait pas exprimer.
 #' @param ser Nom de la SER dans la configuration.
+#' @param etiquette_types Titre de la légende de `types.tif`.
 #' @return Vecteur de phrases.
 #' @export
-limites_rapport <- function(dossier, demo = FALSE, configuration = NULL, ser = "H10") {
+limites_rapport <- function(dossier, demo = FALSE, configuration = NULL, ser = "H10",
+                            etiquette_types = "Type GSM (H10)") {
   pct <- function(x) paste0(formatC(100 * x, format = "f", digits = 1, decimal.mark = ","), " %")
   lim <- c("La carte est une aide \u00e0 la d\u00e9cision, pas un diagnostic : elle ne remplace pas la visite de terrain (typologie descriptive).",
-           "Pas de validation ind\u00e9pendante : aucune placette publi\u00e9e dans H10 ; la carte est produite et non valid\u00e9e.")
+           paste("Pas de validation ind\u00e9pendante : la carte est produite et non valid\u00e9e.", phrase_sans_placette(ser)))
   if (demo) lim <- c("Jeu synth\u00e9tique et cl\u00e9 d'exemple : aucune de ces cartes ne d\u00e9crit une for\u00eat r\u00e9elle.", lim)
   dr <- resume_drapeaux(dossier)
   part <- function(couche) { x <- dr$part[dr$couche == couche]; if (length(x)) x else NA_real_ }
@@ -173,15 +185,16 @@ limites_rapport <- function(dossier, demo = FALSE, configuration = NULL, ser = "
     lim <- c(lim, paste("Houppiers : la densit\u00e9 de tiges vient d'une segmentation du mod\u00e8le de canop\u00e9e",
                         "(param\u00e8tres provisoires) ; les tiges domin\u00e9es sous le couvert sont mal vues."))
   }
-  s <- part("strates_basses_estimees")
-  if (!is.na(s)) lim <- c(lim, paste0("Strates basses : ", pct(s), " des pixels ont des strates basses estim\u00e9es, non mesur\u00e9es."))
+  s <- part("part_retours_sous_s1")
+  if (!is.na(s)) lim <- c(lim, paste0("Strates basses : la part des retours qui passent sous la strate 1 a pour m\u00e9diane ",
+                                      pct(s), " ; pr\u00e8s de 0 %, les strates basses sont peu mesur\u00e9es (estim\u00e9es)."))
   h <- part("hors_cle")
   if (!is.na(h)) lim <- c(lim, paste0("Hors cl\u00e9 : ", pct(h), " des pixels ne correspondent \u00e0 aucun type de la cl\u00e9."))
   e <- part("entre_deux")
   if (!is.na(e)) lim <- c(lim, paste0("Entre deux types : ", pct(e), " des pixels, o\u00f9 le second type est presque aussi plausible que le premier."))
   hp <- part("hp_incertaine")
   if (!is.na(hp)) lim <- c(lim, paste0("Hauteur potentielle incertaine sur ", pct(hp), " des pixels : les types qui en d\u00e9pendent y sont moins s\u00fbrs."))
-  for (lg in seq_len(nrow(leg <- legendes_livrables(dossier)))) {
+  for (lg in seq_len(nrow(leg <- legendes_livrables(dossier, etiquette_types)))) {
     p <- parts_types(leg$raster[lg], leg$table[lg])
     absents <- p$code[p$pixels == 0]
     if (length(absents) > 0)
@@ -220,7 +233,8 @@ limites_rapport <- function(dossier, demo = FALSE, configuration = NULL, ser = "
 #' @param sortie Dossier où écrire les tables (créé au besoin).
 #' @return La liste des chemins écrits, invisible.
 #' @export
-tables_rapport <- function(dossier, sortie, demo = FALSE, configuration = NULL, ser = "H10") {
+tables_rapport <- function(dossier, sortie, demo = FALSE, configuration = NULL, ser = "H10",
+                           etiquette_types = "Type GSM (H10)") {
   dir.create(sortie, recursive = TRUE, showWarnings = FALSE)
   ecr <- function(x, nom) {
     f <- file.path(sortie, nom)
@@ -228,8 +242,8 @@ tables_rapport <- function(dossier, sortie, demo = FALSE, configuration = NULL, 
     f
   }
   chemins <- c(
-    ecr(etat_de_preuve(dossier, demo), "etat_de_preuve.csv"),
-    ecr(data.frame(limite = limites_rapport(dossier, demo, configuration, ser),
+    ecr(etat_de_preuve(dossier, demo, ser), "etat_de_preuve.csv"),
+    ecr(data.frame(limite = limites_rapport(dossier, demo, configuration, ser, etiquette_types),
                    stringsAsFactors = FALSE), "limites.csv"),
     ecr(resume_drapeaux(dossier), "drapeaux.csv"))
   leg <- legendes_livrables(dossier)
@@ -248,12 +262,13 @@ tables_rapport <- function(dossier, sortie, demo = FALSE, configuration = NULL, 
 #' @inheritParams tables_rapport
 #' @param sortie Dossier du rapport (par défaut `dossier`).
 #' @param titre_aoi Nom de l'AOI affiché en titre.
-#' @param etiquette_types Titre de la légende de `types.tif`.
+#' @param etiquette_types Titre de la légende de `types.tif` ; `NULL` : « Type GSM (H10) » en
+#'   mode réel, « clé d'exemple » en démonstration.
 #' @param modele Modèle `.qmd` (par défaut [modele_rapport()]).
 #' @return Chemin du `rapport.html`.
 #' @export
 rendre_rapport <- function(dossier, sortie = dossier, demo = FALSE,
-                           titre_aoi = "AOI", etiquette_types = "Type GSM (H10)",
+                           titre_aoi = "AOI", etiquette_types = NULL,
                            configuration = NULL, ser = "H10", modele = modele_rapport()) {
   if (!requireNamespace("quarto", quietly = TRUE) || is.null(quarto::quarto_path()))
     stop("Quarto est requis pour rendre le rapport (paquet quarto et CLI quarto).", call. = FALSE)
@@ -262,13 +277,15 @@ rendre_rapport <- function(dossier, sortie = dossier, demo = FALSE,
     stop("Livrables absents : pas de types.tif dans ", dossier, ".", call. = FALSE)
   dir.create(sortie, recursive = TRUE, showWarnings = FALSE)
   dossier <- normalizePath(dossier); sortie <- normalizePath(sortie)
-  tables_rapport(dossier, sortie, demo, configuration, ser)
+  if (is.null(etiquette_types))
+    etiquette_types <- if (isTRUE(demo)) "Type (cl\u00e9 d'exemple, pas une typologie)" else "Type GSM (H10)"
+  tables_rapport(dossier, sortie, demo, configuration, ser, etiquette_types)
   qmd <- file.path(sortie, "rapport.qmd")
   file.copy(modele, qmd, overwrite = TRUE)
   legendes <- legendes_livrables(dossier, etiquette_types)
   quarto::quarto_render(qmd, output_format = "html", quiet = TRUE, execute_params = list(
     dossier = dossier, tables = sortie, demo = isTRUE(demo), titre_aoi = titre_aoi,
-    etiquette_types = etiquette_types))
+    etiquette_types = etiquette_types, ser = ser))
   html <- file.path(sortie, "rapport.html")
   if (!file.exists(html)) stop("Le rendu n'a pas produit rapport.html.", call. = FALSE)
   html
