@@ -21,6 +21,27 @@
   l'extérieur et ne se défait pas (contact IGN, convention d'accès IFN)
 - **Inscrite au journal le :** 2026-11-22 (close : arbitrages reportés)
 
+### Délégation n° 3 (en cours depuis le 2026-11-23)
+
+- **Mots de Pascal :** « peux-tu automatiser les releases, tags, versionning comme dans
+  marculus et ajouter les badges au README du projet. je te laisse aussi valider tout ce
+  qu'il faut avec la methode imperatrice jusqu'à l'obtention d'une première carte de typo
+  de peuplement et un rapport comme dans sylvostation » ; « oui, elle est arrêtée,
+  reprends seul » (2026-11-23)
+- **Portée :** porte n° 2 (missions, équipe), porte n° 3 (relecture puis **fusion des PR
+  vers `main`**, y compris la PR n° 2), plans des missions en « prendre la main »,
+  arbitrages techniques et de sens soulevés par les relecteurs et les agents, dans le
+  cadre des arbitrages de réconciliation du 2026-11-23
+- **Jusqu'à :** une première carte des types de peuplement sur l'AOI pilote (forêt
+  domaniale de Léoncel et forêts privées voisines dans H10), avec un rapport produit par
+  le pipeline comme celui de sylvostation (Quarto, état de preuve, limites), publié en
+  article de site ; releases, tags et badges comme dans Marculus
+- **Réservé à Pascal :** sa réponse d'abord ; rendre la main (fusion sans relecture) ;
+  tout contact extérieur (CNPF, juriste, ONF, IGN) ; ce qui ne se défait pas ; une
+  question de sens ou de périmètre que ni le brief, ni la spec, ni ses arbitrages ne
+  tranchent
+- **Inscrite au journal le :** 2026-11-23
+
 ### Délégation n° 2 (échue le 2026-11-22, fin de la mission 010)
 
 - **Mots de Pascal :** « Valide toi même les plans et arbitrage » (2026-11-22)
