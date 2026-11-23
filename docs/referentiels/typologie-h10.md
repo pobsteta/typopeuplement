@@ -87,7 +87,7 @@ Variables de la clé GSM, face aux variables de la chaîne (`variables_cibles` :
 |---|---|
 | G (m²/ha) ; part des GB+TGB (≥ 60 %) | oui (`G`, `part_gb`, avec la limite BM/GB de la config) |
 | **couvert des strates 1, 2 et 3** (par quart de Hₒ potentielle) | **non** : absent des variables cibles, des prédicteurs et des colonnes de pixels |
-| **Hₒ potentielle en m** (seuil 15 m) | oui depuis 012 : `hpot` (sans enveloppe) est exposée à la clé (état 005 : seul `rapport_h` l'était) |
+| **Hₒ potentielle en m** (seuil 15 m) | oui depuis 012, **en mode « variables fournies » seulement** : `hpot` (sans enveloppe) est exposée à la clé ; en mode placettes, seule `rapport_h` l'est |
 | **nombre de tiges par hectare** (seuil 800) | non |
 | **part du taillis** (type T) | non |
 | couvert total, rôle de production ou de protection (types X, P, A) | non (masque forestier et décision de gestion) |
@@ -117,7 +117,7 @@ Le logigramme est lu dans le texte du PDF (`pdftotext -layout`). Les classes de 
 
 `c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `hpot`, `couvert`. Rien d'autre.
 
-Variables du GSM **absentes** de la chaîne : le nombre de tiges par hectare `N` (seuil de 800 pour L et R ; le jeu ONF a un raster `N`, mais `couches_onf()` ne le lit pas), la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). **Câblage à vérifier :** `h_pot` est calculée par la chaîne, mais seule `rapport_h` est passée à la clé (`R/chaine.R`, lignes 78 et 398-402) ; une condition sur `h_pot` (CH et les 15 autres types) demande donc que la chaîne la fournisse à la clé, sans quoi « variable absente pour la clé ». De même les `c*_hpot` ne sont pas encore branchés dans la chaîne (mineur de 008, sans mission). La config se charge ; son exécution sur la chaîne attend ce câblage.
+Variables du GSM **absentes** de la chaîne : la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). Le nombre de tiges par hectare `N` (seuil de 800 pour L et R) est lu : `couches_onf()` branche `N.tif` sur `N` (`R/donnees_lidar.R`, lignes 56-57) et `executer_chaine_fournie` la porte à la clé (`variables_portees()`, `R/chaine.R` l. 265) ; la clé de H10 ne la cite pas (ambiguïté 6). **Câblage, selon le mode.** En mode « variables fournies » (`executer_chaine_fournie`, `R/chaine.R` l. 396), la clé reçoit toutes les variables que la chaîne porte (`variables_portees()`, l. 265-269, appelée l. 542) : celles du producteur (dont `couvert` et `N`), `h_pot`, `hpot` (sans enveloppe, calculée l. 502) et `rapport_h`, plus les couverts de strates `c1_<ref>` à `c4_<ref>` quand l'argument `strates` est fourni (l. 527-533 ; référence par défaut `hpot`, d'où `c*_hpot`) ; une variable citée que la chaîne ne porte pas est neutralisée et déclarée (l. 543-548). En mode placettes (`executer_chaine`, `R/chaine.R` l. 60-78), seule `rapport_h` est ajoutée aux variables prédites (`cbind(var_pix, rapport_h = …)`, l. 78) : ni `hpot`, ni `h_pot`, ni `couvert`, ni `N`, ni `c*_hpot` n'arrivent à la clé, qui n'a pas de strates à ce niveau. **La clé de H10 n'y tourne donc pas** ; elle tourne en mode « variables fournies ».
 
 ### Types non exprimables
 
@@ -191,7 +191,7 @@ Mission 010 :
 2. Les 20 codes comptés : 16 dans `cle.types` + 4 dans `cle.non_exprimables` = 20 ; chargement vérifié (16 types lus).
 3. Termes recopiés de la source : passé pour les libellés et les conditions.
 4. Ambiguïtés du logigramme posées, non tranchées : passé pour les sept ; les transcriptions prises par défaut sont dites (ambiguïtés 1, 2, 5, 6).
-5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `hpot` fait par 012 ; `N` lue mais non citée par la clé.
+5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `hpot` fait par 012 en mode « variables fournies » (pas en mode placettes) ; `N` lue mais non citée par la clé.
 
 ## Journal (proposé)
 
