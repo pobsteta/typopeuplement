@@ -163,7 +163,7 @@ Conséquence : ces types sont testés **avant** les autres dans le logigramme (X
 2. **Quelle typologie pour la carte de H10 ?** (tranchée : les 20 types du GSM, cap du 2026-11-22 ; les options ci-dessous restent pour mémoire)
    - (a) les 20 types du GSM (langue des gestionnaires ONF/CRPF) : il faut alors ajouter à la chaîne le couvert des strates (et accepter les « ou » dans la clé) ; changement de périmètre ;
    - (b) les familles du jeu LiDAR (`Struc_fam`, `Compo1`, …) : déjà cartographiées, mais sans seuils publiés ; à demander à A. Hedel (ONF) ;
-   - (c) les 8 types du SRGS : trop grossiers.
+   - (c) les 8 types du SRGS : trop grossiers. **Périmé le 2026-11-23** : priorité aux forêts privées (Pascal), les 8 types du SRGS deviennent la légende prioritaire et le GSM passe en second (ADR 0008, réconciliation).
 3. Faut-il interroger l'ONF (A. Hedel) sur les classes de `Struc_fam` absentes de la légende et sur les seuils de `Typo_etage` ?
 
 ## Trois points au sol
