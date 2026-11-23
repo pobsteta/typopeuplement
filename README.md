@@ -4,6 +4,7 @@
 [![Release](https://github.com/pobsteta/typopeuplement/actions/workflows/release.yml/badge.svg)](https://github.com/pobsteta/typopeuplement/actions/workflows/release.yml)
 [![Version](https://img.shields.io/github/v/release/pobsteta/typopeuplement?label=version)](https://github.com/pobsteta/typopeuplement/releases/latest)
 [![Couverture](.github/badges/couverture.svg)](https://github.com/pobsteta/typopeuplement/actions/workflows/ci.yml)
+[![Site](https://img.shields.io/badge/site-pkgdown-blue)](https://pobsteta.github.io/typopeuplement/)
 [![R](https://img.shields.io/badge/R-%E2%89%A5%204.1-276DC3)](https://www.r-project.org/)
 [![Licence : GPL-3](https://img.shields.io/badge/licence-GPL--3-blue)](LICENSE)
 
@@ -49,6 +50,11 @@ et [`docs/spec.md`](docs/spec.md). Son pilotage (méthode de l'Impératrice) est
 Rscript -e 'pkgload::load_all(); lancer_demo("sorties/demo_r")'
 LC_ALL=C.UTF-8 Rscript -e 'testthat::test_local()'
 ```
+
+Rapport Quarto d'une AOI (cartes, confiance, état de preuve, limites ; démonstration sans
+réseau par défaut, livrables d'une AOI déjà calculée avec `TYPO_AOI`) :
+`Rscript -e 'targets::tar_make(callr_function = NULL)'` (`_targets.R`). Site :
+<https://pobsteta.github.io/typopeuplement/>.
 
 La commande de tests du projet est dans `.claude/test-command`. Le prototype Python
 (`src/`, `tests/*.py`) ne sert plus que de référence de comparaison.

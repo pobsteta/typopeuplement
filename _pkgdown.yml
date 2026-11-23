@@ -1,0 +1,93 @@
+url: https://pobsteta.github.io/typopeuplement/
+# Le dossier docs/ du dépôt porte la documentation du projet (brief, ADR) : le site se construit ailleurs.
+destination: site
+template:
+  bootstrap: 5
+lang: fr
+
+# Site pkgdown de typopeuplement (mission 015). Publié par .github/workflows/pages.yml,
+# seulement depuis `main`. L'article des résultats tourne sur le jeu synthétique tant que
+# les livrables de Léoncel ne sont pas calculés : il le dit en tête.
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: "Résultats sur l'AOI pilote"
+          href: articles/resultats-aoi-pilote.html
+
+articles:
+  - title: Résultats
+    navbar: ~
+    contents:
+      - starts_with("articles/resultats")
+
+reference:
+  - title: "Point d'entrée et démonstration"
+    contents:
+      - typopeuplement-package
+      - typer_peuplements
+      - lancer_demo
+      - generer_jeu_synthetique
+      - ecrire_livrables
+  - title: "Rapport de l'AOI (Quarto, targets)"
+    desc: "Cartes des types, couche de confiance, état de preuve, limites."
+    contents:
+      - cibles_rapport
+      - rendre_rapport
+      - tables_rapport
+      - etat_de_preuve
+      - limites_rapport
+      - modele_rapport
+  - title: "Autres fonctions"
+    contents:
+      - agreger_grappes
+      - ajuster_hauteur_potentielle
+      - ajuster_modeles_dendro
+      - appartenances_types
+      - apprendre_hauteur_potentielle
+      - calculer_relief
+      - classer_types
+      - comparer_classifieurs
+      - comptes_strates
+      - controle_coherence
+      - correspondance_types
+      - couches_onf
+      - couvert_depuis_comptes
+      - couvert_houppiers
+      - couvert_strates
+      - couvert_strates_dalle
+      - dalles_mnt_ign
+      - dalles_sur_aoi
+      - decider_type
+      - ecart_courbes_station
+      - erreurs_dendro
+      - executer_chaine
+      - executer_chaine_fournie
+      - fiche_en_markdown
+      - fiche_validation
+      - grappes_par_maille
+      - greco_de_ser
+      - indicateurs_confusion
+      - lire_configuration
+      - lire_parametres_lidar
+      - lisser_probabilites
+      - matrice_confusion
+      - milieu_pixels
+      - niveau_modele
+      - peuplements_adultes
+      - poids_transition
+      - predire_dendro
+      - predire_dendro_validation
+      - predire_hauteur_potentielle
+      - raccorder_probabilites
+      - references_strates
+      - segmenter_houppiers
+      - surface_terriere_arbre
+      - telecharger_mnt_ign
+      - types_observes
+      - variables_placette
+      - variables_relief

@@ -55,6 +55,9 @@ jobs:
       - name: Installer les dépendances Python
         run: python3 -m pip install -e ".[test]"
 
+      # CLI Quarto : sans lui, les tests du rapport (rendu, tar_outdated) sauteraient (mission 015).
+      - uses: quarto-dev/quarto-actions/setup@v2
+
       # La commande de tests du projet : R testthat puis pytest.
       - name: Tests du projet (R puis Python)
         run: bash .claude/test-command

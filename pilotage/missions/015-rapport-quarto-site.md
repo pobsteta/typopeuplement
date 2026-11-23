@@ -7,7 +7,7 @@
 
 **En une phrase (quoi, et pourquoi) :** Produire par le pipeline `targets` un rapport Quarto de l'AOI (cartes des types, couche de confiance, état de preuve, limites) et le publier en article d'un site pkgdown, sur le modèle de sylvostation, pour que chaque carte sorte avec sa lecture et ses limites (demande de Pascal, 2026-11-23).
 
-**Redite par l'agent :** _à compléter par l'agent avant d'agir._
+**Redite par l'agent :** Faire que `targets` produise pour une AOI un rapport Quarto (cartes des types, couche de confiance, état de preuve, limites, « appartenance » et non « probabilité ») qui se refait quand son modèle change, en démonstration sans réseau ou sur des livrables déjà calculés, et le publier en article d'un site pkgdown, pour que chaque carte sorte avec sa lecture et dise qu'elle est produite et non validée.
 
 ## Les trois questions
 

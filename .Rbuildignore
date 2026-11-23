@@ -14,3 +14,9 @@
 ^tests/__pycache__$
 ^\.github$
 ^couverture\.txt$
+^_targets\.R$
+^_targets$
+^_pkgdown\.yml$
+^site$
+^docs/site$
+^vignettes/articles$
