@@ -270,36 +270,129 @@ variables_portees <- function(variables, hp, couverts = NULL) {
 }
 
 # Couverts des strates, une ligne par ligne de `variables` (NA pour un pixel sans
-# couvert) : colonnes c1_<ref> à c4_<ref>. `strates` : table (ou .rds) de couverts ou de
-# comptes, appariée aux pixels par ses coordonnées x, y (Lambert-93) ; ou dalles de nuage
-# de points (.las, .laz, .copc.laz) calculées ici, une à la fois, avec la référence prise
-# dans la chaîne (hpot : h_pot / k ; hpot_k : h_pot ; h0 : h_dom).
-preparer_strates <- function(strates, variables, hp, reference, plancher_m = 1) {
+# couvert) : colonnes c1_<ref> à c4_<ref>, et densite_houppiers quand les houppiers
+# servent. Méthode (mission 013) :
+# - « tranches » : les quatre strates par les tranches de hauteur (mission 008) ;
+# - « houppiers » : les quatre strates par les houppiers (vu du dessus) ;
+# - « hybride » (défaut) : strate 1 par les houppiers, strates 2 à 4 par les tranches
+#   corrigées de l'occlusion.
+# `strates` : liste `tranches` / `houppiers`, ou une seule source : table (ou .rds) de
+# comptes (tranches), de couverts par houppiers (colonne n_houppiers), segmentation
+# (segmenter_houppiers()), dalles de nuage de points (calculées ici, avec la référence
+# prise dans la chaîne : hpot = h_pot / k ; hpot_k = h_pot ; h0 = h_dom), ou couverts
+# déjà calculés (c1..c4 sans comptes) pris tels quels, quelle que soit la méthode.
+# Attributs : `methode` (celle appliquée, ou « fournis »), `parametres` (segmentation).
+preparer_strates <- function(strates, variables, hp, reference, plancher_m = 1,
+                             methode = "hybride", ncores = NULL) {
   if (!is.character(reference) || length(reference) != 1 || !nzchar(reference)) {
     arreter("reference_strates doit \u00eatre un nom de r\u00e9f\u00e9rence (hpot, hpot_k, h0)")
+  }
+  if (!is.character(methode) || length(methode) != 1 || !methode %in% METHODES_STRATES) {
+    arreter(sprintf("methode_strates inconnue : %s (%s)", paste(methode, collapse = ", "),
+                    paste(METHODES_STRATES, collapse = ", ")))
   }
   verifier_colonnes(variables, c("x", "y"), "les variables fournies (strates appari\u00e9es par x, y)")
   gabarit <- attr(variables, "gabarit")
   cols <- paste0("c", 1:4, "_", reference)
-  if (is.character(strates) && all(grepl("\\.la[sz]$", strates, ignore.case = TRUE))) {
-    refs_chaine <- list(hpot = hp$hpot, hpot_k = hp$h_pot, h0 = as.numeric(variables$h_dom))
+  refs_chaine <- list(hpot = hp$hpot, hpot_k = hp$h_pot, h0 = as.numeric(variables$h_dom))
+  references <- function() {
     if (!reference %in% names(refs_chaine)) {
       arreter(sprintf("r\u00e9f\u00e9rence des strates inconnue de la cha\u00eene : %s (hpot, hpot_k, h0)",
                       reference))
     }
     refs <- data.frame(x = variables$x, y = variables$y)
     refs[[reference]] <- refs_chaine[[reference]]
-    cv <- couverts_depuis_dalles(strates, gabarit, refs, plancher_m = plancher_m)
-    cv <- as.data.frame(cv)[, c("x", "y", cols)]
-  } else {
-    cv <- lire_couverts_fournis(strates, reference)
+    refs
   }
-  k <- apparier_pixels(variables$x, variables$y, cv$x, cv$y, gabarit)
-  garde <- !is.na(k)
-  if (anyDuplicated(k[garde])) arreter("strates : deux lignes de couverts pour un m\u00eame pixel")
-  out <- as.data.frame(matrix(NA_real_, nrow(variables), 4, dimnames = list(NULL, cols)))
-  out[k[garde], ] <- as.matrix(cv[garde, cols])
+
+  # Sources : tranches et houppiers.
+  src_t <- NULL
+  src_h <- NULL
+  if (is.list(strates) && !is.data.frame(strates) && !inherits(strates, "typo_houppiers") &&
+      any(c("tranches", "houppiers") %in% names(strates))) {
+    src_t <- strates$tranches
+    src_h <- strates$houppiers
+  } else {
+    nat <- nature_strates(strates)
+    if (nat == "couverts") {
+      # Couverts déjà calculés : pris tels quels, la méthode est celle de leur auteur.
+      cv <- lire_couverts_fournis(strates, reference)
+      out <- apparier_couverts(cv, variables, gabarit)
+      attr(out, "methode") <- "fournis"
+      return(out)
+    }
+    if (nat == "dalles") {
+      if (methode != "houppiers") src_t <- strates
+      if (methode != "tranches") src_h <- strates
+    } else if (nat %in% c("segmentation", "houppiers")) {
+      src_h <- strates
+    } else {
+      src_t <- strates
+    }
+  }
+  manque <- c(tranches = methode != "houppiers" && is.null(src_t),
+              houppiers = methode != "tranches" && is.null(src_h))
+  if (any(manque)) {
+    arreter(sprintf(paste0(
+      "m\u00e9thode des strates \u00ab %s \u00bb : couvert par %s manquant ; donner strates = ",
+      "list(tranches = ..., houppiers = ...), des dalles, ou choisir methode_strates"),
+      methode, paste(names(manque)[manque], collapse = " et ")))
+  }
+
+  cv_t <- NULL
+  if (methode != "houppiers") {
+    if (nature_strates(src_t) == "dalles") {
+      cv <- couverts_depuis_dalles(src_t, gabarit, references(), plancher_m = plancher_m)
+      cv <- as.data.frame(cv)[, c("x", "y", cols)]
+    } else {
+      cv <- lire_couverts_fournis(src_t, reference)
+    }
+    cv_t <- apparier_couverts(cv, variables, gabarit)
+  }
+  cv_h <- NULL
+  if (methode != "tranches") {
+    refs <- if (nature_strates(src_h) %in% c("dalles", "segmentation")) references() else NULL
+    cv_h <- couverts_houppiers_chaine(src_h, variables, refs, reference, gabarit, ncores = ncores)
+  }
+  out <- switch(methode,
+    tranches = cv_t,
+    houppiers = cv_h,
+    hybride = {
+      o <- cv_t
+      o[[cols[1]]] <- cv_h[[cols[1]]]
+      o$densite_houppiers <- cv_h$densite_houppiers
+      o
+    })
+  attr(out, "methode") <- methode
+  attr(out, "parametres") <- attr(cv_h, "parametres")
   out
+}
+
+# Ligne de la fiche sur la méthode du couvert des strates (mission 013).
+ligne_methode_strates <- function(methode, parametres = NULL) {
+  if (is.null(methode)) return(character(0))
+  seg <- if (is.null(parametres)) "" else sprintf(paste0(
+    " Segmentation (PROVISOIRE) : MNH \u00e0 %s m, maxima locaux sur %s m, hauteur minimale %s m, ",
+    "croissance de r\u00e9gions (lasR region_growing)."),
+    format(parametres$resolution_m, decimal.mark = ","), format(parametres$fenetre_m, decimal.mark = ","),
+    format(parametres$hauteur_min_m, decimal.mark = ","))
+  switch(methode,
+    hybride = paste0(
+      "M\u00e9thode des strates : HYBRIDE. Strate 1 par les houppiers (chaque arbre rang\u00e9 par la ",
+      "hauteur de sa cime, surface de ses houppiers) ; strates 2 \u00e0 4 par les tranches de ",
+      "hauteur corrig\u00e9es de l'occlusion, ESTIM\u00c9ES (drapeau strates_basses_estimees) : vu du ",
+      "dessus, le sous-\u00e9tage est masqu\u00e9 par les houppiers.", seg),
+    houppiers = paste0(
+      "M\u00e9thode des strates : HOUPPIERS. Les quatre strates par les houppiers, vus du dessus : ",
+      "les strates 2 \u00e0 4 sont masqu\u00e9es par les houppiers du dessus, sous-estim\u00e9es et ",
+      "ESTIM\u00c9ES (drapeau strates_basses_estimees).", seg),
+    tranches = paste0(
+      "M\u00e9thode des strates : TRANCHES. Les quatre strates par les tranches de hauteur des retours ",
+      "(mission 008), ESTIM\u00c9ES (drapeau strates_basses_estimees) ; la strate 1 y est ",
+      "sous-estim\u00e9e : la partie basse d'un houppier compte dans les strates du dessous."),
+    fournis = paste0(
+      "M\u00e9thode des strates : couverts fournis, pris tels quels (m\u00e9thode de leur auteur, ",
+      "non v\u00e9rifi\u00e9e par la cha\u00eene)."))
 }
 
 # Lignes de la fiche sur le couvert des strates : référence, part des pixels couverts,
@@ -307,13 +400,31 @@ preparer_strates <- function(strates, variables, hp, reference, plancher_m = 1) 
 declarations_strates <- function(couverts, variables, non_prec, reference) {
   c1 <- couverts[[paste0("c1_", reference)]]
   pc <- !non_prec
-  avec <- stats::complete.cases(couverts) & pc
+  cc <- paste0("c", 1:4, "_", reference)
+  avec <- stats::complete.cases(couverts[, cc, drop = FALSE]) & pc
   out <- sprintf(paste0(
     "Couvert des strates (GSM, quarts de la hauteur de r\u00e9f\u00e9rence) : r\u00e9f\u00e9rence %s, ",
     "PROVISOIRE ; couverts pour %s %% des pixels pr\u00e9comptables (%d sur %d) ; sans couvert, ",
     "les conditions des strates sont neutralis\u00e9es."),
     reference, format(round(100 * sum(avec) / max(1, sum(pc)), 1), decimal.mark = ","),
     sum(avec), sum(pc))
+  out <- c(out, ligne_methode_strates(attr(couverts, "methode"), attr(couverts, "parametres")))
+  if ("densite_houppiers" %in% names(couverts)) {
+    d <- couverts$densite_houppiers[pc]
+    ligne <- sprintf(paste0(
+      "Densit\u00e9 des houppiers (sommets par hectare) : m\u00e9diane %s tiges/ha ; rendue pour ",
+      "la lecture, elle ne sert pas \u00e0 la cl\u00e9 (le seuil de densit\u00e9 porte sur N du ",
+      "producteur, d\u00e9cision du 2026-11-23)"),
+      fmt_nombre(stats::median(d, na.rm = TRUE), 0))
+    if ("N" %in% names(variables)) {
+      n <- as.numeric(variables$N)[pc]
+      ok <- !is.na(d) & !is.na(n)
+      r <- if (sum(ok) >= 3 && stats::sd(d[ok]) > 0 && stats::sd(n[ok]) > 0) stats::cor(d[ok], n[ok]) else NA_real_
+      ligne <- paste0(ligne, sprintf(" ; N du producteur : m\u00e9diane %s tiges/ha, r de Pearson %s (n = %d)",
+                                     fmt_nombre(stats::median(n, na.rm = TRUE), 0), fmt_nombre(r), sum(ok)))
+    }
+    out <- c(out, paste0(ligne, "."))
+  }
   if ("couvert" %in% names(variables)) {
     k <- controle_couvert_c1(c1[pc], as.numeric(variables$couvert)[pc])
     out <- c(out, sprintf(paste0(
@@ -351,9 +462,14 @@ declarations_strates <- function(couverts, variables, non_prec, reference) {
 #'   vide : ses conditions sont neutralisées et la fiche la nomme.
 #' - Couvert des strates (`strates`, voir [typer_peuplements()]) : rattaché aux pixels
 #'   par `x`, `y` ; un pixel sans couvert a ses conditions de strates neutralisées. La
-#'   fiche dit la référence (provisoire), la part des pixels couverts, et la corrélation
-#'   de `c1_<ref>` (strate haute vue du dessus) avec le taux de couvert du producteur
-#'   (`couvert`), sans seuil : un contrôle, pas une validation.
+#'   fiche dit la référence (provisoire), la méthode (`methode_strates`, hybride par
+#'   défaut) et les paramètres de segmentation (provisoires), la part des pixels couverts,
+#'   et la corrélation de `c1_<ref>` (strate haute vue du dessus) avec le taux de couvert
+#'   du producteur (`couvert`), sans seuil : un contrôle, pas une validation. Avec les
+#'   houppiers, la carte porte `densite_houppiers` (tiges/ha, non passée à la clé) et la
+#'   fiche la compare à `N` ; le drapeau `strates_basses_estimees` est levé sur les
+#'   pixels dont les strates 2 à 4 sont estimées (tranches, ou houppiers masqués), sauf
+#'   pour des couverts fournis tout faits.
 #' - Variable absente : quand les types de tête ne se départagent que par une variable
 #'   manquante, `type` est le groupe de ces types (`"R-PB-J | R-PB-C"`, voir
 #'   [decider_type()]) et `entre_deux` est levé ; `correspondance_types.csv` liste les
@@ -385,7 +501,7 @@ declarations_strates <- function(couverts, variables, non_prec, reference) {
 #'   ses colonnes utilisées sont celles de son attribut `variables_milieu` (posé par
 #'   [milieu_pixels()]), sinon les `variables_milieu` de la configuration ; `NULL` :
 #'   hauteur potentielle vide.
-#' @param strates,reference_strates,modele_hp Voir [typer_peuplements()].
+#' @param strates,reference_strates,modele_hp,methode_strates Voir [typer_peuplements()].
 #' @param plancher_m Bas de la strate 4, quand le couvert est calculé depuis des dalles
 #'   ([comptes_strates()]). **Provisoire** : 1 m.
 #' @return Objet `typo_resultat` : `carte`, `fiche_validation` (sans placette ni grappe,
@@ -395,7 +511,7 @@ declarations_strates <- function(couverts, variables, non_prec, reference) {
 #' @export
 executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NULL,
                                     reference_strates = "hpot", modele_hp = NULL,
-                                    plancher_m = 1) {
+                                    plancher_m = 1, methode_strates = "hybride") {
   chrono <- new.env()
   chrono$temps <- data.frame(etage = character(0), secondes = numeric(0), pixels = integer(0),
                              stringsAsFactors = FALSE)
@@ -526,7 +642,8 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
   couverts <- NULL
   if (!is.null(strates)) {
     couverts <- chronometrer(chrono, "strates", n, {
-      preparer_strates(strates, variables, hp, reference_strates, plancher_m)
+      preparer_strates(strates, variables, hp, reference_strates, plancher_m,
+                       methode = methode_strates)
     })
     declarations <- c(declarations, declarations_strates(couverts, variables, non_prec,
                                                          reference_strates))
@@ -539,7 +656,8 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
   # entre_deux), et la fiche la nomme.
   ok <- which(!non_prec)
   vars <- variables_cle(cle)
-  portees <- variables_portees(variables, hp, couverts)
+  # La densité des houppiers est rendue mais ne sert pas à la clé (décision du 2026-11-23).
+  portees <- variables_portees(variables, hp, couverts[setdiff(names(couverts), "densite_houppiers")])
   absentes <- sort(setdiff(vars, names(portees)))
   if (length(absentes) > 0) {
     declarations <- c(declarations, sprintf(paste0(
@@ -564,6 +682,14 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
     lisser_probabilites(probas, variables$i[ok], variables$j[ok], conf$lissage_fenetre %||% 3,
                         poids = as.numeric(!hors_cle))
   })
+
+  # Strates basses « estimées » (mission 013) : tout pixel dont les strates 2 à 4 viennent
+  # des tranches (hybride, tranches) ou des houppiers vus du dessus (houppiers, masqués).
+  estimees <- NULL
+  if (!is.null(couverts) && !identical(attr(couverts, "methode"), "fournis")) {
+    basses <- couverts[, paste0("c", 2:4, "_", reference_strates), drop = FALSE]
+    estimees <- data.frame(strates_basses_estimees = rowSums(!is.na(basses)) > 0)
+  }
 
   # 4. Décision et assemblage de la carte (une ligne par pixel, vide hors précomptable).
   carte <- chronometrer(chrono, "decision", length(ok), {
@@ -594,6 +720,7 @@ executer_chaine_fournie <- function(variables, conf, milieu = NULL, strates = NU
                      as.data.frame(variables)[, gardees, drop = FALSE],
                      hp[, c("h_pot", "hpot", "h_pot_sd", "rapport_h", "hp_incertaine", "sd_arbres")],
                      couverts,
+                     estimees,
                      data.frame(non_precomptable = non_prec, part_pb_absente = pb_absente,
                                 gb_interim = gb_interim & !non_prec),
                      p_cols)

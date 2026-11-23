@@ -15,7 +15,8 @@ typer_peuplements(
   milieu = NULL,
   strates = NULL,
   reference_strates = "hpot",
-  modele_hp = NULL
+  modele_hp = NULL,
+  methode_strates = "hybride"
 )
 }
 \arguments{
@@ -44,10 +45,17 @@ et \code{source} disent ce que voit la hauteur potentielle (sinon les
 signalée partout.}
 
 \item{strates}{En mode « variables fournies », couvert des strates du GSM pour la
-clé (colonnes \verb{c1_<ref>} à \verb{c4_<ref>}, \verb{<ref>} étant \code{reference_strates}) :
+clé (colonnes \verb{c1_<ref>} à \verb{c4_<ref>}, \verb{<ref>} étant \code{reference_strates}), calculé
+selon \code{methode_strates} :
 \itemize{
 \item \code{NULL} : pas de couvert ; une clé qui cite les strates les neutralise (groupe de
 types, drapeau \code{entre_deux}) et la fiche le dit ;
+\item \code{list(tranches = ..., houppiers = ...)} : les deux sources du mode hybride ;
+\code{tranches} prend les formes ci-dessous (comptes, \code{.rds}, dalles) ; \code{houppiers} est
+une table de \code{\link[=couvert_houppiers]{couvert_houppiers()}} (ou son \code{.rds}), une segmentation de
+\code{\link[=segmenter_houppiers]{segmenter_houppiers()}} (le couvert est alors calculé avec la référence de la
+chaîne), ou des dalles ;
+\item une table de \code{\link[=couvert_houppiers]{couvert_houppiers()}} ou une segmentation seule : source houppiers ;
 \item un data.frame de \code{\link[=couvert_depuis_comptes]{couvert_depuis_comptes()}} (ou de \code{\link[=comptes_strates]{comptes_strates()}} avec \code{x},
 \code{y}), ou les chemins de fichiers \code{.rds} qui en contiennent (par exemple les
 comptes de \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}}, une dalle par fichier : ils sont
@@ -55,8 +63,12 @@ additionnés) ; les lignes sont rattachées aux pixels par leurs coordonnées \c
 \code{y} (Lambert-93) ; ces couverts doivent avoir été calculés avec la même hauteur de
 référence que la chaîne (même milieu, même modèle de hauteur potentielle) ;
 \item les chemins de dalles de nuage de points (\code{.las}, \code{.laz}, \code{.copc.laz}) : le couvert
-est calculé ici, une dalle à la fois, avec la référence tirée de la chaîne (lasR
-requis ; choisir les dalles avec \code{\link[=dalles_sur_aoi]{dalles_sur_aoi()}}).
+est calculé ici, avec la référence tirée de la chaîne (lasR requis ; choisir les
+dalles avec \code{\link[=dalles_sur_aoi]{dalles_sur_aoi()}}) : tranches une dalle à la fois, houppiers en un
+seul \code{exec} avec tampon (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, paramètres par défaut) ;
+\item un data.frame de couverts déjà calculés (\verb{c1_<ref>} à \verb{c4_<ref>}, sans comptes
+ni \code{n_houppiers}) : pris tels quels, quelle que soit \code{methode_strates} (la fiche
+le dit).
 }}
 
 \item{reference_strates}{Hauteur de référence des strates : \code{"hpot"} (hauteur
@@ -67,6 +79,14 @@ potentielle sans enveloppe, h_pot / k ; \strong{par défaut, provisoire}, décis
 appris (\code{\link[=apprendre_hauteur_potentielle]{apprendre_hauteur_potentielle()}}), par exemple sur tout le massif, appliqué
 aux pixels de l'emprise ; \code{NULL} : appris sur les pixels de l'emprise. Demande
 \code{milieu}.}
+
+\item{methode_strates}{Méthode du couvert des strates (mission 013, plan validé par
+Pascal le 2026-11-23) : \code{"hybride"} (\strong{par défaut}) : strate 1 par les houppiers,
+strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, déclarées
+estimées ; \code{"houppiers"} : les quatre strates par les houppiers vus du dessus ;
+\code{"tranches"} : les quatre par les tranches (mission 008). Les colonnes
+\verb{c1_<ref>} à \verb{c4_<ref>} gardent leurs noms. Une source manquante pour la méthode
+arrête la chaîne.}
 }
 \value{
 Objet \code{typo_resultat} (voir \code{\link[=executer_chaine]{executer_chaine()}}), invisible si \code{sortie} est donné.

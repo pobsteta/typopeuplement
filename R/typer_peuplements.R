@@ -47,9 +47,16 @@
 #'   `variables_milieu` de la configuration) ; `NULL` : hauteur potentielle vide et
 #'   signalée partout.
 #' @param strates En mode « variables fournies », couvert des strates du GSM pour la
-#'   clé (colonnes `c1_<ref>` à `c4_<ref>`, `<ref>` étant `reference_strates`) :
+#'   clé (colonnes `c1_<ref>` à `c4_<ref>`, `<ref>` étant `reference_strates`), calculé
+#'   selon `methode_strates` :
 #'   - `NULL` : pas de couvert ; une clé qui cite les strates les neutralise (groupe de
 #'     types, drapeau `entre_deux`) et la fiche le dit ;
+#'   - `list(tranches = ..., houppiers = ...)` : les deux sources du mode hybride ;
+#'     `tranches` prend les formes ci-dessous (comptes, `.rds`, dalles) ; `houppiers` est
+#'     une table de [couvert_houppiers()] (ou son `.rds`), une segmentation de
+#'     [segmenter_houppiers()] (le couvert est alors calculé avec la référence de la
+#'     chaîne), ou des dalles ;
+#'   - une table de [couvert_houppiers()] ou une segmentation seule : source houppiers ;
 #'   - un data.frame de [couvert_depuis_comptes()] (ou de [comptes_strates()] avec `x`,
 #'     `y`), ou les chemins de fichiers `.rds` qui en contiennent (par exemple les
 #'     comptes de [couvert_strates_dalle()], une dalle par fichier : ils sont
@@ -57,8 +64,19 @@
 #'     `y` (Lambert-93) ; ces couverts doivent avoir été calculés avec la même hauteur de
 #'     référence que la chaîne (même milieu, même modèle de hauteur potentielle) ;
 #'   - les chemins de dalles de nuage de points (`.las`, `.laz`, `.copc.laz`) : le couvert
-#'     est calculé ici, une dalle à la fois, avec la référence tirée de la chaîne (lasR
-#'     requis ; choisir les dalles avec [dalles_sur_aoi()]).
+#'     est calculé ici, avec la référence tirée de la chaîne (lasR requis ; choisir les
+#'     dalles avec [dalles_sur_aoi()]) : tranches une dalle à la fois, houppiers en un
+#'     seul `exec` avec tampon ([segmenter_houppiers()], paramètres par défaut) ;
+#'   - un data.frame de couverts déjà calculés (`c1_<ref>` à `c4_<ref>`, sans comptes
+#'     ni `n_houppiers`) : pris tels quels, quelle que soit `methode_strates` (la fiche
+#'     le dit).
+#' @param methode_strates Méthode du couvert des strates (mission 013, plan validé par
+#'   Pascal le 2026-11-23) : `"hybride"` (**par défaut**) : strate 1 par les houppiers,
+#'   strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, déclarées
+#'   estimées ; `"houppiers"` : les quatre strates par les houppiers vus du dessus ;
+#'   `"tranches"` : les quatre par les tranches (mission 008). Les colonnes
+#'   `c1_<ref>` à `c4_<ref>` gardent leurs noms. Une source manquante pour la méthode
+#'   arrête la chaîne.
 #' @param reference_strates Hauteur de référence des strates : `"hpot"` (hauteur
 #'   potentielle sans enveloppe, h_pot / k ; **par défaut, provisoire**, décision du
 #'   2026-11-22), `"hpot_k"` (h_pot) ou `"h0"` (h_dom). Voir [references_strates()].
@@ -85,7 +103,8 @@
 #' @export
 typer_peuplements <- function(aoi, placettes = NULL, ser = NULL, configuration, sortie = NULL,
                               graine = 0, variables = NULL, milieu = NULL, strates = NULL,
-                              reference_strates = "hpot", modele_hp = NULL) {
+                              reference_strates = "hpot", modele_hp = NULL,
+                              methode_strates = "hybride") {
   if (!is.null(variables)) {
     if (is.null(ser)) arreter("SER non donn\u00e9e : en mode \u00ab variables fournies \u00bb, donner `ser`")
     conf <- lire_configuration(configuration, ser)
@@ -100,7 +119,8 @@ typer_peuplements <- function(aoi, placettes = NULL, ser = NULL, configuration, 
       }
     }
     res <- executer_chaine_fournie(variables, conf, milieu, strates = strates,
-                                   reference_strates = reference_strates, modele_hp = modele_hp)
+                                   reference_strates = reference_strates, modele_hp = modele_hp,
+                                   methode_strates = methode_strates)
     if (!is.null(sortie)) {
       ecrire_livrables(res, sortie)
       return(invisible(res))
@@ -235,13 +255,14 @@ correspondance_types <- function(cle, types = NULL) {
 #'   `entre_deux` (0 ou 1) ;
 #' - `variables.tif` : `G`, `part_resineux`, `part_pb`, `part_bm`, `part_gb`, `N` (si
 #'   lue), `h_dom`, `h_pot`, `hpot` (h_pot sans l'enveloppe, mode « variables fournies »),
-#'   `h_pot_sd`, `rapport_h`, et les couverts des strates `c1_<ref>` à `c4_<ref>` s'ils
-#'   ont été fournis ;
+#'   `h_pot_sd`, `rapport_h`, les couverts des strates `c1_<ref>` à `c4_<ref>` s'ils
+#'   ont été fournis, et `densite_houppiers` (tiges/ha) si les houppiers ont servi ;
 #' - `confiance.tif` : `hp_incertaine`, `hors_cle` (0 ou 1), `niveau_modele` (0 :
 #'   variables du producteur, 1 : SER, 2 : grande région *requise* — la bascule vers le
 #'   modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
 #'   servi) ; en mode « variables fournies », aussi `non_precomptable`, `part_pb_absente`
-#'   et `gb_interim` (0 ou 1) ;
+#'   et `gb_interim` (0 ou 1), et `strates_basses_estimees` (0 ou 1) quand le couvert des
+#'   strates a été calculé par la chaîne ;
 #' - `fiche_validation.md` ; `carte_types.csv` (la carte, une ligne par pixel) ;
 #' - `correspondance_types.csv` (`valeur`, `code`, `libelle`), groupes de types compris ;
 #' - `correspondance_niveau_modele.csv` (`valeur`, `niveau`, `sens`) : les codes de
@@ -281,14 +302,15 @@ ecrire_livrables <- function(resultat, dossier, taille_pixel = 25, crs = "EPSG:2
     entre_deux = as.numeric(carte$entre_deux)
   )
   noms_var <- c("G", "part_resineux", "part_pb", "part_bm", "part_gb", "N", "h_dom", "h_pot",
-                "hpot", "h_pot_sd", "rapport_h", grep("^c[1-4]_", names(carte), value = TRUE))
+                "hpot", "h_pot_sd", "rapport_h", grep("^c[1-4]_", names(carte), value = TRUE),
+                "densite_houppiers")
   variables <- carte[, intersect(noms_var, names(carte)), drop = FALSE]
   confiance <- data.frame(
     hp_incertaine = as.numeric(carte$hp_incertaine),
     hors_cle = as.numeric(carte$hors_cle),
     niveau_modele = rep(code_niveau_modele(resultat$niveau_modele), nrow(carte))
   )
-  for (drapeau in c("non_precomptable", "part_pb_absente", "gb_interim")) {
+  for (drapeau in c("non_precomptable", "part_pb_absente", "gb_interim", "strates_basses_estimees")) {
     if (drapeau %in% names(carte)) confiance[[drapeau]] <- as.numeric(carte[[drapeau]])
   }
   couches <- list(types.tif = types, variables.tif = variables, confiance.tif = confiance)

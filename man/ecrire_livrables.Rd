@@ -26,13 +26,14 @@ types, quand une variable manque, a sa propre valeur), \code{proba}, \code{type_
 \code{entre_deux} (0 ou 1) ;
 \item \code{variables.tif} : \code{G}, \code{part_resineux}, \code{part_pb}, \code{part_bm}, \code{part_gb}, \code{N} (si
 lue), \code{h_dom}, \code{h_pot}, \code{hpot} (h_pot sans l'enveloppe, mode « variables fournies »),
-\code{h_pot_sd}, \code{rapport_h}, et les couverts des strates \verb{c1_<ref>} à \verb{c4_<ref>} s'ils
-ont été fournis ;
+\code{h_pot_sd}, \code{rapport_h}, les couverts des strates \verb{c1_<ref>} à \verb{c4_<ref>} s'ils
+ont été fournis, et \code{densite_houppiers} (tiges/ha) si les houppiers ont servi ;
 \item \code{confiance.tif} : \code{hp_incertaine}, \code{hors_cle} (0 ou 1), \code{niveau_modele} (0 :
 variables du producteur, 1 : SER, 2 : grande région \emph{requise} — la bascule vers le
 modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
 servi) ; en mode « variables fournies », aussi \code{non_precomptable}, \code{part_pb_absente}
-et \code{gb_interim} (0 ou 1) ;
+et \code{gb_interim} (0 ou 1), et \code{strates_basses_estimees} (0 ou 1) quand le couvert des
+strates a été calculé par la chaîne ;
 \item \code{fiche_validation.md} ; \code{carte_types.csv} (la carte, une ligne par pixel) ;
 \item \code{correspondance_types.csv} (\code{valeur}, \code{code}, \code{libelle}), groupes de types compris ;
 \item \code{correspondance_niveau_modele.csv} (\code{valeur}, \code{niveau}, \code{sens}) : les codes de

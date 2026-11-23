@@ -12,7 +12,9 @@ Description: Chaine de traitement qui produit, pour les forets de France
     minimale de ranger : 0.15.0, qui introduit le parametre min.bucket (taille
     minimale des feuilles) utilise par les forets aleatoires (NEWS de ranger,
     version 0.15.0). Le couvert des strates par le nuage de points LiDAR HD
-    passe par lasR (Suggests, depuis r-universe), qui demande GDAL.
+    passe par lasR (Suggests, depuis r-universe), qui demande GDAL : tranches
+    de hauteur des retours, et segmentation des houppiers (region_growing de
+    lasR, Dalponte et Coomes 2016).
 License: GPL-3
 Encoding: UTF-8
 Depends:

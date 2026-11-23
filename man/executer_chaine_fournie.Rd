@@ -11,7 +11,8 @@ executer_chaine_fournie(
   strates = NULL,
   reference_strates = "hpot",
   modele_hp = NULL,
-  plancher_m = 1
+  plancher_m = 1,
+  methode_strates = "hybride"
 )
 }
 \arguments{
@@ -27,7 +28,7 @@ ses colonnes utilisées sont celles de son attribut \code{variables_milieu} (pos
 \code{\link[=milieu_pixels]{milieu_pixels()}}), sinon les \code{variables_milieu} de la configuration ; \code{NULL} :
 hauteur potentielle vide.}
 
-\item{strates, reference_strates, modele_hp}{Voir \code{\link[=typer_peuplements]{typer_peuplements()}}.}
+\item{strates, reference_strates, modele_hp, methode_strates}{Voir \code{\link[=typer_peuplements]{typer_peuplements()}}.}
 
 \item{plancher_m}{Bas de la strate 4, quand le couvert est calculé depuis des dalles
 (\code{\link[=comptes_strates]{comptes_strates()}}). \strong{Provisoire} : 1 m.}
@@ -63,9 +64,14 @@ strates \verb{c1_<ref>} à \verb{c4_<ref>}. Une variable citée que la chaîne n
 vide : ses conditions sont neutralisées et la fiche la nomme.
 \item Couvert des strates (\code{strates}, voir \code{\link[=typer_peuplements]{typer_peuplements()}}) : rattaché aux pixels
 par \code{x}, \code{y} ; un pixel sans couvert a ses conditions de strates neutralisées. La
-fiche dit la référence (provisoire), la part des pixels couverts, et la corrélation
-de \verb{c1_<ref>} (strate haute vue du dessus) avec le taux de couvert du producteur
-(\code{couvert}), sans seuil : un contrôle, pas une validation.
+fiche dit la référence (provisoire), la méthode (\code{methode_strates}, hybride par
+défaut) et les paramètres de segmentation (provisoires), la part des pixels couverts,
+et la corrélation de \verb{c1_<ref>} (strate haute vue du dessus) avec le taux de couvert
+du producteur (\code{couvert}), sans seuil : un contrôle, pas une validation. Avec les
+houppiers, la carte porte \code{densite_houppiers} (tiges/ha, non passée à la clé) et la
+fiche la compare à \code{N} ; le drapeau \code{strates_basses_estimees} est levé sur les
+pixels dont les strates 2 à 4 sont estimées (tranches, ou houppiers masqués), sauf
+pour des couverts fournis tout faits.
 \item Variable absente : quand les types de tête ne se départagent que par une variable
 manquante, \code{type} est le groupe de ces types (\code{"R-PB-J | R-PB-C"}, voir
 \code{\link[=decider_type]{decider_type()}}) et \code{entre_deux} est levé ; \code{correspondance_types.csv} liste les

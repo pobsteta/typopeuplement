@@ -224,7 +224,9 @@ test_that("strates en fichiers .rds de comptes (une dalle par fichier) : additio
     cpt$y <- v$y[k]
     saveRDS(cpt, f[m])
   }
-  c <- executer_chaine_fournie(v, conf, strates = f)$carte
+  # Des comptes par tranches seuls : methode « tranches », dite (mission 013 : le defaut
+  # hybride demande aussi les houppiers).
+  c <- executer_chaine_fournie(v, conf, strates = f, methode_strates = "tranches")$carte
   attendu <- couvert_strates(pts, refs)
   expect_equal(c$c1_hpot[k], attendu$c1_hpot)
   expect_equal(c$c4_hpot[k], attendu$c4_hpot)
@@ -266,7 +268,8 @@ test_that("strates calculees depuis une dalle dans la chaine (lasR) : couverts d
                              ymax = 6425513.8, resolution = c(26.6, 26.6), crs = "EPSG:2154")
   conf <- lire_configuration(chemin_config_h10(), "H10")
   laz <- file.path(testthat::test_path("fixtures", "vercors", "strates"), "nuage.laz")
-  c <- executer_chaine_fournie(v, conf, strates = laz, reference_strates = "h0")$carte
+  c <- executer_chaine_fournie(v, conf, strates = laz, reference_strates = "h0",
+                               methode_strates = "tranches")$carte
   cols <- paste0("c", 1:4, "_h0")
   expect_lt(max(abs(as.matrix(c[, cols]) - as.matrix(px[, cols]))), 0.02)
   # La cle du GSM cite c*_hpot, pas c*_h0 : ils restent absents, et la fiche le dit.
