@@ -10,7 +10,13 @@ typer_peuplements(
   ser = NULL,
   configuration,
   sortie = NULL,
-  graine = 0
+  graine = 0,
+  variables = NULL,
+  milieu = NULL,
+  strates = NULL,
+  reference_strates = "hpot",
+  modele_hp = NULL,
+  methode_strates = "hybride"
 )
 }
 \arguments{
@@ -27,6 +33,65 @@ typer_peuplements(
 n'est écrit.}
 
 \item{graine}{Graine du hasard ; remplace celle de la configuration.}
+
+\item{variables}{data.frame de pixels aux variables fournies
+(\code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}) ; \code{NULL} : mode « pixels préparés ».}
+
+\item{milieu}{En mode « variables fournies », data.frame des variables de milieu
+(une ligne par ligne de \code{variables}) pour la hauteur potentielle, par exemple le
+relief tiré du MNT de l'IGN (\code{\link[=milieu_pixels]{milieu_pixels()}}) ; ses attributs \code{variables_milieu}
+et \code{source} disent ce que voit la hauteur potentielle (sinon les
+\code{variables_milieu} de la configuration) ; \code{NULL} : hauteur potentielle vide et
+signalée partout.}
+
+\item{strates}{En mode « variables fournies », couvert des strates du GSM pour la
+clé (colonnes \verb{c1_<ref>} à \verb{c4_<ref>}, \verb{<ref>} étant \code{reference_strates}), calculé
+selon \code{methode_strates} :
+\itemize{
+\item \code{NULL} : pas de couvert ; une clé qui cite les strates les neutralise (groupe de
+types, drapeau \code{entre_deux}) et la fiche le dit ;
+\item \code{list(tranches = ..., houppiers = ...)} : les deux sources du mode hybride ;
+\code{tranches} prend les formes ci-dessous (comptes, \code{.rds}, dalles) ; \code{houppiers} est
+une table de \code{\link[=couvert_houppiers]{couvert_houppiers()}} (ou son \code{.rds}), une segmentation de
+\code{\link[=segmenter_houppiers]{segmenter_houppiers()}} (le couvert est alors calculé avec la référence de la
+chaîne), ou des dalles ;
+\item une table de \code{\link[=couvert_houppiers]{couvert_houppiers()}} ou une segmentation seule : source houppiers ;
+\item un data.frame de \code{\link[=couvert_depuis_comptes]{couvert_depuis_comptes()}} (ou de \code{\link[=comptes_strates]{comptes_strates()}} avec \code{x},
+\code{y}), ou les chemins de fichiers \code{.rds} qui en contiennent (par exemple les
+comptes de \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}}, une dalle par fichier : ils sont
+additionnés) ; les lignes sont rattachées aux pixels par leurs coordonnées \code{x},
+\code{y} (Lambert-93) ; ces couverts doivent avoir été calculés avec la même hauteur de
+référence que la chaîne (même milieu, même modèle de hauteur potentielle) ;
+\item les chemins de dalles de nuage de points (\code{.las}, \code{.laz}, \code{.copc.laz}) : le couvert
+est calculé ici, avec la référence tirée de la chaîne (lasR requis ; choisir les
+dalles avec \code{\link[=dalles_sur_aoi]{dalles_sur_aoi()}}) : tranches une dalle à la fois, houppiers en un
+seul \code{exec} avec tampon (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, paramètres par défaut) ; en
+hybride, la segmentation sert à retirer des tranches les retours des houppiers de
+la strate 1 ;
+\item un data.frame de couverts déjà calculés (\verb{c1_<ref>} à \verb{c4_<ref>}, sans comptes
+ni \code{n_houppiers}) : pris tels quels, quelle que soit \code{methode_strates} (la fiche
+le dit).
+}}
+
+\item{reference_strates}{Hauteur de référence des strates : \code{"hpot"} (hauteur
+potentielle sans enveloppe, h_pot / k ; \strong{par défaut, provisoire}, décision du
+2026-11-22), \code{"hpot_k"} (h_pot) ou \code{"h0"} (h_dom). Voir \code{\link[=references_strates]{references_strates()}}.}
+
+\item{modele_hp}{En mode « variables fournies », modèle de hauteur potentielle déjà
+appris (\code{\link[=apprendre_hauteur_potentielle]{apprendre_hauteur_potentielle()}}), par exemple sur tout le massif, appliqué
+aux pixels de l'emprise ; \code{NULL} : appris sur les pixels de l'emprise. Demande
+\code{milieu}.}
+
+\item{methode_strates}{Méthode du couvert des strates (mission 013, plan validé par
+Pascal le 2026-11-23) : \code{"hybride"} (\strong{par défaut}) : strate 1 par les houppiers,
+strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, sans les
+retours qui tombent dans les houppiers de la strate 1 (décision du 2026-11-23 ; il
+faut une segmentation unique et des tranches calculées depuis les dalles, ou des
+comptes de \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}} avec \code{houppiers}), déclarées estimées
+(\code{part_retours_sous_s1}) ; \code{"houppiers"} : les quatre strates par les houppiers vus du dessus ;
+\code{"tranches"} : les quatre par les tranches (mission 008). Les colonnes
+\verb{c1_<ref>} à \verb{c4_<ref>} gardent leurs noms. Une source manquante pour la méthode
+arrête la chaîne.}
 }
 \value{
 Objet \code{typo_resultat} (voir \code{\link[=executer_chaine]{executer_chaine()}}), invisible si \code{sortie} est donné.
@@ -36,8 +101,22 @@ Point d'entrée de la chaîne : produit la carte du type de peuplement d'une emp
 (AOI), sa couche de confiance et la fiche de validation de la SER.
 }
 \details{
-Ce qui tourne aujourd'hui : \code{aoi} est un data.frame de pixels déjà préparés (les
-colonnes décrites dans \code{\link[=executer_chaine]{executer_chaine()}}), avec \code{placettes} et \code{ser} donnés.
+Deux modes tournent aujourd'hui :
+\itemize{
+\item \strong{pixels préparés} : \code{aoi} est un data.frame de pixels (les colonnes décrites dans
+\code{\link[=executer_chaine]{executer_chaine()}}), avec \code{placettes} et \code{ser} donnés ; les variables sont prédites
+par des modèles calibrés sur les placettes, et validées sur elles ;
+\item \strong{variables fournies} (mission 006) : \code{variables} est un data.frame de pixels dont
+les variables viennent d'un producteur, par exemple les paramètres forestiers LiDAR
+de l'ONF lus par \code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}. Pas d'ajustement dendrométrique, pas de
+placettes, donc pas de validation (voir \code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}}). \code{aoi} peut
+alors être \code{NULL} (toutes les lignes de \code{variables}) ou un objet \code{sf} (seuls les
+pixels dont le centre \code{x}, \code{y} tombe dedans sont gardés).
+}
+
+Pixels préparés sans colonnes \code{x}, \code{y} : les centres des pixels sont pris à
+\verb{x = i × taille_pixel}, \verb{y = j × taille_pixel} (convention du jeu synthétique, voir
+\code{\link[=ecrire_livrables]{ecrire_livrables()}}). Pour de vraies données, donner \code{x}, \code{y} en Lambert-93.
 
 Ce qui reste en attente (arrêt net, message dit) :
 \itemize{
@@ -51,6 +130,15 @@ données ouvertes (LiDAR HD, Sentinel-2, BD Forêt v3, climat, sol) n'est pas é
 La typologie est descriptive : la carte aide à décider, elle ne remplace pas le
 diagnostic de terrain. Vérifier en priorité les pixels « entre deux types ».
 }
+\section{Variables passées à la clé}{
+
+Variables passées à la clé, en mode « variables fournies » : toute variable que la clé
+cite et que la chaîne porte — celles du producteur (\code{G}, parts, \code{couvert}, \code{N}…), la
+hauteur potentielle \code{h_pot} (avec l'enveloppe), \code{hpot} (sans l'enveloppe, h_pot / k),
+\code{rapport_h}, et les couverts des strates. Une variable citée que la chaîne ne porte
+pas est neutralisée (voir \code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}}).
+}
+
 \examples{
 \donttest{
 jeu <- generer_jeu_synthetique(30, 30, 200, graine = 1)

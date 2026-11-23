@@ -17,5 +17,6 @@ Vecteur logique.
 }
 \description{
 Masque des lignes retenues pour apprendre la hauteur potentielle :
-\code{couvert >= couvert_min} et \code{h_dom >= hauteur_min_m} (seuils du modèle).
+\code{couvert >= couvert_min} et \code{h_dom >= hauteur_min_m} (seuils du modèle). Une ligne
+où le couvert ou la hauteur manque n'est pas adulte (\code{FALSE}, jamais \code{NA}).
 }

@@ -42,7 +42,8 @@ def test_hauteur_incertaine_signalee(donnees):
 
 def test_chaine_complete(resultat):
     carte = resultat["carte"]
-    p = carte.filter(like="p_")
+    p = carte.filter(regex=r"^p_")
+    assert p.shape[1] >= 2 and all(p.dtypes.map(lambda d: d.kind == "f"))
     assert np.allclose(p.sum(axis=1), 1)
     assert carte["proba"].between(0, 1).all()
     fiche = resultat["fiche_validation"]

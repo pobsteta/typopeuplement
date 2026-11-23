@@ -50,14 +50,21 @@ la hauteur potentielle est jugée incertaine. \strong{Provisoire} : 0,2.}
 }
 \value{
 Objet \code{typo_hauteur_potentielle} : modèles, \code{rmse_cv} (RMSE de validation
-croisée par famille, m) et \code{facteur} (enveloppe) par famille.
+croisée par famille, m), \code{facteur} (enveloppe k) et \code{apprentissage} (lignes apprises
+et leur prédiction hors sac) par famille.
 }
 \description{
 Apprend, par famille d'essences, la hauteur dominante des peuplements adultes fermés
 en fonction des variables de milieu (forêt aléatoire ranger). La prédiction est
-relevée par une enveloppe haute : le quantile \code{quantile_enveloppe} du rapport hauteur
-observée / hauteur prédite hors échantillon chez les adultes (au moins 1), car un
-peuplement adulte n'a pas toujours atteint sa hauteur potentielle.
+relevée par une enveloppe haute k : le quantile \code{quantile_enveloppe} du rapport hauteur
+observée / hauteur prédite hors sac (out-of-bag de ranger) chez les adultes (au moins 1),
+car un peuplement adulte n'a pas toujours atteint sa hauteur potentielle. Les adultes
+appris sont ensuite prédits hors sac (\code{\link[=predire_hauteur_potentielle]{predire_hauteur_potentielle()}}) : environ
+\code{1 - quantile_enveloppe} d'entre eux dépassent leur hauteur potentielle.
+}
+\details{
+La RMSE de validation croisée par blocs (plis contigus) donne l'incertitude :
+\code{h_pot_sd} = k × RMSE.
 }
 \seealso{
 \code{\link[=predire_hauteur_potentielle]{predire_hauteur_potentielle()}}, \code{\link[=peuplements_adultes]{peuplements_adultes()}}

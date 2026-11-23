@@ -82,14 +82,14 @@ test_that("critere 4 : les deux cotes de la limite voient la meme chose", {
   expect_equal(cote1$A, 0.45, tolerance = 1e-12)
 })
 
-test_that("critere 4 : le poids est continu et monotone, et nul de bande donne un poids de 1", {
+test_that("critere 4 : le poids est continu et monotone, et une largeur de bande nulle est refusee", {
   d <- seq(-800, 800, by = 50)
   w <- poids_transition(d, 500)
   expect_true(all(diff(w) >= -1e-12))
   expect_true(all(w >= 0.5 & w <= 1))
   # Pas de saut : la pente est de 1/(2 x 500) = 0,001 par metre, deux distances voisines de 1 m different de 0,001 au plus.
   expect_lte(max(abs(diff(poids_transition(seq(-600, 600, by = 1), 500)))), 1e-3 + 1e-12)
-  expect_equal(poids_transition(c(-10, 0, 10), 0), c(1, 1, 1))
+  expect_error(poids_transition(c(-10, 0, 10), 0), "strictement positive")
 })
 
 test_that("raccorder : un type absent d'un cote vaut 0 et la somme reste 1", {

@@ -7,12 +7,16 @@
 
 PARTS_CATEGORIES <- c("part_pb", "part_bm", "part_gb")
 
-foret_regression <- function(X, y, nombre_arbres, feuille_min, graine) {
+# Forêt de régression, seule source des paramètres des forêts de la chaîne (modèles
+# dendrométriques, hauteur potentielle). `keep.inbag = TRUE` garde la trace des lignes
+# tirées par chaque arbre (prédiction hors sac de la hauteur potentielle) ; cela ne
+# change ni les arbres ni leurs prédictions.
+foret_regression <- function(X, y, nombre_arbres, feuille_min, graine, keep.inbag = FALSE) {
   ranger::ranger(
     x = as.data.frame(X), y = y,
     num.trees = nombre_arbres, mtry = ncol(X),
     min.node.size = 2, min.bucket = feuille_min,
-    seed = graine_ranger(graine), num.threads = 1
+    seed = graine_ranger(graine), num.threads = 1, keep.inbag = keep.inbag
   )
 }
 

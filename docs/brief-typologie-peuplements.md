@@ -44,14 +44,14 @@ Le projet livre des cartes prédictives et leurs clés de lecture, pas des consi
 1. Produire une carte des **types de peuplements** qui couvre aussi les feuillus, les taillis et les mélanges futaie-taillis.
 2. Passer de la famille (feuillus / résineux) à l'essence principale.
 3. Situer chaque peuplement par rapport à la hauteur que le milieu permet, pour séparer peuplement jeune et peuplement chétif.
-4. Afficher pour chaque pixel la probabilité du type prédit et l'erreur mesurée en validation indépendante.
+4. Afficher pour chaque pixel la probabilité du type prédit et l'erreur mesurée en validation indépendante. *(réconciliation, Pascal, 2026-11-23 : le nombre s'appelle « appartenance » tant qu'il n'est pas calibré, et l'erreur par pixel est définie par la validation au pixel, ADR 0006.)*
 5. Rendre la chaîne rejouable à chaque nouvelle donnée (image satellite annuelle, nouveau vol).
 
 **Dans le périmètre**
 
 - France hexagonale et Corse, forêts publiques et privées.
-- Un calcul par aire d'intérêt (AOI) : une forêt, au plus un massif. La chaîne ne calcule pas la France entière d'un coup.
-- Une résolution de travail de l'ordre de 25 m, une lecture à l'échelle du quart au demi-hectare.
+- Un calcul par aire d'intérêt (AOI) : une forêt, au plus un massif. La chaîne ne calcule pas la France entière d'un coup. *(réconciliation, Pascal, 2026-11-23 : la SER, puis le national à terme, s'obtiennent par assemblage d'AOI, ADR 0013.)*
+- Une résolution de travail de l'ordre de 25 m, une lecture à l'échelle du quart au demi-hectare. *(réconciliation, Pascal, 2026-11-23 : grille de 26,6 m en Lambert-93, ADR 0005.)*
 - Une table de correspondance entre les types prédits et les typologies locales existantes (guides de sylviculture, typologies des schémas régionaux de gestion sylvicole).
 
 **Hors périmètre**
@@ -71,6 +71,8 @@ Le projet livre des cartes prédictives et leurs clés de lecture, pas des consi
 | [FORMS](https://essd.copernicus.org/articles/15/4927/2023/) (Schwartz et al., 2023) | Hauteur nationale à 10 m, volume à 30 m | Contrôle et repli hors couverture LiDAR HD |
 | ONF, [carte prédictive des peuplements, montagnes de l'Ain](https://www.data.gouv.fr/datasets/envir-onf-peuplements-2) (2017) | Types de peuplements par LiDAR (A à F, PB, BM, GB) | Méthode et clé à comparer ; jeu de contrôle |
 | [nemeton](https://github.com/pobsteta/nemeton) (P2, indice de station) | Courbes de hauteur dominante selon l'âge, sourcées, par essence et classe de fertilité ; repli SER → grande région → national | Contrôle de la hauteur potentielle là où l'âge est connu (lien, pas de copie) |
+| [Cartes LiDAR ONF](https://www.ign.fr/lidar-hd-foret), pixels de 700 m² | Surface terrière, diamètres, hauteur dominante, densité, structure | Contrôle, jamais entrée ; pas de contact ONF, ADR 0015 *(réconciliation, Pascal, 2026-11-23)* |
+| [Open-Canopy](https://arxiv.org/pdf/2407.09392) (IGN, ENPC) | Hauteur de canopée à très haute résolution | Variable d'entrée ou de contrôle *(réconciliation, Pascal, 2026-11-23 ; contenu rapporté par le cadrage B, non consulté)* |
 
 **Ce que le projet ajoute** : un type de peuplement par pixel, calibré par SER, avec sa probabilité et l'écart à la hauteur potentielle, à l'échelle d'une forêt ou d'un massif, pour les aménagistes, les coopératives et les experts.
 
@@ -111,7 +113,7 @@ Le milieu n'est pas typé : il sert à estimer, pixel par pixel, la hauteur domi
 
 **Démarche**
 
-1. Repérer par LiDAR HD les peuplements adultes fermés de chaque SER et relever leur hauteur dominante.
+1. Repérer par LiDAR HD les peuplements adultes fermés de chaque SER et relever leur hauteur dominante. *(réconciliation, Pascal, 2026-11-23 : prototype seulement ; adultes définis par un critère extérieur au LiDAR si disponible ; cible à terme : croisement LiDAR HD et séries de hauteur de nemetoncanopee, ADR 0009.)*
 2. Modéliser cette hauteur en fonction des variables de milieu, par essence ou famille d'essences.
 3. Appliquer le modèle à toute la SER pour obtenir une carte de hauteur potentielle.
 4. Introduire dans la clé des peuplements le rapport entre hauteur mesurée et hauteur potentielle.
@@ -133,7 +135,7 @@ La SER est le bon niveau de déclinaison : la France métropolitaine, Corse comp
 | Grande région écologique | Modèles par défaut quand une SER manque de placettes | Familles d'essences, étages climatiques |
 | SER | – | Seuils (catégories de bois, hauteur potentielle), nombre et nom des types, correspondance avec les typologies locales |
 
-Le rapport illustre ce besoin : la limite des gros bois est fixée à 42,5 cm en Savoie et dans les Pyrénées, à 47,5 cm dans les Vosges.
+Le rapport illustre ce besoin : la limite des gros bois est fixée à 42,5 cm en Savoie et dans les Pyrénées, à 47,5 cm dans les Vosges. *(réconciliation, Pascal, 2026-11-23 : les seuils sont un paramètre du référentiel typologique, pas de la SER ; H10 : 42,5 cm toutes essences, ADR 0007.)*
 
 **Règles de déclinaison**
 
@@ -149,6 +151,8 @@ Le rapport illustre ce besoin : la limite des gros bois est fixée à 42,5 cm en
 | Vercors drômois | Partenariat public-privé déjà actif, LiDAR HD à 23 pts/m² | [Base ONF – CNPF – Département de la Drôme](https://www.data.gouv.fr/datasets/parametres-forestiers-lidar-vercors-dromois-2021-2022-1), avec couches de typologie |
 | Une SER de plaine feuillue | Combler le principal angle mort du rapport | À constituer |
 | Une SER à dominante privée (Massif central, par exemple) | Tester l'usage en forêt privée morcelée | À inventorier |
+
+*(réconciliation, Pascal, 2026-11-23) **AOI pilote** : la forêt domaniale de Léoncel (H10, contrôle par la carte GSM de l'aménagement) plus les forêts privées voisines dans H10 (légende SRGS, usage PSG), ADR 0008.*
 
 ## Méthode et chaîne de traitement
 
@@ -198,7 +202,7 @@ Le rapport de 2020 utilise Computree, R et ArcGIS ; un passage à des outils lib
 Le projet avance en trois phases, chacune fermée par un critère de passage ; les durées et le budget restent à chiffrer avec le porteur.
 
 1. **Cadrage.** Inventaire des données par SER, choix des pilotes, protocole de placette commun, gouvernance. *Passage : pilotes et porteur désignés, accès aux données acquis.*
-2. **Pilotes.** Chaîne complète sur deux à quatre SER contrastées, validation indépendante, retours de gestionnaires. *Passage : erreur acceptable fixée par usage (stratification d'inventaire, aménagement) et par SER avec les utilisateurs, et atteinte en validation indépendante ; les 76 % du rapport restent le repère des résineux de montagne. Cartes jugées utilisables sur le terrain.* *(Critère amendé par délégation, point B6.)*
+2. **Pilotes.** Chaîne complète sur deux à quatre SER contrastées, validation indépendante, retours de gestionnaires. *Passage : erreur acceptable fixée par usage (stratification d'inventaire, aménagement) et par SER avec les utilisateurs, et atteinte en validation indépendante ; les 76 % du rapport restent le repère des résineux de montagne. Cartes jugées utilisables sur le terrain.* *(Critère amendé par délégation, point B6.)* *(réconciliation, Pascal, 2026-11-23 : deux conditions cumulées, non-infériorité appariée contre une base par SER et borne basse de l'IC de la précision au moins égale au seuil d'usage fixé par Pascal ; le 76 % porte sur la seule structure et n'est pas le seuil ; ADR 0006.)*
 3. **Généralisation.** Extension par grande région écologique, puis affinage SER par SER selon les placettes disponibles. *Passage : fiche de validation publiée pour chaque SER couverte.*
 
 **Partenaires pressentis**
@@ -218,18 +222,18 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 | Données de sol trop grossières pour estimer la hauteur potentielle | Relevés de sol dans les pilotes ; à défaut, s'en tenir à la hauteur mesurée et le signaler |
 | Trop peu de placettes dans les types rares | Échantillonnage stratifié ; modèle de la grande région par défaut |
 | LiDAR HD acquis à des dates et saisons différentes selon les blocs | Date et saison du vol en variable ; mise à jour par imagerie |
-| Données fines sensibles en forêt privée | Résolution dégradée en diffusion publique, comme dans le Vercors drômois |
+| Données fines sensibles en forêt privée | Résolution dégradée en diffusion publique, comme dans le Vercors drômois *(réconciliation, Pascal, 2026-11-23 : abandonné, aucune dégradation, aucune différence public / privé ; risque nouveau : carte précise croisée avec le cadastre, à vérifier avant la première diffusion publique, ADR 0014)* |
 | Carte prise pour une vérité | Couche de confiance obligatoire, formation des utilisateurs |
 | Zones sensibles non diffusées du LiDAR HD (ZICAD) : trous dans la carte | Signaler les zones sans donnée ; repli sur FORMS ou l'imagerie *(ajouté par délégation, B5)* |
 | Coordonnées publiques des placettes de l'inventaire forestier national arrondies au kilomètre ([IGN](https://www.data.gouv.fr/datasets/donnees-brutes-de-l-inventaire-forestier)) | Calibrer sur les placettes des utilisateurs de l'AOI ; les placettes IFN servent au contrôle, pas à la calibration *(délégation B3, confirmé par Pascal le 2026-11-22)* |
 
 **Questions ouvertes**
 
-- [ ] Faut-il une clé nationale unique déclinée par seuils, ou des clés distinctes par SER ?
+- [x] Faut-il une clé nationale unique déclinée par seuils, ou des clés distinctes par SER ? *(réconciliation, Pascal, 2026-11-23) : la légende du référentiel du gestionnaire d'abord (8 types SRGS, puis GSM pour H10), un type générique national en plus, ADR 0008.*
 - [ ] Qui porte le projet, et dans quel cadre de financement ?
 - [ ] Quelles SER pilotes, et avec quelles placettes existantes ?
 - [ ] La typologie doit-elle être reconnue par les schémas régionaux de gestion sylvicole pour servir dans les plans simples de gestion ?
-- [ ] Le code de la chaîne ONF est-il partageable entre organismes ?
+- [ ] Le code de la chaîne ONF est-il partageable entre organismes ? *(réconciliation, Pascal, 2026-11-23) : sans objet tant qu'il n'y a pas de contact ONF, ADR 0015.*
 
 ## Arbitrages du 22 novembre 2026
 
@@ -244,6 +248,28 @@ Le projet avance en trois phases, chacune fermée par un critère de passage ; l
 | A1 à A6 Rust ou Python | ADR 0003 : pas de Rust pour l'instant | Claude, par délégation |
 | Python ou R | R, package compagnon de nemeton (ADR 0004) | Pascal |
 | Brief amendé | Validé | Pascal |
+
+## Amendements de la réconciliation du 23 novembre 2026
+
+Deux cadrages ont été faits en parallèle ; Pascal a tranché le 2026-11-23. Les amendements
+ci-dessous (et les notes marquées « réconciliation » plus haut) précisent le texte sans le
+réécrire. Détail, sources et crible FRANCE : [`docs/adr/README.md`](adr/README.md).
+
+| Sujet | Amendement (réconciliation, Pascal, 2026-11-23) | ADR |
+|---|---|---|
+| C1 Seuils | Par référentiel typologique, pas par SER ; surface terrière par classe de 5 cm × groupe d'essences ; H10 : 42,5 cm toutes essences | [0007](adr/0007-seuils-par-referentiel-et-surface-terriere-par-classe.md) |
+| C2, C3 Légendes | 8 types SRGS prioritaires (forêts privées), GSM en second pour H10, type générique national ; hauteur potentielle : critère de la clé GSM, attribut du générique, repli sur la hauteur mesurée | [0008](adr/0008-legendes-srgs-gsm-et-type-generique.md) |
+| C4 Hauteur potentielle | Cible : LiDAR HD × séries de hauteur de nemetoncanopee ; prototype de A d'ici là ; critère par SER | [0009](adr/0009-hauteur-potentielle.md) |
+| C5, C6 Validation | Pixel ; placette de 15 m centrée ; grappes au demi-hectare ; deux conditions cumulées ; kappa en indicateur | [0006](adr/0006-validation-reference-critere-et-confiance.md) |
+| C7 Échelle | AOI ; SER puis national par assemblage ; DOI, millésime, STAC et INSPIRE pour toute livraison publiée | [0013](adr/0013-echelle-aoi-formats-codes-et-metadonnees.md) |
+| C8 Grille | 26,6 m en Lambert-93 ; rééchantillonnage unique de Sentinel | [0005](adr/0005-grille-de-26-6-m-et-reechantillonnage.md) |
+| C9 Existant, placettes | Pas de contact ONF ; sources publiques ; couvert des strates au protocole | [0010](adr/0010-placettes-sources-et-protocole.md), [0015](adr/0015-reprise-de-l-existant-et-pas-de-contact-onf.md) |
+| C10 Nuage de points | lasR isolé derrière une interface, PDAL en repli | [0016](adr/0016-nuage-de-points-lasr-isole-pdal-et-reproductibilite.md) |
+| C11, C12, C13 | Validation croisée spatiale ; « appartenance » puis « probabilité » après calibration ; couche de confiance cumulée | [0006](adr/0006-validation-reference-critere-et-confiance.md) |
+| C14 Diffusion | Public = privé, sans dégradation ; GPL-3 (code), Etalab 2.0 (données) ; métriques depuis le LiDAR HD partout | [0014](adr/0014-diffusion-sans-degradation-et-licences.md) |
+| Apports | Emprise de calcul élargie et aire d'applicabilité ; continuité aux blocs LiDAR ; versions calendaires | [0011](adr/0011-emprises-et-aire-d-applicabilite.md), [0012](adr/0012-continuite-aux-limites.md), [0017](adr/0017-versions-calendaires-tags-et-releases.md) |
+| Forêt pilote | Léoncel (domaniale) plus forêts privées voisines dans H10 | [0008](adr/0008-legendes-srgs-gsm-et-type-generique.md) |
+| Cadrage (apport) | Estimer le coût complet ; pour chaque SER pilote, au moins un vol avec feuilles et un sans feuilles, ou un constat documenté que ce n'est pas possible (repris du brief de B) | — |
 
 ## Sources
 

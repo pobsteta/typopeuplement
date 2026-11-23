@@ -65,11 +65,18 @@ niveau_modele <- function(effectifs, codes, minimum = 30) {
 #'
 #' @param distance_m Distance signée à la limite de SER, en m.
 #' @param demi_largeur_m Demi-largeur de la bande de transition, en m. **Provisoire** : 500.
+#'   Strictement positive : une largeur nulle ferait une rupture à la limite des SER
+#'   (critère 4), c'est une erreur.
 #' @return Poids entre 0,5 et 1.
 #' @export
 poids_transition <- function(distance_m, demi_largeur_m = 500) {
   d <- as.numeric(distance_m)
-  if (demi_largeur_m <= 0) return(rep(1, length(d)))
+  if (!is.numeric(demi_largeur_m) || length(demi_largeur_m) != 1 || is.na(demi_largeur_m) ||
+      demi_largeur_m <= 0) {
+    arreter(sprintf(paste0("demi-largeur de la bande de transition invalide (%s) : elle doit \u00eatre ",
+                           "strictement positive, une largeur nulle ferait une rupture \u00e0 la ",
+                           "limite des SER"), paste(format(demi_largeur_m), collapse = ", ")))
+  }
   pmin(pmax(0.5 + d / (2 * demi_largeur_m), 0.5), 1)
 }
 

@@ -13,8 +13,9 @@ lire_configuration(chemin, ser)
 }
 \value{
 Une liste : les champs fusionnés, plus \code{ser} (le nom demandé). La clé est
-dans \verb{$cle} : \code{types} (liste de types, chacun \code{code}, \code{libelle}, \code{conditions}),
-\code{souplesse} (liste nommée par variable) et \code{marge_entre_deux}.
+dans \verb{$cle} : \code{types} (liste de types, chacun \code{code}, \code{libelle}, \code{conditions},
+et \code{alternatives} s'il y a des « ou »), \code{souplesse} (liste nommée par variable) et
+\code{marge_entre_deux}. Le bloc \code{jeux} est rendu tel quel.
 }
 \description{
 Lit un fichier JSON de configuration et rend la configuration effective d'une SER :
@@ -25,6 +26,31 @@ elle-même (\code{ser}), chaque niveau l'emportant sur le précédent, champ par
 Les seuils, la clé de types et ses souplesses sont propres à chaque SER. La clé de
 \code{inst/extdata/config/exemple.json} est un \strong{exemple} pour faire tourner la chaîne,
 pas une typologie : chaque SER pilote la remplacera par la sienne, sourcée.
+
+\strong{Format de la clé.} \code{cle$types} est une liste de types ; chacun a un \code{code}, un
+\code{libelle} et des \code{conditions} : \verb{\{"variable": "part_gb", "min": 0.5, "max": 0.8\}}
+(\code{min} inclus, \code{max} exclu, l'un ou l'autre facultatif), reliées par « et ». Pour un
+« ou », le type porte en plus des \code{alternatives} : un tableau de jeux de conditions.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{\{"code": "X", "libelle": "...",
+ "conditions": [\{"variable": "part_resineux", "min": 0.65\}],
+ "alternatives": [
+   [\{"variable": "part_gb", "min": 0.5\}],
+   [\{"variable": "part_pb", "max": 0.2\}, \{"variable": "rapport_h", "min": 0.6\}]]\}
+}\if{html}{\out{</div>}}
+
+Ce type vaut : \code{conditions} \strong{et} (premier jeu \strong{ou} second jeu). Dans la clé floue,
+l'appartenance est le produit des \code{conditions} par le maximum des produits des jeux.
+\code{conditions} peut être absent quand le type n'a que des \code{alternatives}. Une clé sans
+\code{alternatives} se lit exactement comme avant. Une alternative vide ou mal formée est
+une erreur.
+
+\strong{Bloc \code{jeux}.} Les souplesses propres à un jeu de données (erreurs d'un producteur)
+se déclarent à côté de la clé, sous \verb{jeux.<nom du jeu>}, à la racine du fichier (ou dans une SER) :
+\verb{\{"jeux": \{"vercors_onf": \{"source": "fiche ONF, p. 1", "souplesse": \{"part_gb": 0.11\}\}\}\}}.
+Pour les variables qu'il nomme, \code{souplesse} remplace celles de la clé quand les
+variables viennent de ce jeu (\code{\link[=couches_onf]{couches_onf()}} porte le nom \code{vercors_onf}). \code{source} est
+reprise dans la fiche. Une souplesse négative ou non numérique est une erreur.
 }
 \examples{
 chemin <- system.file("extdata", "config", "exemple.json", package = "typopeuplement")

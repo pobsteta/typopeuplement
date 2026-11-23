@@ -53,3 +53,11 @@ Le code Python déjà écrit (il sert de référence au portage), et l'audience 
 ## Sources
 
 - https://github.com/pobsteta/nemeton (`DESCRIPTION`, `CLAUDE.md`, `R/site_index.R`)
+
+## Précisions ultérieures (ajout daté, rien n'est effacé ci-dessus)
+
+- 2026-11-23 · réconciliation des cadrages · « lasR ou lidR » devient lasR isolé derrière une
+  interface, PDAL en repli ([ADR 0016](0016-nuage-de-points-lasr-isole-pdal-et-reproductibilite.md)) ;
+  « GeoTIFF ou COG » devient COG pour toute livraison publiée
+  ([ADR 0013](0013-echelle-aoi-formats-codes-et-metadonnees.md)) ; la licence du code est
+  fixée par le fichier `LICENSE` ([ADR 0014](0014-diffusion-sans-degradation-et-licences.md)).

@@ -21,17 +21,36 @@ Le chemin du dossier, invisible.
 \description{
 Écrit dans \code{dossier} :
 \itemize{
-\item \code{types.tif} : \code{type} (valeur entière, voir la table de correspondance), \code{proba},
-\code{type_second}, \code{entre_deux} (0 ou 1) ;
-\item \code{variables.tif} : \code{G}, \code{part_resineux}, \code{part_pb}, \code{part_bm}, \code{part_gb}, \code{h_dom},
-\code{h_pot}, \code{h_pot_sd}, \code{rapport_h} ;
-\item \code{confiance.tif} : \code{hp_incertaine}, \code{hors_cle} (0 ou 1), \code{niveau_modele} (1 : SER,
-2 : grande région) ;
+\item \code{types.tif} : \code{type} (valeur entière, voir la table de correspondance : un groupe de
+types, quand une variable manque, a sa propre valeur), \code{proba}, \code{type_second},
+\code{entre_deux} (0 ou 1) ;
+\item \code{variables.tif} : \code{G}, \code{part_resineux}, \code{part_pb}, \code{part_bm}, \code{part_gb}, \code{N} (si
+lue), \code{h_dom}, \code{h_pot}, \code{hpot} (h_pot sans l'enveloppe, mode « variables fournies »),
+\code{h_pot_sd}, \code{rapport_h}, les couverts des strates \verb{c1_<ref>} à \verb{c4_<ref>} s'ils
+ont été fournis, et \code{densite_houppiers} (tiges/ha) si les houppiers ont servi ;
+\item \code{confiance.tif} : \code{hp_incertaine}, \code{hors_cle} (0 ou 1), \code{niveau_modele} (0 :
+variables du producteur, 1 : SER, 2 : grande région \emph{requise} — la bascule vers le
+modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
+servi) ; en mode « variables fournies », aussi \code{non_precomptable}, \code{part_pb_absente}
+et \code{gb_interim} (0 ou 1), et \code{part_retours_sous_s1} (de 0 à 1 : part des retours
+du pixel qui passent sous la strate 1 et servent aux strates 2 à 4, estimées ; vide
+sans comptes de retours) quand le couvert des strates a été calculé par la chaîne ;
 \item \code{fiche_validation.md} ; \code{carte_types.csv} (la carte, une ligne par pixel) ;
-\item \code{correspondance_types.csv} (\code{valeur}, \code{code}, \code{libelle}).
+\item \code{correspondance_types.csv} (\code{valeur}, \code{code}, \code{libelle}), groupes de types compris ;
+\item \code{correspondance_niveau_modele.csv} (\code{valeur}, \code{niveau}, \code{sens}) : les codes de
+\code{niveau_modele} de \code{confiance.tif} ;
+\item \code{temps_etages.csv} (\code{etage}, \code{secondes}, \code{pixels}), si la chaîne a chronométré ses
+étages (\code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}}) ; les étages \code{ecriture_rasters} (les trois
+GeoTIFF) et \code{ecriture_tables} (fiche et CSV) y sont ajoutés.
 }
 }
 \details{
+Grille : si le résultat porte un \code{gabarit} (grille du jeu d'entrée, par exemple
+\code{\link[=lire_parametres_lidar]{lire_parametres_lidar()}}), les rasters reprennent exactement cette grille et se
+superposent au jeu. Sinon la grille part des centres \code{x}, \code{y} de la carte ; \strong{sans
+\code{x}, \code{y}, les centres sont pris à \verb{i × taille_pixel}, \verb{j × taille_pixel}} (convention
+du jeu synthétique), ce qui ne place pas les pixels sur le terrain.
+
 Les rasters sont des GeoTIFF : ils s'ouvrent dans QGIS et dans R (terra) sans
 conversion. Les zones sans donnée (ZICAD, hors LiDAR) ne sont pas encore portées par
 \code{confiance.tif} : la lecture des données ouvertes n'est pas écrite.

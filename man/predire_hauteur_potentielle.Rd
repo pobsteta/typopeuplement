@@ -4,20 +4,56 @@
 \alias{predire_hauteur_potentielle}
 \title{Prédire la hauteur potentielle et le rapport des hauteurs}
 \usage{
-predire_hauteur_potentielle(modele, df)
+predire_hauteur_potentielle(modele, df, taille_paquet = 20000L)
 }
 \arguments{
 \item{modele}{Objet rendu par \code{\link[=ajuster_hauteur_potentielle]{ajuster_hauteur_potentielle()}}.}
 
 \item{df}{data.frame : variables de milieu, \code{h_dom}, et la colonne de famille si elle existe.}
+
+\item{taille_paquet}{Nombre de lignes prédites à la fois. \strong{Provisoire} : 20 000.}
 }
 \value{
-data.frame : \code{h_pot} (m), \code{h_pot_sd} (m), \code{rapport_h}, \code{hp_incertaine}.
+data.frame : \code{h_pot} (m), \code{h_pot_sd} (m), \code{rapport_h}, \code{hp_incertaine} ; avec
+les attributs \code{sd_arbres} (m, dispersion des arbres, \code{NA} sans milieu) et \code{hors_sac}
+(logique : ligne prédite hors sac).
 }
 \description{
-Hauteur potentielle (moyenne des arbres de la forêt, enveloppe comprise), son
-incertitude (dispersion des arbres et erreur de validation croisée), et le rapport
-hauteur dominante mesurée / hauteur potentielle. Là où l'incertitude relative dépasse
-\code{incertitude_relative_max}, le rapport est vide (\code{NA}) et \code{hp_incertaine} est vrai :
-la clé s'en tient alors à la hauteur mesurée.
+Hauteur potentielle \code{h_pot} = k × moyenne des arbres de la forêt (k : enveloppe de la
+famille), son incertitude \code{h_pot_sd} = k × RMSE de validation croisée par blocs de la
+famille, et le rapport hauteur dominante mesurée / hauteur potentielle. Là où
+l'incertitude relative \code{h_pot_sd / h_pot} dépasse \code{incertitude_relative_max}, le rapport
+est vide (\code{NA}) et \code{hp_incertaine} est vrai : la clé s'en tient alors à la hauteur
+mesurée. Là où une variable de milieu manque (pixel hors du MNT), \code{h_pot} et \code{h_pot_sd}
+sont vides et \code{hp_incertaine} est vrai.
+}
+\details{
+\strong{Hors sac.} Un adulte fermé qui a servi à l'apprentissage (même milieu, même \code{h_dom},
+même \code{couvert}, même famille qu'une ligne apprise) est prédit hors sac : par les seuls
+arbres où il n'a pas servi. Les autres lignes ont la prédiction ordinaire (tous les
+arbres). Sans cela, la forêt « reconnaîtrait » les adultes appris et l'enveloppe serait
+trop basse pour eux.
+
+\strong{Écart entre les deux prédictions.} La prédiction hors sac d'un adulte appris et la
+prédiction ordinaire d'un pixel voisin de même milieu ne sont pas la même grandeur :
+la forêt entière a vu l'adulte, ses arbres hors sac non. Sur le Vercors (relecture de
+la mission 009), elles diffèrent d'environ 1 m. Une carte de \code{h_pot} peut donc montrer
+un saut de cet ordre entre un adulte fermé appris et son voisin ; ce saut vient de la
+méthode, pas du milieu (l'attribut \code{hors_sac} dit quelles lignes sont concernées).
+
+\strong{Dispersion des arbres.} L'écart-type entre arbres (× k), rendu dans l'attribut
+\code{sd_arbres}, n'est pas une erreur de prédiction : il dit combien la forêt varie d'un
+arbre à l'autre en ce point. Il ne compte pas dans \code{h_pot_sd}, ni dans \code{hp_incertaine}.
+Il ne porte pas sur les mêmes arbres partout : pour un adulte appris (prédit hors sac),
+sur les seuls arbres hors sac (environ un tiers) ; pour les autres lignes, sur tous les
+arbres. Les deux ne se comparent pas directement.
+
+\strong{Drapeau « incertaine » : un seuil de hauteur potentielle.} \code{h_pot_sd} est constant
+dans une famille (k × RMSE). Le test \code{h_pot_sd / h_pot > incertitude_relative_max}
+revient donc à \verb{h_pot < k × RMSE / incertitude_relative_max} : un seuil de hauteur
+potentielle par famille, qui marque les stations les moins fertiles (décision de
+2026-11-22, option a ; la fiche de \code{\link[=executer_chaine_fournie]{executer_chaine_fournie()}} donne ces seuils).
+
+La prédiction se fait par paquets de \code{taille_paquet} lignes, pour borner la mémoire
+(une valeur par arbre et par ligne).
 }

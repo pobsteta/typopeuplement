@@ -141,8 +141,15 @@ fmt_pourcent <- function(x) {
 #' @export
 fiche_en_markdown <- function(fiche) {
   lignes <- c(paste0("# Fiche de validation \u2014 SER ", fiche$ser), "")
+  if (identical(fiche$mode, "variables fournies")) {
+    lignes <- c(lignes,
+                "Mode \u00ab variables fournies \u00bb : les variables viennent du producteur ;",
+                "sans placettes, **pas de validation** (ni \u00e0 la placette ni \u00e0 la grappe).",
+                "")
+  }
   for (niveau in c("placette", "grappe")) {
     f <- fiche[[niveau]]
+    if (is.null(f)) next
     m <- unclass(as.matrix(f$matrice))
     lignes <- c(
       lignes,
@@ -160,12 +167,36 @@ fiche_en_markdown <- function(fiche) {
     }
     lignes <- c(lignes, "")
   }
-  if (!is.null(fiche$niveau_modele)) {
+  if (length(fiche$declarations) > 0) {
+    lignes <- c(lignes, "## D\u00e9clarations", "", paste0("- ", fiche$declarations), "")
+  }
+  if (!is.null(fiche$controle)) {
+    ct <- fiche$controle
+    m <- unclass(as.matrix(ct$tableau))
+    lignes <- c(lignes,
+                paste0("## Contr\u00f4le de coh\u00e9rence avec ", ct$reference), "",
+                "Contr\u00f4le de coh\u00e9rence, **pas une validation** : la couche du producteur ne d\u00e9crit pas les m\u00eames types.",
+                "",
+                paste0("- Pixels : ", ct$n),
+                paste0("- V de Cram\u00e9r : ", fmt_nombre(ct$v_cramer)), "",
+                paste0("| type \\ ", ct$reference, " | ", paste(colnames(m), collapse = " | "), " |"),
+                paste0(strrep("|---", ncol(m) + 1), "|"))
+    for (r in seq_len(nrow(m))) {
+      lignes <- c(lignes, paste0("| ", rownames(m)[r], " | ",
+                                 paste(as.integer(m[r, ]), collapse = " | "), " |"))
+    }
+    lignes <- c(lignes, "")
+  }
+  if (identical(fiche$niveau_modele, "producteur")) {
+    lignes <- c(lignes, "## Niveau du mod\u00e8le", "",
+                "- Niveau : producteur (variables du producteur, pas de mod\u00e8le ajust\u00e9)", "")
+  } else if (!is.null(fiche$niveau_modele)) {
     lignes <- c(lignes, "## Niveau du mod\u00e8le", "",
                 paste0("- Niveau : ", fiche$niveau_modele,
-                       " (\u00ab grande_region \u00bb : au moins un type de la cl\u00e9 a trop peu ",
-                       "de placettes ; la bascule vers le mod\u00e8le de grande r\u00e9gion n'est ",
-                       "pas encore \u00e9crite)"),
+                       " (\u00ab grande_region \u00bb : grande r\u00e9gion *requise*, au moins un ",
+                       "type de la cl\u00e9 a trop peu de placettes ; la bascule vers le mod\u00e8le ",
+                       "de grande r\u00e9gion n'est pas encore \u00e9crite : le mod\u00e8le de la SER ",
+                       "reste celui qui a servi)"),
                 "")
   }
   if (!is.null(fiche$erreurs_variables)) {
@@ -197,4 +228,35 @@ fiche_en_markdown <- function(fiche) {
     lignes <- c(lignes, "")
   }
   lignes
+}
+
+#' Contrôle de cohérence avec une couche de référence du producteur
+#'
+#' Tableau croisé des types de la carte et d'une couche catégorielle du producteur (par
+#' exemple l'étagement `Typo_etage` du jeu ONF), et V de Cramér. C'est un **contrôle de
+#' cohérence, pas une validation** : la référence de validation est la clé appliquée
+#' aux mesures (Souchon, 2020), et la couche du producteur ne décrit pas les mêmes
+#' types.
+#'
+#' @param types Types de la carte (un par pixel ; `NA` : pixel non typé, écarté).
+#' @param reference Classe de la couche du producteur (un par pixel ; `NA` écarté).
+#' @param nom Nom de la couche de référence, pour la fiche.
+#' @param exclure Classes de `reference` à écarter (par exemple 0, « non précomptable »).
+#' @return Liste : `reference` (le nom), `tableau` (lignes : types, colonnes : classes),
+#'   `n`, `v_cramer` (`NA` si le tableau a moins de deux lignes ou deux colonnes).
+#' @export
+controle_coherence <- function(types, reference, nom = "reference", exclure = NULL) {
+  garde <- !is.na(types) & !is.na(reference) & !(reference %in% exclure)
+  tab <- table(as.character(types[garde]), as.character(reference[garde]))
+  names(dimnames(tab)) <- c("type", nom)
+  n <- sum(tab)
+  v <- NA_real_
+  if (n > 0 && nrow(tab) >= 2 && ncol(tab) >= 2) {
+    m <- unclass(tab)
+    storage.mode(m) <- "double"
+    attendu <- outer(rowSums(m), colSums(m)) / n
+    chi2 <- sum((m - attendu)^2 / attendu)
+    v <- sqrt(chi2 / (n * (min(dim(m)) - 1)))
+  }
+  list(reference = nom, tableau = tab, n = as.integer(n), v_cramer = v)
 }

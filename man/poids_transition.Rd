@@ -9,7 +9,9 @@ poids_transition(distance_m, demi_largeur_m = 500)
 \arguments{
 \item{distance_m}{Distance signée à la limite de SER, en m.}
 
-\item{demi_largeur_m}{Demi-largeur de la bande de transition, en m. \strong{Provisoire} : 500.}
+\item{demi_largeur_m}{Demi-largeur de la bande de transition, en m. \strong{Provisoire} : 500.
+Strictement positive : une largeur nulle ferait une rupture à la limite des SER
+(critère 4), c'est une erreur.}
 }
 \value{
 Poids entre 0,5 et 1.
