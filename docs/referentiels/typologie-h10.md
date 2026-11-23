@@ -87,7 +87,7 @@ Variables de la clé GSM, face aux variables de la chaîne (`variables_cibles` :
 |---|---|
 | G (m²/ha) ; part des GB+TGB (≥ 60 %) | oui (`G`, `part_gb`, avec la limite BM/GB de la config) |
 | **couvert des strates 1, 2 et 3** (par quart de Hₒ potentielle) | **non** : absent des variables cibles, des prédicteurs et des colonnes de pixels |
-| **Hₒ potentielle en m** (seuil 15 m) | partiel : `h_pot` est calculée mais seul `rapport_h` est donné à la clé |
+| **Hₒ potentielle en m** (seuil 15 m) | oui depuis 012 : `hpot` (sans enveloppe) est exposée à la clé (état 005 : seul `rapport_h` l'était) |
 | **nombre de tiges par hectare** (seuil 800) | non |
 | **part du taillis** (type T) | non |
 | couvert total, rôle de production ou de protection (types X, P, A) | non (masque forestier et décision de gestion) |
@@ -115,7 +115,7 @@ Le logigramme est lu dans le texte du PDF (`pdftotext -layout`). Les classes de 
 
 ### Variables de la chaîne utilisées
 
-`c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `h_pot`, `couvert`. Rien d'autre.
+`c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `hpot`, `couvert`. Rien d'autre.
 
 Variables du GSM **absentes** de la chaîne : le nombre de tiges par hectare `N` (seuil de 800 pour L et R ; le jeu ONF a un raster `N`, mais `couches_onf()` ne le lit pas), la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). **Câblage à vérifier :** `h_pot` est calculée par la chaîne, mais seule `rapport_h` est passée à la clé (`R/chaine.R`, lignes 78 et 398-402) ; une condition sur `h_pot` (CH et les 15 autres types) demande donc que la chaîne la fournisse à la clé, sans quoi « variable absente pour la clé ». De même les `c*_hpot` ne sont pas encore branchés dans la chaîne (mineur de 008, sans mission). La config se charge ; son exécution sur la chaîne attend ce câblage.
 
@@ -128,14 +128,16 @@ Variables du GSM **absentes** de la chaîne : le nombre de tiges par hectare `N`
 | A | Autres espaces non boisés | idem |
 | T | Taillis (couvert taillis ≥ 2/3, couvert futaie < 1/3) | part du taillis absente |
 
+**Notice : taillis et peuplements sans rôle de production non détectés (types X et T non exprimables).**
+
 Conséquence : ces types sont testés **avant** les autres dans le logigramme (X en tête, puis P/A, T après CH). Sans eux, un taillis ou un peuplement sans rôle tombe dans l'un des 16 types exprimés. Le couvert total < 1/10 (espaces non boisés) n'est transcrit que comme absence du « couvert ≥ 0,1 » qui conditionne les 16 types : un pixel non boisé n'a donc aucun type (hors clé), faute de P et de A.
 
 ### Conventions prises (signalées, à trancher)
 
-- **Couverts en parts** : le GSM estime le couvert en dixièmes entiers et ne dit pas comment arrondir. Convention prise : dixième le plus proche, donc **déficitaire c < 0,25 ; moyenne 0,25 ≤ c < 0,45 ; prépondérante c ≥ 0,45**. Autre lecture possible : coupures à 0,3 et 0,5. Les deux sont défendables ; aucune n'est écrite dans le GSM. **À trancher.**
-- **Valeur 15 m** : CH si Hₒ potentielle < 15 m, les autres si > 15 m ; 15 n'est dans aucun cas. Prise : `h_pot ≥ 15` pour les autres. **À trancher.**
+- **Couverts en parts** : le GSM estime le couvert en dixièmes entiers et ne dit pas comment arrondir. Convention prise : dixième le plus proche, donc **déficitaire c < 0,25 ; moyenne 0,25 ≤ c < 0,45 ; prépondérante c ≥ 0,45**. **Défaut 0,25 / 0,45 (provisoire).** Alternatives : lecture littérale du GSM (déficitaire ≤ 0,2, prépondérante ≥ 0,5, soit coupures à 0,2 / 0,5) ; troncature (coupures à 0,3 / 0,5). Aucune n'est écrite dans le GSM. **À trancher.**
+- **Valeur 15 m** : CH si Hₒ potentielle < 15 m, les autres si > 15 m ; 15 n'est dans aucun cas. Prise : `hpot ≥ 15` pour les autres, sur la hauteur potentielle sans enveloppe (variable `hpot`, exposée par la chaîne depuis 012), comme les strates. **À trancher.**
 - **Couvert total** : « couvert total ≥ 1/10 » transcrit par `couvert ≥ 0,1` (taux de couvert du jeu ONF) ; équivalence avec le couvert total du GSM non vérifiée.
-- **Souplesses** : aucune sur `c1_hpot` à `c4_hpot`, `h_pot`, `couvert` (conditions dures) ; G, part_resineux, part_gb ont celles de la fiche ONF. Le mélange dur/souple est un effet de ce qui est donné ; **à trancher.** `part_resineux` n'est pas utilisée par la clé GSM.
+- **Souplesses** : aucune sur `c1_hpot` à `c4_hpot`, `hpot`, `couvert` (conditions dures) ; G, part_resineux, part_gb ont celles de la fiche ONF. Le mélange dur/souple est un effet de ce qui est donné ; **à trancher.** `part_resineux` n'est pas utilisée par la clé GSM.
 - **Seuil 60 %** : `part_gb ≥ 0,6` pour « GB », `< 0,6` sinon (limites écrites ainsi dans le GSM). La part de gros bois du jeu ONF est à 47,5 cm, très gros bois inclus (intérim, drapeau `gb_interim`).
 - **Exclusivité** : la clé du GSM est un arbre de décision ordonné ; transcrite à plat, chaque type porte toutes les conditions qui l'excluent des autres. Contrôle fait : sur une grille de 216 combinaisons (couverts, G, part_gb), avec souplesse nulle, **un seul type** est vrai par combinaison pour les 16 types exprimés.
 
@@ -143,10 +145,10 @@ Conséquence : ces types sont testés **avant** les autres dans le logigramme (X
 
 1. **Types 2 et 2GB, tableau p. 57 ou logigramme p. 55 ?** Le logigramme dit « strate 2 prépondérante ou majoritaire **et strate 1 non prépondérante** » (strate 1 moyenne ou déficitaire). Le tableau montre, pour la strate 2 prépondérante, la strate 1 **moyenne** seulement ; une strate 1 déficitaire avec une strate 2 prépondérante n'y figure pas. Transcrit : le logigramme (strate 1 non prépondérante). À confirmer.
 2. **Types 3, tableau et logigramme.** Le logigramme exige « strates 1 et 2 non prépondérantes » ; le tableau met « quelconque » pour les strates 1 et 2 quand la strate 3 est prépondérante (le type 1 ou 2 l'emporte alors dans l'ordre du logigramme). Transcrit : le logigramme.
-3. **Arrondi des classes de couvert** (voir conventions) : 0,25 / 0,45 ou 0,3 / 0,5.
+3. **Arrondi des classes de couvert** (voir conventions) : défaut 0,25 / 0,45 (provisoire) ; alternatives : lecture littérale 0,2 / 0,5, troncature 0,3 / 0,5.
 4. **Valeur 15 m** (voir conventions).
 5. **L et R : « couvert strates 3 et 4 » du logigramme (p. 54) contre « couvert strates [3+4] » du tableau (p. 57).** Le tableau écrit « [3 + 4] < 5/10 » pour L et « [3 + 4] > 5/10 » pour R (strict, donc 5/10 exactement n'est dans aucun des deux) ; le logigramme écrit « strates 3 et 4 < 5/10 », « strate 3 ≥ 5/10 », « strate 4 ≥ 5/10 et strate 3 < 5/10 ». Le couvert de la strate « [3+4] » (les deux réunies ?) n'est pas défini dans le GSM. Transcrit : le logigramme, strates 3 et 4 séparées.
-6. **L et R : « ou plus de 800 tiges/ha », « ou moins de 800 tiges/ha ».** La branche de densité est un « ou » : un pixel peut satisfaire à la fois la branche de couvert de L et celle de densité de R (cas c4 < 5/10 et N > 800, ou l'inverse), ou être à la fois L et 3 (c3 ≥ 5/10 et N < 800). Le GSM ne dit pas laquelle l'emporte, ni si le « ou » est exclusif. De plus N n'est pas lue par la chaîne. Transcrit : **la branche du couvert seulement** (suffisante si le « ou » est inclusif), types marqués « partiel ». Pascal tranche : garder L et R partiels, ou les marquer non exprimables tant que N n'est pas branchée et la règle fixée.
+6. **L et R : « ou plus de 800 tiges/ha », « ou moins de 800 tiges/ha ».** La branche de densité est un « ou » : un pixel peut satisfaire à la fois la branche de couvert de L et celle de densité de R (cas c4 < 5/10 et N > 800, ou l'inverse), ou être à la fois L et 3 (c3 ≥ 5/10 et N < 800). Le GSM ne dit pas laquelle l'emporte, ni si le « ou » est exclusif. De plus N est lue par la chaîne depuis 012 (tiges/ha), mais la clé ne la cite pas. Transcrit : **la branche du couvert seulement** (suffisante si le « ou » est inclusif), types marqués « partiel ». Pascal tranche : garder L et R partiels, ou les marquer non exprimables tant que N n'est pas branchée et la règle fixée.
 7. **Ordre des tests X et T.** X (rôle faible) est testé avant tout, T après CH, dans le logigramme ; non exprimables ici, leur absence change le type attribué aux pixels qu'ils auraient absorbés (voir conséquence plus haut).
 
 ### Trois points au sol (clé GSM)
@@ -189,7 +191,7 @@ Mission 010 :
 2. Les 20 codes comptés : 16 dans `cle.types` + 4 dans `cle.non_exprimables` = 20 ; chargement vérifié (16 types lus).
 3. Termes recopiés de la source : passé pour les libellés et les conditions.
 4. Ambiguïtés du logigramme posées, non tranchées : passé pour les sept ; les transcriptions prises par défaut sont dites (ambiguïtés 1, 2, 5, 6).
-5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `h_pot` et `c*_hpot` vers la clé, et `N`, à faire avant exécution.
+5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `hpot` fait par 012 ; `N` lue mais non citée par la clé.
 
 ## Journal (proposé)
 
