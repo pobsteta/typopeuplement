@@ -7,7 +7,6 @@
 
 ## Bac à sable
 
-- 013 couvert par houppier (segmentation des cimes), proposée à Pascal · depuis le cycle 2
 - Mineurs de 012 : règle hors clé en mode « pixels préparés », raster factice de focalMat en Lambert-93, part « entre deux » et effectifs dans la fiche · depuis le cycle 2
 
 
@@ -17,6 +16,8 @@
 - Clé à part pour les SER d'alluvions · depuis le cycle 0
 
 ## Validé
+
+- [013-couvert-houppiers](missions/013-couvert-houppiers.md) · depuis le cycle 3
 
 - [011-incertitude-locale-hpot](missions/011-incertitude-locale-hpot.md) · depuis le cycle 2
 - [010-cle-gsm](missions/010-cle-gsm.md), reprise courte (seuil de 15 m sur hpot, test de la clé H10) · depuis le cycle 2

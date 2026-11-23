@@ -47,6 +47,7 @@
 | [008 Couvert des strates LiDAR HD](missions/008-couvert-strates-lidar.md) | `dev` | opus | **prendre** (plan) | oui · non · après 009 | 3-4 |
 | [010 Clé du GSM](missions/010-cle-gsm.md) | `acquereur` | sonnet | donner | oui · oui · après 007-009 | 4 |
 | [012 Brancher les strates](missions/012-brancher-strates.md) | `dev` | opus | donner | oui · oui · oui | 4 |
+| [013 Couvert par houppier](missions/013-couvert-houppiers.md) | `dev` | opus | **prendre** (plan) | oui · non · oui | 3 |
 | [011 Incertitude locale de h_pot](missions/011-incertitude-locale-hpot.md) | `dev` | opus | donner, plan court | oui · oui · oui | 5 |
 
 **En attente, faute de réponse à la 1re question** : lire les données d'une AOI, typologie
