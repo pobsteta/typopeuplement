@@ -1,0 +1,9 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  articles/resultats-aoi-pilote: resultats-aoi-pilote.html
+last_built: 2026-11-23T18:09Z
+urls:
+  reference: https://pobsteta.github.io/typopeuplement/reference
+  article: https://pobsteta.github.io/typopeuplement/articles
