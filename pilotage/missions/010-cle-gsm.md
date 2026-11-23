@@ -83,3 +83,15 @@ Le seuil de 800 tiges/ha porte sur `N` du jeu ONF (tiges précomptables). Transc
 branche N de L et R selon le logigramme (p. 54), avec les « ou » du format de 007.
 L'ambiguïté 6 (branches qui se recouvrent) reste à poser, pas à trancher. Le test
 `test-cle-h10.R` doit rester vert : il lit les seuils dans la clé.
+
+## Ambiguïté 6 tranchée par Pascal (2026-11-23) : cascade L, puis 3, puis R
+
+On lit la colonne du logigramme dans l'ordre : le premier type vrai l'emporte. La clé
+n'ayant pas d'ordre de priorité, la cascade s'écrit en conditions exclusives :
+
+- **L** : (c3 < 0,45 et c4 < 0,45) ou N < 800 ;
+- **3** : c3 ≥ 0,45 et N ≥ 800 ;
+- **R** : c3 < 0,45 et c4 ≥ 0,45 et N ≥ 800.
+
+Partir du patch mis de côté (`scratchpad/branche_N_LR.patch`) ; le test d'exclusivité
+redevient vert.
