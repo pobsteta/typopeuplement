@@ -83,8 +83,7 @@ et les tests qui lisent l'extrait de nuage sont sautés. Une dalle de 1 km² (27
 
 Chaque fusion dans `main` est testée par la CI (`.github/workflows/ci.yml`) : tests des
 scripts de release, puis `bash .claude/test-command` (R testthat puis pytest), puis
-construction du paquet. Les tests qui demandent lasR ou nemeton, non installés en CI,
-sautent.
+construction du paquet. lasR et nemeton sont installés en CI : les tests du terrain y tournent.
 
 **Règle de release.** Si la CI d'un push sur `main` est verte et que le paquet a changé,
 `release.yml` publie une release automatiquement, sans geste manuel :

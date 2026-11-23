@@ -37,12 +37,13 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          # lasR n'est pas sur le CRAN : dépôt r-universe de r-lidar (binaires).
+          extra-repositories: https://r-lidar.r-universe.dev
 
-      # Imports (sf, terra, ranger, ...) et outils de test. Les Suggests lasR (r-universe, GDAL) et
-      # nemeton ne sont PAS installés : les tests qui en dépendent sautent (skip_if_not_installed).
+      # Imports et Suggests : lasR (r-universe) et nemeton (Remotes GitHub, dépôt public) sont
+      # installés pour que les tests du terrain tournent en CI au lieu de sauter.
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          dependencies: '"hard"'
           extra-packages: any::testthat, any::pkgload
 
       - uses: actions/setup-python@v5
@@ -78,10 +79,11 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+          # lasR n'est pas sur le CRAN : dépôt r-universe de r-lidar (binaires).
+          extra-repositories: https://r-lidar.r-universe.dev
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          dependencies: '"hard"'
           extra-packages: any::covr, any::testthat, any::pkgload
 
       - name: Mesurer la couverture (covr, tests R)

@@ -7,7 +7,7 @@
 
 **En une phrase (quoi, et pourquoi) :** Mettre en place la CI (tests R et Python, couverture), les tags et releases calendaires `vAAAA.MM.N` après tests verts sur `main`, la règle « pas de release pour docs, pilotage, *.md, badges, tests » et les badges du README, en reprenant les scripts de sylvostation (paquet R) et la convention de Marculus, pour que chaque fusion soit vérifiée et publiée sans geste manuel (demande de Pascal, 2026-11-23).
 
-**Redite par l'agent :** _à compléter par l'agent avant d'agir._
+**Redite par l'agent :** je mets en place, en reprenant les scripts de sylvostation, la CI (tests R puis Python, couverture), la release calendaire `vAAAA.MM.N` avec l'archive `R CMD build` après une CI verte sur `main`, la règle « pas de release pour docs, pilotage, *.md, badges, tests » et les badges du README, pour que chaque fusion soit vérifiée et publiée sans geste manuel.
 
 ## Les trois questions
 
