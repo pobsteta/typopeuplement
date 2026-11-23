@@ -15,7 +15,7 @@
     "grappe_cote_m": 70.7,
     "placettes_min_par_type": 30,
     "transition_demi_largeur_m": 500,
-    "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5},
+    "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 47.5, "gb_tgb_cm": 67.5},
     "hauteur_potentielle": {"couvert_min": 0.7, "hauteur_min_m": 15.0, "incertitude_relative_max": 0.2, "quantile_enveloppe": 0.9},
     "cle": {
       "marge_entre_deux": 0.15,
@@ -31,8 +31,8 @@
       "grande_region": "H",
       "_code_ser": "H10 (Préalpes du Nord), SER pilote ; voir docs/referentiels/ser.md. Décision de l'orchestrateur (délégation n° 3) : entrée H10 seule.",
       "_sources": "docs/referentiels/srgs-aura.md",
-      "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 42.5, "gb_tgb_cm": 62.5},
-      "_seuils_diametre_source": "SRGS AURA p. 12 (tableau des classes de grosseur ; note sous le tableau) : PB classes 20 et 25 ; BM classes 30 à 45 ; GB classes 50 et + ; TGB classes 70 et +. Note : « la limite BM/GB est choisie à 47.5 cm pour toutes les essences (normalement 42.5 cm pour résineux : possible de la conserver quand des typologies sont utilisées) et celles des GB/TGB à 67.5 cm (au lieu de 62.5 cm pour résineux) ». VALEUR PROVISOIRE : BM/GB 42,5 cm et GB/TGB 62,5 cm (le SRGS permet de garder 42,5 quand une typologie est utilisée ; fidèle à la décision de Pascal du 2026-11-22 pour H10). ALTERNATIVE documentée, non appliquée : 47,5 et 67,5 cm (valeurs nominales du SRGS). Bornes en cm (17,5 ; 27,5) lues par les centres de classe : INFÉRENCE, le SRGS ne donne que des classes. gb_tgb_cm n'est lu par aucune fonction de la chaîne (part_gb = GB + TGB) : donnée documentaire.",
+      "seuils_diametre": {"precomptage_cm": 17.5, "pb_bm_cm": 27.5, "bm_gb_cm": 47.5, "gb_tgb_cm": 67.5},
+      "_seuils_diametre_source": "SRGS AURA p. 12 (tableau des classes de grosseur ; note sous le tableau) : PB classes 20 et 25 ; BM classes 30 à 45 ; GB classes 50 et + ; TGB classes 70 et +. Note : « la limite BM/GB est choisie à 47.5 cm pour toutes les essences (normalement 42.5 cm pour résineux : possible de la conserver quand des typologies sont utilisées) et celles des GB/TGB à 67.5 cm (au lieu de 62.5 cm pour résineux) ». VALEUR RETENUE : BM/GB 47,5 cm et GB/TGB 67,5 cm, valeurs nominales du SRGS p. 12 (toutes essences). Arbitrage C1 de Pascal (docs/reconciliation/arbitrages-de-pascal.md, branche de la PR #2) : « valeur A pour H10 : GSM, 42,5 cm toutes essences ; « 42,5 cm seulement en résineux » ne vaut que pour le SRGS AURA s'il est livré en plus » : pour le SRGS, 42,5 est donc réservé aux résineux. ALTERNATIVE documentée, non exprimable tant que la chaîne n'a qu'un seuil par clé : 42,5 et 62,5 cm en résineux seulement. Bornes en cm lues par les centres de classe : INFÉRENCE, le SRGS ne donne que des classes (PB 17,5 à 27,5 ; BM 27,5 à 47,5, classes 30 à 45 ; GB 47,5 à 67,5 ; TGB à partir de 67,5 : cohérent avec les classes 20-25 / 30-45 / 50-65 / 70+). Les conditions de FRE et FIR (types GSM) ne lisent pas part_gb : ce seuil ne change pas leur appartenance, il règle la lecture des variables d'entrée. gb_tgb_cm n'est lu par aucune fonction de la chaîne (part_gb = GB + TGB) : donnée documentaire.",
       "cle": {
         "_statut": "PROVISOIRE, NON GELÉE. 3 types exprimés (FRE, FIR, TNU), 5 non exprimables (MFT, TAS, PEU, ACC, LAN) : 3 + 5 = 8 types du SRGS (p. 11-12). Codes FRE, FIR, MFT, TAS, PEU, ACC, TNU : abréviations du SRGS (tableau p. 53, repris p. 76 ; « ceux utilisés pour la saisie en ligne des documents de gestion », p. 53). LAN : code du projet, pas du SRGS. Aucun seuil de reconnaissance n'est publié par le SRGS : les conditions de FRE et FIR sont celles des types GSM de H10, par substitution.",
         "_conventions": {

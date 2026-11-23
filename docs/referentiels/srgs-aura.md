@@ -54,12 +54,16 @@ Note sous le tableau (p. 12), recopiée : « Par souci d'harmonisation, notammen
 
 Le SRGS donne des **classes** (centres), pas des bornes en cm. Les bornes ci-dessous sont lues par les centres de classe : **inférence**, non écrite telle quelle dans le SRGS.
 
-| Limite | Valeur provisoire (retenue) | Alternative (nominale du SRGS) |
+| Limite | Valeur retenue (nominale du SRGS, toutes essences) | Alternative (résineux seulement) |
 |---|---|---|
 | précomptage / PB | 17,5 cm (classe 20) | idem |
 | PB / BM | 27,5 cm (classe 30) | idem |
-| BM / GB | **42,5 cm** (le SRGS permet de la garder « quand des typologies sont utilisées ») | 47,5 cm |
-| GB / TGB | **62,5 cm** | 67,5 cm |
+| BM / GB | **47,5 cm** | 42,5 cm, non exprimable tant que la chaîne n'a qu'un seuil par clé |
+| GB / TGB | **67,5 cm** | 62,5 cm, idem |
+
+Cohérence des bornes : PB 17,5 à 27,5 (classes 20 et 25) ; BM 27,5 à 47,5 (classes 30, 35, 40, 45) ; GB 47,5 à 67,5 (classes 50 à 65) ; TGB à partir de 67,5 (classe 70 et +). Avec 47,5 cm, les quatre bornes sont lues par les centres de classe de façon uniforme : PB/BM à 27,5 reste valable.
+
+**Constat sur le seuil (arbitrage C1 de Pascal, `docs/reconciliation/arbitrages-de-pascal.md`, branche de la PR #2).** C1 dit : « valeur A pour H10 : GSM, 42,5 cm toutes essences ; « 42,5 cm seulement en résineux » ne vaut que pour le SRGS AURA s'il est livré en plus ». Pour le SRGS, 42,5 cm est donc réservé aux résineux. La chaîne n'a qu'un seuil par clé : la clé SRGS prend les valeurs nominales (47,5 et 67,5 cm), et la règle « 42,5 en résineux » reste une alternative documentée, non exprimable aujourd'hui (elle demande des seuils par groupe d'essences). Les conditions de FRE et FIR, héritées des types GSM, ne lisent pas `part_gb` : ce seuil ne change pas leur appartenance.
 
 ## Types exprimés dans la chaîne (3)
 
@@ -72,6 +76,8 @@ Variables de la clé : `couvert`, `hpot`, `G`, `N`, `c1_hpot` à `c4_hpot` (mode
 | **TNU** | aucun chiffre propre au type ; p. 7 : état boisé = couvert >= 10 % ; GSM p. 54 : couvert total >= 1/10 | `couvert` < 0,1 ; **condition nécessaire, non suffisante** : le couvert seul ne distingue pas un terrain à (re)boiser d'une prairie, d'une lande ou d'un espace non boisé |
 
 **Règle de correspondance** (décision de l'orchestrateur, délégation n° 3 ; statut provisoire, à confirmer par le CNPF) : **une strate ou deux strates adjacentes = FRE** ; **strates non adjacentes (13) ou structure jardinée (J, JGB) = FIR**. Justification : une futaie dont le couvert tient en une strate, ou en deux strates voisines, est lue comme une structure simple (régulière) ; deux étages séparés par une strate vide (1 et 3) ou trois strates moyennes (jardinée) sont lus comme une structure irrégulière. Les suffixes GB suivent leur type de base (extension validée).
+
+**La correspondance se fait par types GSM, non par strates : la règle en mots résume, les types GSM font foi.** Exemple : strate 1 moyenne, strate 2 vide (déficitaire) et strate 3 prépondérante, avec G >= 10, donne le type GSM 3 (c1 < 0,45, c2 < 0,45, c3 >= 0,45), donc **FRE**, alors que la règle en mots (strates 1 et 3 non adjacentes) dirait FIR. La clé suit les types GSM.
 
 Correspondance GSM vers SRGS (types GSM de `typologie-h10.md`, 20 au total) :
 
@@ -104,7 +110,7 @@ Décompte : 3 exprimés + 5 non exprimables = **8**.
 ## Écarts relevés (non tranchés)
 
 1. **Liste de la p. 11-12 contre tableau p. 53 et p. 76.** Les 8 types de la p. 11-12 fusionnent « taillis simple ou fureté » et ajoutent « landes, friches et maquis ». Le tableau p. 53 et p. 76 a 8 lignes de codes (FRE, PEU, FIR, MFT, TAS, TAF, ACC, TNU) : il sépare TAS (taillis simple) et TAF (taillis fureté), n'a pas de ligne pour les landes, et nomme la ligne ACC « Peuplements clairs, accrus, prés-bois ». Retenu : la liste p. 11-12 (les 8 « obligatoires »), un seul type TAS pour taillis simple ou fureté (décision de l'orchestrateur).
-2. **BM/GB : 47,5 cm (SRGS) contre 42,5 cm (GSM).** Déjà documenté dans `typologie-h10.md` ; retenu 42,5 cm, alternative 47,5 cm.
+2. **BM/GB : 47,5 cm (SRGS) contre 42,5 cm (GSM, clé H10).** Déjà documenté dans `typologie-h10.md`. Clé SRGS : 47,5 cm (et GB/TGB 67,5), alternative 42,5 / 62,5 en résineux seulement (arbitrage C1). La clé H10 reste à 42,5 : deux clés, deux seuils, un seul par clé.
 3. **Landes et boisements : 800 tiges/ha (p. 8, 118).** Ce seuil définit un semis comptable en forêt, pas une lande : une lande est ce qui reste sous ce seuil (p. 7 : hors forêt). Il ne permet pas, seul, de reconnaître une lande.
 4. **12 et 23 : écart levé.** Ces deux types (deux strates adjacentes moyennes) étaient d'abord rangés l'un en FRE, l'autre en FIR, alors que le GSM les classe en « futaies adultes » et « jeunes futaies ». L'orchestrateur a rendu la règle cohérente : une strate ou deux strates adjacentes = FRE, donc 12 et 23 en FRE. Reste provisoire.
 
@@ -112,7 +118,7 @@ Décompte : 3 exprimés + 5 non exprimables = **8**.
 
 | # | Ambiguïté | Valeur provisoire | Alternatives |
 |---|---|---|---|
-| 1 | Limite BM/GB et GB/TGB | 42,5 / 62,5 cm (SRGS p. 12 : peut être gardée avec une typologie) | 47,5 / 67,5 cm |
+| 1 | Limite BM/GB et GB/TGB | 47,5 / 67,5 cm (SRGS p. 12, toutes essences ; arbitrage C1) | 42,5 / 62,5 cm en résineux seulement (non exprimable : un seul seuil par clé) |
 | 2 | Bornes en cm des classes de grosseur | centres de classe (17,5 ; 27,5) : inférence | autres lectures des classes |
 | 3 | Seuil de régularité (futaie régulière / irrégulière) | substitution par types GSM | règle par parts (>= 0,5 ; >= 0,1) |
 | 4 | « Faible capital » de la futaie du mélange futaie-taillis | non exprimable | repères de gestion 6 à 13 m²/ha (p. 95-96) |
@@ -138,18 +144,16 @@ Quelle décision cette donnée va-t-elle éclairer ? **Quels types SRGS la réco
 2. Décomptes : 8 types SRGS ; 3 + 5 = 8 ; 20 types GSM (4 + 8 + 4 + 4) ; 5 classes de grosseur : passé.
 3. Termes recopiés : libellés, note p. 12, définitions p. 112 et p. 118 : passé.
 4. Statut dit tel qu'il est : provisoire, non gelé ; substitution FRE / FIR à confirmer.
-5. **Non cochés :** chargement par `lire_configuration()` et tests : voir le rendu de la mission (l'agent n'avait pas d'outil pour lancer R).
+5. Chargement par `lire_configuration()` : **vérifié par le relecteur** (FRE 9 alternatives, FIR 2, TNU). Tests : à relancer après l'aller-retour 1/3 (l'acquéreur n'a pas d'outil pour lancer R).
+
+## À l'attention des missions 017 et 018
+
+`types_observes()` rend le premier type de la clé (FRE) pour un pixel hors clé. Avec cette clé, les pixels hors clé sont nombreux : `hpot` < 15 m, types GSM R, L, C et CH (non rattachés), et tout pixel dont les couverts de strates ne tombent dans aucune alternative. **Risque d'étiquetage faux** (un pixel hors clé étiqueté FRE) : à traiter par les missions 017 et 018.
 
 ## Journal (proposé)
 
-`2026-11-23 · acquereur · 016 · clé SRGS AURA 2023 (srgs-aura.json, SER H10) : 8 types p. 11-12, aucun seuil de reconnaissance publié ; 3 exprimés (FRE, FIR par substitution des types GSM : une strate ou deux adjacentes = FRE, non adjacentes ou jardiné = FIR ; TNU couvert < 0,1, condition nécessaire non suffisante), R L C CH hors clé SRGS, 5 non exprimables (MFT, TAS, PEU, ACC, LAN) ; BM/GB 42,5 cm provisoire (alternative 47,5) ; codes SRGS p. 53 (LAN = code du projet) ; non gelée`
+`2026-11-23 · acquereur · 016 · clé SRGS AURA 2023 (srgs-aura.json, SER H10) : 8 types p. 11-12, aucun seuil de reconnaissance publié ; 3 exprimés (FRE, FIR par substitution des types GSM : une strate ou deux adjacentes = FRE, non adjacentes ou jardiné = FIR ; TNU couvert < 0,1, condition nécessaire non suffisante), R L C CH hors clé SRGS, 5 non exprimables (MFT, TAS, PEU, ACC, LAN) ; BM/GB 47,5 cm et GB/TGB 67,5 cm (nominales SRGS p. 12 ; 42,5 / 62,5 réservés aux résineux par l'arbitrage C1, non exprimable avec un seuil par clé) ; correspondance par types GSM (la règle en mots résume) ; hors clé nombreux, risque d'étiquetage de types_observes() pour 017/018 ; codes SRGS p. 53 (LAN = code du projet) ; non gelée`
 
-## Note de l'orchestrateur (délégation n° 3, 2026-11-23)
+## Constat sur le seuil BM/GB (aller-retour 1/3, 2026-11-23)
 
-L'arbitrage C1 de Pascal (réconciliation) donne pour le SRGS la règle « 47,5 cm toutes
-essences, 42,5 cm admis en résineux ». La chaîne ne porte aujourd'hui qu'un seuil BM/GB par
-clé. Comme FRE et FIR sont rendus **par substitution des types GSM de H10**, cette clé
-hérite du seuil du GSM (42,5 cm toutes essences, décision de Pascal du 2026-11-22). La
-règle SRGS par groupe d'essences s'appliquera quand la chaîne saura des seuils par groupe
-d'essences (ADR 0007, mission « seuils par référentiel » à venir) ; jusque-là, l'écart est
-déclaré ici et dans la fiche de validation.
+L'arbitrage C1 de Pascal (`docs/reconciliation/arbitrages-de-pascal.md`, branche de la PR #2) réserve 42,5 cm aux résineux pour le SRGS AURA : « valeur A pour H10 : GSM, 42,5 cm toutes essences ; « 42,5 cm seulement en résineux » ne vaut que pour le SRGS AURA s'il est livré en plus ». La chaîne n'a qu'un seuil BM/GB par clé. La clé SRGS porte donc les valeurs nominales du SRGS p. 12 (**47,5 cm** BM/GB, **67,5 cm** GB/TGB, toutes essences) ; la règle « 42,5 / 62,5 en résineux » reste une alternative documentée, non exprimable tant qu'il n'y a qu'un seuil par clé (elle demandera des seuils par groupe d'essences). La clé H10 (GSM) garde 42,5 cm.
