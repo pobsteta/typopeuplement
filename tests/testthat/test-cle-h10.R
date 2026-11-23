@@ -47,6 +47,19 @@ conditions_plates <- function(t) {
   c(t$conditions, unlist(t$alternatives, recursive = FALSE))
 }
 
+test_that("H10 : le seuil de 15 m porte sur hpot (sans enveloppe) dans les 16 types", {
+  cle <- conf_h10()$cle
+  for (t in cle$types) {
+    sur_15 <- Filter(function(cd) isTRUE(cd$min == 15) || isTRUE(cd$max == 15),
+                     conditions_plates(t))
+    vars <- vapply(sur_15, function(cd) as.character(cd$variable), character(1))
+    expect_gte(length(vars), 1, label = paste("conditions a 15 m du type", t$code))
+    expect_true(all(vars == "hpot"),
+                info = paste("seuil de 15 m hors hpot pour le type", t$code,
+                             ":", paste(vars, collapse = ", ")))
+  }
+})
+
 test_that("H10 : en cle dure, chaque combinaison boisee recoit exactement un type", {
   cle <- conf_h10()$cle
   codes <- vapply(cle$types, function(t) as.character(t$code), character(1))
@@ -60,6 +73,7 @@ test_that("H10 : en cle dure, chaque combinaison boisee recoit exactement un typ
                                function(cd) as.character(cd$variable), character(1)))
   expect_length(var_couvert, 1)
   expect_length(var_hauteur, 1)
+  expect_identical(var_hauteur, "hpot")
 
   # Seuils par variable, puis valeurs qui encadrent chaque seuil (seuil - pas, seuil, seuil + pas ;
   # de pas : 0,01 pour les variables a seuil <= 1, 0,1 sinon), plus 0.
@@ -91,11 +105,14 @@ test_that("H10 : en cle dure, chaque combinaison boisee recoit exactement un typ
   p <- as.matrix(probas)
   attr(p, "hors_cle") <- NULL
   hors_cle <- attr(probas, "hors_cle")
-  # Souplesse nulle : appartenances 0 ou 1 ; exactement un type a 1 sur les lignes boisees.
-  expect_true(all(p %in% c(0, 1) | hors_cle))
-  nb_types <- rowSums(p == 1)
-  n_zero <- sum(boise & nb_types == 0 | boise & hors_cle)
-  n_multi <- sum(boise & nb_types > 1)
+  # Souplesse nulle : un chevauchement doit etre signale comme tel. appartenances_types()
+  # normalise (deux types a 1 donnent 0,5 chacun, et rowSums(p == 1) les ferait passer pour
+  # « sans type ») : on compte donc les probabilites strictement positives, hors lignes
+  # hors cle (qui recoivent 1/16 partout).
+  expect_true(all(abs(rowSums(p) - 1) < 1e-9))
+  nb_types <- rowSums(p > 0)
+  n_zero <- sum(boise & hors_cle)
+  n_multi <- sum(boise & !hors_cle & nb_types > 1)
   expect_identical(n_zero, 0L, info = sprintf("%d combinaisons boisees sans type", n_zero))
   expect_identical(n_multi, 0L, info = sprintf("%d combinaisons boisees a plusieurs types", n_multi))
 
