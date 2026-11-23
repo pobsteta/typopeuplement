@@ -1,5 +1,12 @@
 # typopeuplement
 
+[![CI](https://github.com/pobsteta/typopeuplement/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pobsteta/typopeuplement/actions/workflows/ci.yml)
+[![Release](https://github.com/pobsteta/typopeuplement/actions/workflows/release.yml/badge.svg)](https://github.com/pobsteta/typopeuplement/actions/workflows/release.yml)
+[![Version](https://img.shields.io/github/v/release/pobsteta/typopeuplement?label=version)](https://github.com/pobsteta/typopeuplement/releases/latest)
+[![Couverture](.github/badges/couverture.svg)](https://github.com/pobsteta/typopeuplement/actions/workflows/ci.yml)
+[![R](https://img.shields.io/badge/R-%E2%89%A5%204.1-276DC3)](https://www.r-project.org/)
+[![Licence : GPL-3](https://img.shields.io/badge/licence-GPL--3-blue)](LICENSE)
+
 Package R qui produit, pour une forêt ou un massif (AOI), une carte du **type de
 peuplement** calibrée par sylvoécorégion (SER), avec sa **probabilité** et une **couche de
 confiance** qui dit quand s'en méfier. Package compagnon de
@@ -72,6 +79,37 @@ et les tests qui lisent l'extrait de nuage sont sautés. Une dalle de 1 km² (27
 49 millions de points, Vercors) se traite en 2 min environ sur 4 cœurs et demande près de
 9 Go de mémoire (mesure du 2026-11-22) ; on la traite seule, puis on la supprime.
 
+## Déployer et publier
+
+Chaque fusion dans `main` est testée par la CI (`.github/workflows/ci.yml`) : tests des
+scripts de release, puis `bash .claude/test-command` (R testthat puis pytest), puis
+construction du paquet. Les tests qui demandent lasR ou nemeton, non installés en CI,
+sautent.
+
+**Règle de release.** Si la CI d'un push sur `main` est verte et que le paquet a changé,
+`release.yml` publie une release automatiquement, sans geste manuel :
+
+- **version calendaire** `vAAAA.MM.N` : `AAAA.MM` = année et mois (UTC), `N` = compteur du
+  mois (repart à 1 chaque mois, `.9` puis `.10`) ; le type de commit ne change pas la version ;
+- **tag annoté** posé sur le commit testé, archive `typopeuplement_AAAA.MM.N.tar.gz`
+  (`R CMD build`) attachée, notes générées depuis les commits depuis le tag précédent ;
+- le champ `Version` de `DESCRIPTION` est réécrit **à la construction**, jamais commité :
+  la valeur du dépôt (`0.1.0`) n'est pas une version publiée ;
+- **pas de release** si seuls `pilotage/`, `docs/`, les `*.md`, `.github/badges/`, `tests/` ou
+  `.github/scripts/test-*.sh` ont changé depuis le dernier tag, ni si `main` a déjà avancé
+  au-delà du commit testé (dans le doute, on publie) ;
+- **ne pas relancer** la CI d'un commit de `main` déjà vert, ni celle d'un ancien commit :
+  pour republier, ouvrir une PR.
+
+Les titres de PR suivent les commits conventionnels (`feat:`, `fix:`, `docs:`, ...). Le badge
+de couverture est un SVG local écrit par la CI dans `.github/badges/`. Installer une version :
+
+```r
+remotes::install_github("pobsteta/typopeuplement@v2026.11.1")
+```
+
+Décision : [`docs/adr/0017-versions-calendaires-tags-et-releases.md`](docs/adr/0017-versions-calendaires-tags-et-releases.md).
+
 ## Licence
 
-GPL-3.0-or-later.
+GPL-3 (comme `DESCRIPTION` et [`LICENSE`](LICENSE)).

@@ -12,3 +12,5 @@
 ^pyproject\.toml$
 ^tests/.*\.py$
 ^tests/__pycache__$
+^\.github$
+^couverture\.txt$
