@@ -7,6 +7,8 @@
 
 ## Bac à sable
 
+- typologie-h10.md, tableau l. 89 et 92 (strates, N) à passer à « oui, mode variables fournies » · depuis le cycle 3
+
 - Mineurs de 012 : règle hors clé en mode « pixels préparés », raster factice de focalMat en Lambert-93, part « entre deux » et effectifs dans la fiche · depuis le cycle 2
 
 
@@ -20,7 +22,6 @@
 - [013-couvert-houppiers](missions/013-couvert-houppiers.md) · depuis le cycle 3
 
 - [011-incertitude-locale-hpot](missions/011-incertitude-locale-hpot.md) · depuis le cycle 2
-- [010-cle-gsm](missions/010-cle-gsm.md), reprise courte (seuil de 15 m sur hpot, test de la clé H10) · depuis le cycle 2
 
 ## Planifié
 
