@@ -7,7 +7,7 @@
 
 **En une phrase (quoi, et pourquoi) :** Transcrire, avec page et source, les 8 types obligatoires du SRGS Auvergne-Rhône-Alpes et leurs critères (seuils de catégories de bois, précomptage, futaie / taillis / mélange) en une clé lisible par la chaîne, parce que la légende SRGS est prioritaire (réconciliation, arbitrage C3).
 
-**Redite par l'agent :** _à compléter par l'agent avant d'agir._
+**Redite par l'agent :** « Transcrire, avec page et source, les 8 types obligatoires du SRGS AURA 2023 et leurs critères (catégories de bois, précomptage, futaie / taillis / mélange) en un fichier de clé que `lire_configuration()` charge » (acquereur, plan du 2026-11-23).
 
 ## Les trois questions
 

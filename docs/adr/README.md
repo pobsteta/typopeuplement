@@ -14,7 +14,7 @@ une correction est une ligne datée qui renvoie à l'ancienne.
 
 ## ADR 0005 à 0017 : réconciliation des cadrages A et B (2026-11-23)
 
-Deux cadrages ont été faits en parallèle : A (ce dépôt, PR n° 2) et B (branche locale
+Deux cadrages ont été faits en parallèle : A (ce dépôt, PR n° 2) et B (branche `docs/cadrage`, locale et sur origin,
 `docs/cadrage` de `/home/pascal/dev/typopeuplement`, commit 7b714f1, 13 ADR). Pascal a
 tranché le 2026-11-23 ; ses arbitrages priment sur A et sur B. **C1 à C14 sont les
 arbitrages de Pascal** (au journal), à ne pas confondre avec les points C1 à C17 de la

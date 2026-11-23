@@ -1,7 +1,7 @@
 # ADR 0006 — Validation : référence, unité, critère de passage, calibration et confiance
 
 - **Date :** 2026-11-23
-- **Statut :** acceptée par Pascal le 2026-11-23 (réconciliation des cadrages)
+- **Statut :** acceptée par Pascal le 2026-11-23 (réconciliation des cadrages) ; un paragraphe décidé par l'orchestrateur par délégation n° 3 (plan de sondage, rattachement des placettes), signalé comme tel
 - **Proposée par :** Claude (orchestrateur), d'après le cadrage A et l'ADR 0002 du cadrage B (`docs/cadrage`, commit 7b714f1), corrigée par les arbitrages C5, C6, C11, C12 et C13
 - **Tranchée par :** Pascal (arbitrages C5, C6, C11, C12, C13, 2026-11-23)
 - **Précise :** spec, critères 1 (probabilités), 6 et 7 ; brief, objectif 4 et critère de passage de la phase « Pilotes »
@@ -38,9 +38,9 @@ l'« erreur par pixel » du brief (objectif 4) n'était pas définie.
   les seuls tests de houppiers.
 - **Parcelle** : le type local est aussi validé à la parcelle, à partir d'un polygone
   fourni par l'utilisateur, avec un estimateur et une règle des bordures nommés.
-- **Non arbitré** : le plan de sondage des placettes nouvelles (B : aléatoire stratifié
-  **Décidé le 2026-11-23 par l'orchestrateur, délégation n° 3** : plan aléatoire stratifié par type prédit (Olofsson et al., 2014) pour toute campagne de placettes nouvelles. Une placette dont le centre n'est pas au centre d'un pixel est rattachée au pixel qui la contient si son centre est à 2 m au plus du centre du pixel ; au-delà, ses métriques sont recalculées sur le disque de 15 m centré sur elle (tolérance provisoire, à mesurer au pilote). La hauteur potentielle de référence d'une placette est celle du pixel de la carte qui la contient, déclarée « modélisée » dans la fiche.
-  par type prédit, Olofsson et al., 2014) et les effectifs par type.
+- **Plan de sondage, non arbitré par Pascal** : B proposait un plan aléatoire stratifié
+  par type prédit (Olofsson et al., 2014) et des effectifs par type.
+- **Décidé le 2026-11-23 par l'orchestrateur, délégation n° 3** : plan aléatoire stratifié par type prédit (Olofsson et al., 2014) pour toute campagne de placettes nouvelles. Une placette dont le centre n'est pas au centre d'un pixel est rattachée au pixel qui la contient si son centre est à 2 m au plus du centre du pixel ; au-delà, ses métriques sont recalculées sur le disque de 15 m centré sur elle (tolérance provisoire, à mesurer au pilote). La hauteur potentielle de référence d'une placette est celle du pixel de la carte qui la contient, déclarée « modélisée » dans la fiche.
 
 ### Critère de passage (arbitrage C5)
 

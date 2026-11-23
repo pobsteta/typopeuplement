@@ -51,7 +51,7 @@ Options envisagées :
   (ADR 0008).
 
 **Origine de la grille** : « fixe ailleurs » que sur les rasters ONF ; sa valeur n'est pas
-fixée par l'arbitrage (voir la liste des points ambigus de la réconciliation) et reste à
+fixée par l'arbitrage (point ambigu n° 2 de l'archiviste ; décision de l'orchestrateur du 2026-11-23 au journal : origine fixée par le plan de la mission 018) et reste à
 écrire dans la mission qui met la grille en code.
 
 ## Le crible FRANCE

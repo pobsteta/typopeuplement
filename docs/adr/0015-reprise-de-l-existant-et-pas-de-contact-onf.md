@@ -36,7 +36,7 @@ Positions de départ :
 - **C14** (postérieur dans l'ordre de la liste, plus général) : métriques calculées depuis
   le LiDAR HD **partout**, rasters ONF **en contrôle**, pour une qualité égale partout.
   Cette ADR suit C14 ; l'articulation avec la formule de C9 « en entrée là où ils sont
-  complets » est à confirmer (voir la liste des points ambigus de la réconciliation).
+  complets » est **tranchée** : C14 l'emporte, les rasters ONF servent de contrôle partout (décision de l'orchestrateur par délégation n° 3, journal du 2026-11-23).
 - **C10** : lasR gardé, isolé derrière une interface (ADR 0016) ; lidaRtRee sert aux tests
   des houppiers et non de socle, contrairement à B.
 
