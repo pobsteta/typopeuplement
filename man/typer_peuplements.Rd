@@ -65,7 +65,9 @@ référence que la chaîne (même milieu, même modèle de hauteur potentielle) 
 \item les chemins de dalles de nuage de points (\code{.las}, \code{.laz}, \code{.copc.laz}) : le couvert
 est calculé ici, avec la référence tirée de la chaîne (lasR requis ; choisir les
 dalles avec \code{\link[=dalles_sur_aoi]{dalles_sur_aoi()}}) : tranches une dalle à la fois, houppiers en un
-seul \code{exec} avec tampon (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, paramètres par défaut) ;
+seul \code{exec} avec tampon (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, paramètres par défaut) ; en
+hybride, la segmentation sert à retirer des tranches les retours des houppiers de
+la strate 1 ;
 \item un data.frame de couverts déjà calculés (\verb{c1_<ref>} à \verb{c4_<ref>}, sans comptes
 ni \code{n_houppiers}) : pris tels quels, quelle que soit \code{methode_strates} (la fiche
 le dit).
@@ -82,8 +84,11 @@ aux pixels de l'emprise ; \code{NULL} : appris sur les pixels de l'emprise. Dema
 
 \item{methode_strates}{Méthode du couvert des strates (mission 013, plan validé par
 Pascal le 2026-11-23) : \code{"hybride"} (\strong{par défaut}) : strate 1 par les houppiers,
-strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, déclarées
-estimées ; \code{"houppiers"} : les quatre strates par les houppiers vus du dessus ;
+strates 2 à 4 par les tranches de hauteur corrigées de l'occlusion, sans les
+retours qui tombent dans les houppiers de la strate 1 (décision du 2026-11-23 ; il
+faut une segmentation unique et des tranches calculées depuis les dalles, ou des
+comptes de \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}} avec \code{houppiers}), déclarées estimées
+(\code{part_retours_sous_s1}) ; \code{"houppiers"} : les quatre strates par les houppiers vus du dessus ;
 \code{"tranches"} : les quatre par les tranches (mission 008). Les colonnes
 \verb{c1_<ref>} à \verb{c4_<ref>} gardent leurs noms. Une source manquante pour la méthode
 arrête la chaîne.}

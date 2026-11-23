@@ -8,7 +8,9 @@ couvert_strates(points, references, plancher_m = 1, classes = 1:5)
 }
 \arguments{
 \item{points}{data.frame : \code{cellule} (numéro de pixel, entier), \code{Z} (hauteur au-dessus
-du sol, m), \code{ReturnNumber}, \code{Classification}. Une ligne par retour.}
+du sol, m), \code{ReturnNumber}, \code{Classification}. Une ligne par retour. Facultatives :
+\code{h_cime} (hauteur de la cime du houppier où tombe le retour, m ; vide hors
+houppier) et \code{cellule_cime} (pixel du sommet de ce houppier) ; les deux ensemble.}
 
 \item{references}{data.frame : \code{cellule}, et une colonne numérique (m) par hauteur de
 référence, nommée (par exemple celles de \code{\link[=references_strates]{references_strates()}}). Une ligne par pixel.}

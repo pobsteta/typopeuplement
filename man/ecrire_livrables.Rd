@@ -32,8 +32,9 @@ ont été fournis, et \code{densite_houppiers} (tiges/ha) si les houppiers ont s
 variables du producteur, 1 : SER, 2 : grande région \emph{requise} — la bascule vers le
 modèle de grande région n'est pas encore écrite, c'est le modèle de la SER qui a
 servi) ; en mode « variables fournies », aussi \code{non_precomptable}, \code{part_pb_absente}
-et \code{gb_interim} (0 ou 1), et \code{strates_basses_estimees} (0 ou 1) quand le couvert des
-strates a été calculé par la chaîne ;
+et \code{gb_interim} (0 ou 1), et \code{part_retours_sous_s1} (de 0 à 1 : part des retours
+du pixel qui passent sous la strate 1 et servent aux strates 2 à 4, estimées ; vide
+sans comptes de retours) quand le couvert des strates a été calculé par la chaîne ;
 \item \code{fiche_validation.md} ; \code{carte_types.csv} (la carte, une ligne par pixel) ;
 \item \code{correspondance_types.csv} (\code{valeur}, \code{code}, \code{libelle}), groupes de types compris ;
 \item \code{correspondance_niveau_modele.csv} (\code{valeur}, \code{niveau}, \code{sens}) : les codes de

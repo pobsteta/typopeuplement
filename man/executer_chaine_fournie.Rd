@@ -69,9 +69,16 @@ défaut) et les paramètres de segmentation (provisoires), la part des pixels co
 et la corrélation de \verb{c1_<ref>} (strate haute vue du dessus) avec le taux de couvert
 du producteur (\code{couvert}), sans seuil : un contrôle, pas une validation. Avec les
 houppiers, la carte porte \code{densite_houppiers} (tiges/ha, non passée à la clé) et la
-fiche la compare à \code{N} ; le drapeau \code{strates_basses_estimees} est levé sur les
-pixels dont les strates 2 à 4 sont estimées (tranches, ou houppiers masqués), sauf
-pour des couverts fournis tout faits.
+fiche la compare à \code{N}. La fiche dit aussi la somme \code{c1 + c2 + c3 + c4} (médiane,
+part au-delà de 1 : chaque strate a son propre couvert, la somme peut dépasser 1)
+et, en hybride, si les retours des houppiers de la strate 1 ont été retirés des
+strates 2 à 4. Les strates basses sont estimées : la carte porte
+\code{part_retours_sous_s1} (de 0 à 1, remplace le drapeau booléen
+\code{strates_basses_estimees}, décision de Pascal du 2026-11-23), la part des retours
+du pixel qui passent sous la strate 1 (sous 3/4 H, sol compris) et servent aux
+strates 2 à 4, hors houppiers de la strate 1 en hybride ; près de 0, les strates
+basses reposent sur très peu de retours. Vide si les tranches ne viennent pas de
+comptes ; absente pour des couverts fournis tout faits.
 \item Variable absente : quand les types de tête ne se départagent que par une variable
 manquante, \code{type} est le groupe de ces types (\code{"R-PB-J | R-PB-C"}, voir
 \code{\link[=decider_type]{decider_type()}}) et \code{entre_deux} est levé ; \code{correspondance_types.csv} liste les

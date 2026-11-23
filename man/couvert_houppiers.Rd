@@ -33,30 +33,35 @@ grille, la surface des houppiers de chaque strate :
 }
 \details{
 \itemize{
-\item sommet d'un houppier = sa cellule la plus haute dans le MNH ; sa hauteur est celle
-de l'arbre ;
+\item sommet d'un houppier = sa cellule la plus haute dans le MNH
+(\code{\link[=sommets_houppiers]{sommets_houppiers()}}) ; sa hauteur est celle de l'arbre ; le houppier numéro 0
+est un arbre comme les autres ;
 \item strate de l'arbre = quart de la hauteur de référence H \strong{du pixel de son sommet}
 (strate 1 : cime ≥ 3/4 H ; 2 : ≥ H/2 ; 3 : ≥ H/4 ; 4 : en dessous), comme
 \code{\link[=comptes_strates]{comptes_strates()}} pour les retours. Un arbre dont le sommet tombe dans un pixel
 sans référence (hors de \code{references}) prend, cellule par cellule, la référence du
 pixel où tombe la cellule ;
 \item \verb{c<k>_<r>} = surface des cellules des houppiers de la strate k dans le pixel,
-divisée par la surface du pixel couverte par le MNH. Un houppier à cheval sur deux
-pixels compte dans chacun pour sa part, avec la strate de son arbre.
+divisée par la surface du pixel couverte par le MNH. Numérateur et dénominateur ne
+comptent que les cellules qui ont une hauteur : un couvert ne dépasse pas 1. Un
+houppier à cheval sur deux pixels compte dans chacun pour sa part, avec la strate de
+son arbre.
 }
 
 C'est un couvert \strong{vu du dessus} : chaque cellule n'appartient qu'à un houppier, et
 les quatre couverts s'additionnent au plus à 1. Les strates basses sont masquées par
 les houppiers du dessus (sous-étage sous-estimé) : d'où le mode hybride de la chaîne
-(strate 1 par les houppiers, strates 2 à 4 par les tranches, \code{\link[=typer_peuplements]{typer_peuplements()}}).
+(strate 1 par les houppiers, strates 2 à 4 par les tranches, sans les retours qui
+tombent dans les houppiers de la strate 1, \code{\link[=typer_peuplements]{typer_peuplements()}}).
 
 La densité des houppiers (\code{densite_houppiers}, sommets par hectare de MNH) est rendue
 pour la lecture ; elle ne sert pas à la clé (le seuil de densité de la clé de H10
 porte sur N du producteur, décision de Pascal du 2026-11-23).
 
-Plusieurs segmentations (une liste, par exemple par paquets de dalles) s'additionnent
-pixel par pixel ; un houppier coupé à la limite de deux segmentations y compte pour
-deux arbres. Les rasters sont lus par blocs de \code{lignes_bloc} lignes.
+Plusieurs segmentations (une liste) s'additionnent pixel par pixel ; un houppier coupé
+à la limite de deux segmentations y compte pour deux arbres : on segmente toutes les
+dalles en un seul \code{exec} (\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, décision du 2026-11-23). Les
+rasters sont lus par blocs de \code{lignes_bloc} lignes.
 }
 \examples{
 # Deux pixels de 10 m ; MNH de 1 m ; un houppier de 4 x 4 m, cime à 18 m, dans le
@@ -74,5 +79,5 @@ couvert_houppiers(list(houppiers = ids, mnh = h), gab,
                   data.frame(x = c(5, 15), y = 5, h = 20))
 }
 \seealso{
-\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}}
+\code{\link[=segmenter_houppiers]{segmenter_houppiers()}}, \code{\link[=sommets_houppiers]{sommets_houppiers()}}, \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}}
 }

@@ -67,7 +67,7 @@ Les 3 pixels de Léoncel, et le pixel 2 en premier : jeune futaie, ou futaie adu
   houppiers. La densité des houppiers est rendue mais ne sert pas à la clé : le seuil de
   800 tiges/ha porte sur N de l'ONF (décision de Pascal).
 - **Pas de nemeton** en contrôle croisé (Pascal).
-- **Carte de Léoncel refaite en mode hybride** (22 dalles), comparée à la carte de 012.
+- **Carte de Léoncel refaite en mode hybride** (19 dalles), comparée à la carte de 012.
   Pixels 1, 2 et 3 : le pixel 2 est une jeune futaie (Pascal, sur le terrain).
 
 ## Reprise, aller-retour 1/3 (2026-11-23, décisions de Pascal)
@@ -87,6 +87,12 @@ Les 3 pixels de Léoncel, et le pixel 2 en premier : jeune futaie, ou futaie adu
      point 1) ;
    - `!is.na(h)` dans le numérateur de `couvert_houppiers` ;
    - houppier numéro 0.
+
+   Note du dev (2026-11-23) : après le point 1, la somme c1 + … + c4 **peut encore dépasser 1**,
+   et c'est voulu. Chaque strate a son propre couvert, comme au GSM (un sous-étage sous un houppier de
+   la strate 1 compte pour lui-même). Les strates 2 à 4 se mesurent dans les trouées de la strate 1 et
+   valent pour tout le pixel. À Léoncel, la médiane de la somme passe de 1,14 à 1,04 et la part au-delà
+   de 1 de 67,9 % à 55,2 %. La fiche de validation le dit.
 5. **Carte de Léoncel refaite**, comparée à la carte hybride précédente : familles, part
    « entre deux », pixels 1, 2 et 3. Le pixel 2 est une jeune futaie (terrain) ; le pixel 3
    est inconnu.

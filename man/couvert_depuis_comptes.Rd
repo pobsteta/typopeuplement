@@ -12,7 +12,9 @@ couvert_depuis_comptes(comptes)
 }
 \value{
 data.frame, une ligne par pixel : \code{cellule}, \code{x}, \code{y} (si présents), \code{n_tous},
-\code{n_premiers}, puis \code{c1_r}, \code{c2_r}, \code{c3_r}, \code{c4_r} pour chaque référence \code{r}.
+\code{n_premiers}, puis \code{c1_r}, \code{c2_r}, \code{c3_r}, \code{c4_r} et \code{sous_s1_r} pour chaque
+référence \code{r}. Attribut \code{retrait_s1} : \code{TRUE} si les comptes ont retiré les retours
+des houppiers de la strate 1 (colonnes \verb{r1_*}).
 }
 \description{
 Additionne les comptes d'un même pixel (venus de plusieurs dalles) puis calcule, pour
@@ -30,5 +32,11 @@ l'occlusion par les strates du dessus.
 
 Les quatre couverts sont entre 0 et 1, chacun pour sa strate : ils ne s'additionnent
 pas en un couvert total (une strate basse cachée sous une strate haute compte pour son
-propre couvert). Dénominateur nul : \code{NA}.
+propre couvert, comme au GSM) ; leur somme peut dépasser 1. Dénominateur nul : \code{NA}.
+
+\code{sous_s1_r} = \code{s2 / n_tous} : part des retours du pixel qui passent sous la strate 1
+(sous 3/4 H, sol compris) et servent aux strates 2 à 4 ; sans les retours tombés dans
+les houppiers de la strate 1 si les comptes les ont retirés (\code{r1_r}). C'est la mesure
+sur laquelle reposent les strates basses : près de 0, elles sont estimées sur très
+peu de retours.
 }

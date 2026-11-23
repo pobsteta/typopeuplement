@@ -8,7 +8,9 @@ comptes_strates(points, references, plancher_m = 1, classes = 1:5)
 }
 \arguments{
 \item{points}{data.frame : \code{cellule} (numéro de pixel, entier), \code{Z} (hauteur au-dessus
-du sol, m), \code{ReturnNumber}, \code{Classification}. Une ligne par retour.}
+du sol, m), \code{ReturnNumber}, \code{Classification}. Une ligne par retour. Facultatives :
+\code{h_cime} (hauteur de la cime du houppier où tombe le retour, m ; vide hors
+houppier) et \code{cellule_cime} (pixel du sommet de ce houppier) ; les deux ensemble.}
 
 \item{references}{data.frame : \code{cellule}, et une colonne numérique (m) par hauteur de
 référence, nommée (par exemple celles de \code{\link[=references_strates]{references_strates()}}). Une ligne par pixel.}
@@ -22,7 +24,8 @@ mesure. Strictement positif : à 0, le sol compterait comme végétation.}
 }
 \value{
 data.frame, une ligne par pixel touché : \code{cellule}, \code{n_tous}, \code{n_premiers}, et
-pour chaque référence \code{r} : \code{p1_r}, \code{n2_r}, \code{s2_r}, \code{n3_r}, \code{s3_r}, \code{n4_r}, \code{s4_r}.
+pour chaque référence \code{r} : \code{p1_r}, \code{n2_r}, \code{s2_r}, \code{n3_r}, \code{s3_r}, \code{n4_r}, \code{s4_r},
+et \code{r1_r} (retours retirés) si les cimes sont données.
 }
 \description{
 Compte, pour chaque pixel et chaque hauteur de référence H, les retours qui servent au
@@ -38,6 +41,16 @@ La strate 4 commence à \code{plancher_m}. Un retour sous \code{plancher_m} est 
 toutes les strates : sous une référence de moins de 4 m (H/4 < 1 m), il ne compte
 ni en strate 4 ni dans les strates du dessus qui descendraient sous le plancher.
 }
+
+\strong{Retours sous les houppiers de la strate 1} (mission 013, décision de Pascal du
+2026-11-23) : si \code{points} porte la cime de chaque retour (\code{h_cime}, \code{cellule_cime},
+voir \code{\link[=couvert_strates_dalle]{couvert_strates_dalle()}} avec \code{houppiers}), un retour qui tombe, vu du dessus,
+dans le houppier d'un arbre de la strate 1 et qui est sous 3/4 H ne compte plus dans
+les strates 2 à 4 : ni au numérateur (\code{n2}, \code{n3}, \code{n4}), ni au dénominateur (\code{s2},
+\code{s3}, \code{s4}), sol compris. La strate de l'arbre se lit comme dans
+\code{\link[=couvert_houppiers]{couvert_houppiers()}} : sa cime contre la référence du pixel de son sommet (à défaut,
+celle du pixel du retour). Les strates 2 à 4 se mesurent alors dans les trouées de la
+strate 1. Les retours retirés sont comptés dans \code{r1_r}.
 
 Les hauteurs Z négatives (sous le sol interpolé) valent 0. Seules les classes
 \code{classes} comptent (par défaut 1 à 5 de l'ASPRS, celles du LiDAR HD de l'IGN : non
