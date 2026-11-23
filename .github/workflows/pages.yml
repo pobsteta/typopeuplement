@@ -1,0 +1,97 @@
+name: Site
+
+# Site pkgdown (mission 015), publie par GitHub Pages. Deux jobs : « build » construit le site
+# avec un jeton en LECTURE seule (le code d'une pull request ne tourne jamais avec un jeton en
+# ecriture) ; « deploy » publie sur la branche gh-pages, seulement sur un push de main.
+# L'article des resultats tourne sur le jeu synthetique de la chaine : aucun reseau, aucune donnee.
+# Prerequis (a faire par Pascal, une fois) : Reglages > Pages > Source = branche gh-pages.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # pkgdown rend tout fichier .md de la racine : CLAUDE.md (consignes internes) ne doit pas
+      # etre publie. Il reste dans le depot ; on le retire de la copie de CI seulement.
+      - name: Retirer CLAUDE.md de la copie de CI
+        run: rm -f CLAUDE.md
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          extra-repositories: https://r-lidar.r-universe.dev
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Construire le site
+        run: Rscript -e 'pkgdown::check_pkgdown(); pkgdown::build_site_github_pages(dest_dir = "site", new_process = FALSE, install = FALSE)'
+
+      # Garde : aucune PAGE interne dans le site (CLAUDE, pilotage, .claude).
+      - name: Garde contre la publication de fichiers internes
+        run: |
+          fail=0
+          if find site \( -ipath '*CLAUDE*' -o -ipath '*pilotage*' -o -ipath '*/.claude*' \) | grep -q .; then
+            echo "fichier interne dans site/ :"; find site \( -ipath '*CLAUDE*' -o -ipath '*pilotage*' -o -ipath '*/.claude*' \); fail=1
+          fi
+          for f in site/sitemap.xml site/llms.txt; do
+            [ -f "$f" ] || continue
+            if grep -qE "CLAUDE|/pilotage/|/\.claude" "$f"; then echo "chemin interne dans $f"; fail=1; fi
+          done
+          if grep -qE '"path":"[^"]*(CLAUDE|pilotage|\.claude)' site/search.json; then
+            echo "page interne dans site/search.json"; fail=1
+          fi
+          exit $fail
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: site
+          if-no-files-found: error
+
+  deploy:
+    # Seulement sur un push de main : jamais depuis une pull request ni une autre branche.
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # ecriture sur gh-pages seulement
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+
+      - name: Deployer sur gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        with:
+          clean: true
+          branch: gh-pages
+          folder: site

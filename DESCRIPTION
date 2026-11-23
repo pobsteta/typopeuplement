@@ -15,6 +15,7 @@ Description: Chaine de traitement qui produit, pour les forets de France
     passe par lasR (Suggests, depuis r-universe), qui demande GDAL : tranches
     de hauteur des retours, et segmentation des houppiers (region_growing de
     lasR, Dalponte et Coomes 2016).
+URL: https://pobsteta.github.io/typopeuplement/, https://github.com/pobsteta/typopeuplement
 License: GPL-3
 Encoding: UTF-8
 Depends:
@@ -29,8 +30,13 @@ Imports:
     stats,
     utils
 Suggests:
+    knitr,
     lasR,
     nemeton,
+    pkgdown,
+    quarto,
+    rmarkdown,
+    targets,
     testthat (>= 3.0.0)
 Remotes:
     github::pobsteta/nemeton
