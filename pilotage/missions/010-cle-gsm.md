@@ -61,3 +61,18 @@ Pascal relit le logigramme et reconnaît les types sur une forêt du Vercors.
    (types X et T non exprimables).
 4. Un test automatique de la clé de H10, confié au `testeur` : 16 types et 4 non
    exprimables, soit 20 codes, une `source` par type, et l'exclusivité en clé dure.
+
+## Reprise courte, aller-retour 1/3 (2026-11-23)
+
+1. **Acquéreur.** Corriger le paragraphe « Câblage à vérifier » de `typologie-h10.md`
+   (l. 120 environ).
+   - En mode « variables fournies » (`executer_chaine_fournie`), la clé reçoit `hpot`,
+     `h_pot`, `c*_hpot` (argument `strates`), `couvert` et `N`, et `N` est lue par
+     `couches_onf()`.
+   - En mode placettes (`executer_chaine`, `R/chaine.R` l. 78), seule `rapport_h` est
+     passée : la clé de H10 n'y tourne pas.
+2. **Testeur.** Dans `test-cle-h10.R` :
+   - une assertion verrouille `hpot` comme variable du seuil de 15 m dans les 16 types ;
+   - le comptage des chevauchements se fait sur l'appartenance brute (avant
+     normalisation), ou sur les probabilités strictement positives, pour qu'un
+     chevauchement soit signalé comme chevauchement.
