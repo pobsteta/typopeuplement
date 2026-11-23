@@ -1,0 +1,108 @@
+name: CI
+
+# Push sur main et pull requests (ADR 0017). La release (release.yml) part après un run VERT de ce
+# workflow sur un push de main. Ne jamais relancer à la main la CI d'un commit de main déjà vert
+# ni celle d'un ancien commit : pour republier, faire une PR.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Tester la décision de release
+        run: .github/scripts/test-release-necessaire.sh
+
+      - name: Tester le calcul de version calendaire
+        run: .github/scripts/test-version-calendaire.sh
+
+      - name: Tester le badge de couverture
+        run: .github/scripts/test-badge-couverture.sh
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          # lasR n'est pas sur le CRAN : dépôt r-universe de r-lidar (binaires).
+          extra-repositories: https://r-lidar.r-universe.dev
+
+      # Imports et Suggests : lasR (r-universe) et nemeton (Remotes GitHub, dépôt public) sont
+      # installés pour que les tests du terrain tournent en CI au lieu de sauter.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::testthat, any::pkgload
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Installer les dépendances Python
+        run: python3 -m pip install -e ".[test]"
+
+      # La commande de tests du projet : R testthat puis pytest.
+      - name: Tests du projet (R puis Python)
+        run: bash .claude/test-command
+
+      # Le paquet doit se construire ; la version n'est qu'un essai, la vraie est posée par release.yml.
+      - name: Construire le paquet (essai)
+        run: |
+          sed -i "s/^Version: .*/Version: 2000.01.1/" DESCRIPTION
+          R CMD build --no-build-vignettes .
+          test -f typopeuplement_2000.01.1.tar.gz
+
+  couverture:
+    # Seulement sur un push de main, après des tests verts. Un échec ici ne casse jamais la CI.
+    if: github.event_name == 'push'
+    needs: tests
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          # lasR n'est pas sur le CRAN : dépôt r-universe de r-lidar (binaires).
+          extra-repositories: https://r-lidar.r-universe.dev
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::covr, any::testthat, any::pkgload
+
+      - name: Mesurer la couverture (covr, tests R)
+        id: covr
+        continue-on-error: true
+        run: |
+          Rscript -e 'p <- covr::percent_coverage(covr::package_coverage()); writeLines(format(round(p, 1), nsmall = 1), "couverture.txt")'
+          echo "pct=$(cat couverture.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Générer le badge SVG (local, sans service externe)
+        run: .github/scripts/badge-couverture.sh "${{ steps.covr.outputs.pct }}"
+
+      - name: Publier le badge mis à jour
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges/couverture.svg
+          if git diff --cached --quiet; then echo "Badge inchangé."; exit 0; fi
+          git commit -m "docs: mise à jour du badge de couverture [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main

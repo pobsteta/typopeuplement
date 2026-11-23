@@ -1,0 +1,98 @@
+name: Release
+
+# La release ne part qu'après la fin VERTE de « CI » sur un push de main (ADR 0017).
+# ATTENTION : un workflow_run ne s'exécute que si ce fichier est présent sur la BRANCHE PAR DÉFAUT
+# du dépôt. Tant que main n'est pas la branche par défaut, ou que ce fichier n'y est pas, rien ne part.
+on:
+  workflow_run:
+    workflows: [ CI ]
+    types: [ completed ]
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    # Tests verts, sur un push de main (jamais une PR, jamais un run rouge ou annulé).
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    steps:
+      # On construit exactement le commit que la CI a testé.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      # Pas de tag ni de release si le commit n'est plus la tête de main, ou si rien du paquet
+      # (hors pilotage/, docs/, *.md, badge, tests/) n'a changé depuis le dernier tag v*.
+      - name: Décider si une release est nécessaire
+        id: decision
+        run: |
+          RES=$(.github/scripts/release-necessaire.sh "${{ github.event.workflow_run.head_sha }}")
+          echo "$RES"
+          case "$RES" in
+            "pas de release"*) echo "necessaire=false" >> "$GITHUB_OUTPUT" ;;
+            *) echo "necessaire=true" >> "$GITHUB_OUTPUT" ;;
+          esac
+          echo "### Release : $RES" >> "$GITHUB_STEP_SUMMARY"
+
+      # Version calendaire vAAAA.MM.N (N = compteur du mois, UTC) d'après les tags existants ;
+      # le changelog est lu avant de poser le nouveau tag ; tag annoté sur head_sha.
+      - name: Calculer la version et poser le tag
+        id: tag
+        if: steps.decision.outputs.necessaire == 'true'
+        run: |
+          TAG=$(.github/scripts/version-calendaire.sh)
+          PREC=$(git describe --tags --abbrev=0 --match 'v*' HEAD 2>/dev/null || true)
+          {
+            echo "## Changements"
+            echo
+            if [ -n "$PREC" ]; then
+              echo "Depuis \`$PREC\` :"; echo
+              git log --no-merges --pretty='- %s (%h)' "$PREC..HEAD"
+            else
+              echo "Première release :"; echo
+              git log --no-merges --pretty='- %s (%h)'
+            fi
+          } > "$RUNNER_TEMP/notes.md"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "typopeuplement $TAG" "${{ github.event.workflow_run.head_sha }}"
+          git push origin "refs/tags/$TAG"
+          echo "new_tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "new_version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - uses: r-lib/actions/setup-r@v2
+        if: steps.tag.outputs.new_tag != ''
+        with:
+          use-public-rspm: true
+
+      # La Version de DESCRIPTION est réécrite à la volée (dans l'espace de travail, jamais commitée).
+      - name: Construire le tarball (R CMD build)
+        id: build
+        if: steps.tag.outputs.new_tag != ''
+        run: |
+          sed -i "s/^Version: .*/Version: ${{ steps.tag.outputs.new_version }}/" DESCRIPTION
+          grep '^Version:' DESCRIPTION
+          # Sans vignettes (le paquet n'en a pas).
+          R CMD build --no-build-vignettes .
+          FICHIER="typopeuplement_${{ steps.tag.outputs.new_version }}.tar.gz"
+          test -f "$FICHIER"
+          echo "name=$FICHIER" >> "$GITHUB_OUTPUT"
+
+      - name: Créer la release GitHub
+        if: steps.tag.outputs.new_tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.new_tag }}
+          name: typopeuplement ${{ steps.tag.outputs.new_tag }}
+          body_path: ${{ runner.temp }}/notes.md
+          files: ${{ steps.build.outputs.name }}
