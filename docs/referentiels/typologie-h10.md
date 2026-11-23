@@ -4,7 +4,7 @@
 - **Consulté le :** 2026-11-22 (agent `acquereur`, missions 005 et 010)
 - **Décision éclairée :** quelle clé de types (noms, seuils, limite des gros bois) la première carte réelle de H10 doit parler, pour que les gestionnaires du Vercors la lisent sans traduction. Depuis la mission 010, la clé GSM est transcrite dans la configuration (voir « Transcription dans la configuration (mission 010) » plus bas).
 - **Fichier de configuration :** `inst/extdata/config/vercors-h10.json` (se charge ; **clé GSM transcrite : 16 types sur 20**, 4 non exprimables, voir plus bas).
-- **Statut : transcrite, NON GELÉE.** Limite BM/GB tranchée par Pascal le 2026-11-22 (42,5 cm). Reste ouvert : sept ambiguïtés du logigramme, la convention d'arrondi des couverts, 4 types non exprimables dans la chaîne actuelle (X, P, A, T) et 2 types partiels (L, R). Rien de ce qui est ouvert n'est tranché ici.
+- **Statut : transcrite, NON GELÉE.** Limite BM/GB tranchée par Pascal le 2026-11-22 (42,5 cm). Reste ouvert : six ambiguïtés du logigramme (la 6 est tranchée, voir plus bas), la convention d'arrondi des couverts, 4 types non exprimables dans la chaîne actuelle (X, P, A, T). Rien de ce qui est ouvert n'est tranché ici.
 
 ## Sources (une seule par référence)
 
@@ -86,9 +86,9 @@ Variables de la clé GSM, face aux variables de la chaîne (`variables_cibles` :
 | Variable de la typologie | Dans la chaîne ? |
 |---|---|
 | G (m²/ha) ; part des GB+TGB (≥ 60 %) | oui (`G`, `part_gb`, avec la limite BM/GB de la config) |
-| **couvert des strates 1, 2 et 3** (par quart de Hₒ potentielle) | **non** : absent des variables cibles, des prédicteurs et des colonnes de pixels |
+| **couvert des strates 1, 2 et 3** (par quart de Hₒ potentielle) | **oui, en mode « variables fournies »** (`c1_hpot` à `c4_hpot`, argument `strates`) ; pas en mode placettes |
 | **Hₒ potentielle en m** (seuil 15 m) | oui depuis 012, **en mode « variables fournies » seulement** : `hpot` (sans enveloppe) est exposée à la clé ; en mode placettes, seule `rapport_h` l'est |
-| **nombre de tiges par hectare** (seuil 800) | non |
+| **nombre de tiges par hectare** (seuil 800) | **oui, en mode « variables fournies »** : `N` du jeu ONF (tiges précomptables), citée par L et R |
 | **part du taillis** (type T) | non |
 | couvert total, rôle de production ou de protection (types X, P, A) | non (masque forestier et décision de gestion) |
 | part de résineux | oui, mais **le GSM ne s'en sert pas** : sa clé est indépendante de l'essence |
@@ -99,7 +99,7 @@ Convention d'arrondi : voir ci-dessous (ambiguïté 3).
 
 ## Transcription dans la configuration (mission 010)
 
-`inst/extdata/config/vercors-h10.json`, SER H10, `cle.types` : **16 types exprimés** (CH, L, 3, R, 1, 1GB, 2, 2GB, 12, 12GB, 13, 13GB, 23, C, J, JGB) et **4 non exprimables** (X, P, A, T), listés dans `cle.non_exprimables` avec leur raison : 16 + 4 = **20 types du GSM**. Chaque type porte sa `source` (page du logigramme et du tableau) et, pour L et R, un `statut` « partiel ». Souplesses du jeu Vercors dans `jeux.vercors_onf.souplesse` : G 7,32 m²/ha ; part de résineux 0,199 ; part de gros bois 0,163 (EQM de la fiche ONF, p. 1, vérifiées à la source : G « 7.32 (25%) », % F/R « 19.9 (40%) », P100GGB « 16.28 (49%) » ; décision de Pascal, 2026-11-22). La limite BM/GB à 42,5 cm est écrite pour H10 (`seuils_diametre.bm_gb_cm`).
+`inst/extdata/config/vercors-h10.json`, SER H10, `cle.types` : **16 types exprimés** (CH, L, 3, R, 1, 1GB, 2, 2GB, 12, 12GB, 13, 13GB, 23, C, J, JGB) et **4 non exprimables** (X, P, A, T), listés dans `cle.non_exprimables` avec leur raison : 16 + 4 = **20 types du GSM**. Chaque type porte sa `source` (page du logigramme et du tableau) et, pour L et R, un `statut` (branche N transcrite ; recouvrement tranché par Pascal le 2026-11-23 : cascade L, 3, R). Souplesses du jeu Vercors dans `jeux.vercors_onf.souplesse` : G 7,32 m²/ha ; part de résineux 0,199 ; part de gros bois 0,163 (EQM de la fiche ONF, p. 1, vérifiées à la source : G « 7.32 (25%) », % F/R « 19.9 (40%) », P100GGB « 16.28 (49%) » ; décision de Pascal, 2026-11-22). La limite BM/GB à 42,5 cm est écrite pour H10 (`seuils_diametre.bm_gb_cm`).
 
 ### Lecture du GSM, pages
 
@@ -115,9 +115,9 @@ Le logigramme est lu dans le texte du PDF (`pdftotext -layout`). Les classes de 
 
 ### Variables de la chaîne utilisées
 
-`c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `hpot`, `couvert`. Rien d'autre.
+`c1_hpot` à `c4_hpot` (couverts des strates, référence `hpot`, provisoire, mission 008), `G`, `part_gb` (GB + TGB), `hpot`, `couvert`, et `N` (tiges/ha du jeu ONF, tiges précomptables : seuil de 800 de L et R). Rien d'autre.
 
-Variables du GSM **absentes** de la chaîne : la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). Le nombre de tiges par hectare `N` (seuil de 800 pour L et R) est lu : `couches_onf()` branche `N.tif` sur `N` (`R/donnees_lidar.R`, lignes 56-57) et `executer_chaine_fournie` la porte à la clé (`variables_portees()`, `R/chaine.R` l. 265) ; la clé de H10 ne la cite pas (ambiguïté 6). **Câblage, selon le mode.** En mode « variables fournies » (`executer_chaine_fournie`, `R/chaine.R` l. 396), la clé reçoit toutes les variables que la chaîne porte (`variables_portees()`, l. 265-269, appelée l. 542) : celles du producteur (dont `couvert` et `N`), `h_pot`, `hpot` (sans enveloppe, calculée l. 502) et `rapport_h`, plus les couverts de strates `c1_<ref>` à `c4_<ref>` quand l'argument `strates` est fourni (l. 527-533 ; référence par défaut `hpot`, d'où `c*_hpot`) ; une variable citée que la chaîne ne porte pas est neutralisée et déclarée (l. 543-548). En mode placettes (`executer_chaine`, `R/chaine.R` l. 60-78), seule `rapport_h` est ajoutée aux variables prédites (`cbind(var_pix, rapport_h = …)`, l. 78) : ni `hpot`, ni `h_pot`, ni `couvert`, ni `N`, ni `c*_hpot` n'arrivent à la clé, qui n'a pas de strates à ce niveau. **La clé de H10 n'y tourne donc pas** ; elle tourne en mode « variables fournies ».
+Variables du GSM **absentes** de la chaîne : la part du taillis (T), le rôle de production ou de protection (X), l'usage du sol (P, A). Le nombre de tiges par hectare `N` (seuil de 800 pour L et R) est lu : `couches_onf()` branche `N.tif` sur `N` (`R/donnees_lidar.R`, lignes 56-57) et `executer_chaine_fournie` la porte à la clé (`variables_portees()`, `R/chaine.R` l. 265) ; la clé de H10 la cite depuis la branche N de L et R (2026-11-23, ambiguïté 6). **Câblage, selon le mode.** En mode « variables fournies » (`executer_chaine_fournie`, `R/chaine.R` l. 396), la clé reçoit toutes les variables que la chaîne porte (`variables_portees()`, l. 265-269, appelée l. 542) : celles du producteur (dont `couvert` et `N`), `h_pot`, `hpot` (sans enveloppe, calculée l. 502) et `rapport_h`, plus les couverts de strates `c1_<ref>` à `c4_<ref>` quand l'argument `strates` est fourni (l. 527-533 ; référence par défaut `hpot`, d'où `c*_hpot`) ; une variable citée que la chaîne ne porte pas est neutralisée et déclarée (l. 543-548). En mode placettes (`executer_chaine`, `R/chaine.R` l. 60-78), seule `rapport_h` est ajoutée aux variables prédites (`cbind(var_pix, rapport_h = …)`, l. 78) : ni `hpot`, ni `h_pot`, ni `couvert`, ni `N`, ni `c*_hpot` n'arrivent à la clé, qui n'a pas de strates à ce niveau. **La clé de H10 n'y tourne donc pas** ; elle tourne en mode « variables fournies ».
 
 ### Types non exprimables
 
@@ -148,14 +148,14 @@ Conséquence : ces types sont testés **avant** les autres dans le logigramme (X
 3. **Arrondi des classes de couvert** (voir conventions) : défaut 0,25 / 0,45 (provisoire) ; alternatives : lecture littérale 0,2 / 0,5, troncature 0,3 / 0,5.
 4. **Valeur 15 m** (voir conventions).
 5. **L et R : « couvert strates 3 et 4 » du logigramme (p. 54) contre « couvert strates [3+4] » du tableau (p. 57).** Le tableau écrit « [3 + 4] < 5/10 » pour L et « [3 + 4] > 5/10 » pour R (strict, donc 5/10 exactement n'est dans aucun des deux) ; le logigramme écrit « strates 3 et 4 < 5/10 », « strate 3 ≥ 5/10 », « strate 4 ≥ 5/10 et strate 3 < 5/10 ». Le couvert de la strate « [3+4] » (les deux réunies ?) n'est pas défini dans le GSM. Transcrit : le logigramme, strates 3 et 4 séparées.
-6. **L et R : « ou plus de 800 tiges/ha », « ou moins de 800 tiges/ha ».** La branche de densité est un « ou » : un pixel peut satisfaire à la fois la branche de couvert de L et celle de densité de R (cas c4 < 5/10 et N > 800, ou l'inverse), ou être à la fois L et 3 (c3 ≥ 5/10 et N < 800). Le GSM ne dit pas laquelle l'emporte, ni si le « ou » est exclusif. De plus N est lue par la chaîne depuis 012 (tiges/ha), mais la clé ne la cite pas. Transcrit : **la branche du couvert seulement** (suffisante si le « ou » est inclusif), types marqués « partiel ». Pascal tranche : garder L et R partiels, ou les marquer non exprimables tant que N n'est pas branchée et la règle fixée.
+6. **L et R : « ou moins de 800 tiges/ha », « ou plus de 800 tiges/ha » : les branches se recouvrent. Tranchée par Pascal (2026-11-23) : cascade L, puis 3, puis R.** Logigramme p. 54 (PDF p. 29), termes recopiés : L « Couvert strates 3 et 4 < 5/10 ou moins de 800 tiges/ha » ; 3 « Couvert strate 3 ≥ 5/10 » ; R « Couvert strate 4 ≥ 5/10 ou plus de 800 tiges/ha et strate 3 < 5/10 ». Transcrit (2026-11-23, sur consigne de Pascal : seuil sur `N`, tiges/ha du jeu ONF, tiges précomptables), **lecture la plus fidèle, « ou » inclusif, à la lettre** : L = G < 10 et [(c3 < 0,45 et c4 < 0,45) ou N < 800] ; R = G < 10 et c3 < 0,45 et (c4 ≥ 0,45 ou N ≥ 800) ; 3 inchangé. Trois écarts de lecture à signaler : (a) « plus de 800 » est strict dans le GSM, le format n'a que « min inclus » : N = 800 exactement tombe dans R (L : « moins de 800 », N < 800) ; (b) « et strate 3 < 5/10 » est lu comme portant sur toute la branche de R (couvert ou densité), et non sur la seule densité ; (c) « strates 3 et 4 < 5/10 » = les deux strates séparément (ambiguïté 5). **Décision :** on lit la colonne du logigramme dans l'ordre, le premier type vrai l'emporte (L, puis 3, puis R). La clé n'ayant pas d'ordre de priorité, la cascade est écrite en conditions exclusives (G < 10) : **L** = (c3 < 0,45 et c4 < 0,45) ou N < 800 ; **3** = c3 ≥ 0,45 et N ≥ 800 ; **R** = c3 < 0,45 et c4 ≥ 0,45 et N ≥ 800. Branche G < 10 close : N < 800 donne L ; N ≥ 800 donne 3 si c3 ≥ 0,45, sinon L si c4 < 0,45, sinon R. Les alternatives de 3 pour G ≥ 10 ne changent pas. Reste l'écart de lecture (a) : N = 800 exactement tombe dans 3 ou R (« plus de 800 » strict dans le GSM). Statut : L, 3 et R transcrits, NON GELÉS (la clé reste non gelée) ; test d'exclusivité vert.
 7. **Ordre des tests X et T.** X (rôle faible) est testé avant tout, T après CH, dans le logigramme ; non exprimables ici, leur absence change le type attribué aux pixels qu'ils auraient absorbés (voir conséquence plus haut).
 
 ### Trois points au sol (clé GSM)
 
 1. Un peuplement à une seule strate haute dense (strate 1 à 6/10, G 25 m²/ha, 70 % de GB) : 1GB, mais avec un couvert mesuré de 0,47 la convention d'arrondi (0,45 ou 0,5) décide entre « strate 1 prépondérante » (1GB) et « strate 1 moyenne » (un autre type selon les strates 2 et 3) : à voir sur le terrain.
 2. Un peuplement de hêtres sous grands sapins (strates 1 et 3 moyennes, strate 2 déficitaire) : 13 ou 13GB, ce que la couche `Typo_etage = 3` ne distingue pas.
-3. Une clairière de régénération (G < 10, strate 4 à 6/10, strate 3 à 2/10) : R si le couvert de la strate 4 est mesuré par `c4_hpot` ; vérifier que les tiges « plus de 800 tiges/ha » (branche omise) ne la rangent pas ailleurs.
+3. Une clairière de régénération (G < 10, strate 4 à 6/10, strate 3 à 2/10) : R si N ≥ 800 ; si N < 800, la cascade (ambiguïté 6) la range en L : à voir sur le terrain.
 
 ## Questions à Pascal (mission 005, mises à jour)
 
@@ -190,11 +190,13 @@ Mission 010 :
 1. Chaque seuil a sa page : passé (champ `source` de chaque type, tableau « Lecture du GSM, pages »).
 2. Les 20 codes comptés : 16 dans `cle.types` + 4 dans `cle.non_exprimables` = 20 ; chargement vérifié (16 types lus).
 3. Termes recopiés de la source : passé pour les libellés et les conditions.
-4. Ambiguïtés du logigramme posées, non tranchées : passé pour les sept ; les transcriptions prises par défaut sont dites (ambiguïtés 1, 2, 5, 6).
-5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `hpot` fait par 012 en mode « variables fournies » (pas en mode placettes) ; `N` lue mais non citée par la clé.
+4. Ambiguïtés du logigramme posées, non tranchées : passé pour les sept ; les transcriptions prises par défaut sont dites (ambiguïtés 1, 2, 5, 6). Branche N de L et R (2026-11-23) : seuils 800 avec la page (p. 54, PDF p. 29), termes recopiés ; recouvrement tranché par Pascal : cascade L, 3, R.
+5. Statut dit tel qu'il est : transcrite, non gelée ; câblage `hpot` fait par 012 en mode « variables fournies » (pas en mode placettes) ; `N` lue et citée par L et R depuis le 2026-11-23, en mode « variables fournies » seulement.
 
 ## Journal (proposé)
 
 `2026-11-22 · acquereur · 005 · typologie H10 : GSM Alpes du Nord (20 types, couvert des strates) trouvée, non exprimable dans la chaîne actuelle ; limite BM/GB 42,5 / 47,5 non tranchée ; config H10 chargeable à clé vide`
 
 `2026-11-22 · acquereur · 010 · clé GSM transcrite dans vercors-h10.json : 16 types sur 20 (L et R partiels), X, P, A, T non exprimables ; limite BM/GB 42,5 cm, souplesses du jeu ONF (G 7,32 ; part_resineux 0,199 ; part_gb 0,163) ; 7 ambiguïtés du logigramme et l'arrondi des couverts (0,25 / 0,45 prise) à trancher par Pascal ; non gelée`
+
+`2026-11-23 · acquereur · 010 · branche N de L et R transcrite (p. 54) ; ambiguïté 6 tranchée par Pascal : cascade L, puis 3, puis R, en conditions exclusives (L = (c3<0,45 et c4<0,45) ou N<800 ; 3 = c3≥0,45 et N≥800 ; R = c3<0,45 et c4≥0,45 et N≥800) ; L, 3 et R transcrits, clé non gelée ; test d'exclusivité vert ; couvert des strates et N « oui, en mode variables fournies »`
